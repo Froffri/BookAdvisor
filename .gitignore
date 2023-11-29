@@ -35,3 +35,6 @@ replay_pid*
 
 # Dataset
 dataset
+
+# VSCode stuff
+.vscode
