@@ -27,34 +27,53 @@ public class ReviewDao {
             Document doc = review.toDocument();
             collection.insertOne(doc);
         } catch (Exception e) {
-            // Handle exception
+            System.err.println("Errore durante l'inserimento della recensione: " + e.getMessage());
         }
     }
 
     // Find a review by its ID
     public Review findReviewById(String id) {
-        Document doc = collection.find(Filters.eq("_id", new ObjectId(id))).first();
-        return doc != null ? new Review(doc) : null;
+        try {
+            Document doc = collection.find(Filters.eq("_id", new ObjectId(id))).first();
+            return doc != null ? new Review(doc) : null;
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca della recensione per ID: " + e.getMessage());
+            return null;
+        }
     }
 
     // Find reviews by book ID
     public List<Review> findReviewsByBookId(String bookId) {
         List<Review> reviews = new ArrayList<>();
-        for (Document doc : collection.find(Filters.eq("bookId", new ObjectId(bookId)))) {
-            reviews.add(new Review(doc));
+        try {
+            for (Document doc : collection.find(Filters.eq("bookId", new ObjectId(bookId)))) {
+                reviews.add(new Review(doc));
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca delle recensioni per ID libro: " + e.getMessage());
         }
         return reviews;
     }
 
     // Update a review's information
     public boolean updateReview(String id, Review review) {
-        UpdateResult result = collection.updateOne(Filters.eq("_id", new ObjectId(id)), new Document("$set", review.toDocument()));
-        return result.getModifiedCount() > 0;
+        try {
+            UpdateResult result = collection.updateOne(Filters.eq("_id", new ObjectId(id)), new Document("$set", review.toDocument()));
+            return result.getModifiedCount() > 0;
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiornamento della recensione: " + e.getMessage());
+            return false;
+        }
     }
 
     // Delete a review from the database
     public boolean deleteReview(String id) {
-        DeleteResult result = collection.deleteOne(Filters.eq("_id", new ObjectId(id)));
-        return result.getDeletedCount() > 0;
+        try {
+            DeleteResult result = collection.deleteOne(Filters.eq("_id", new ObjectId(id)));
+            return result.getDeletedCount() > 0;
+        } catch (Exception e) {
+            System.err.println("Errore durante la cancellazione della recensione: " + e.getMessage());
+            return false;
+        }
     }
 }

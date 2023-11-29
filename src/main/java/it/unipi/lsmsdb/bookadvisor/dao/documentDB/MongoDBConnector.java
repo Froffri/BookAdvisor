@@ -15,13 +15,17 @@ public class MongoDBConnector {
 
     // Costruttore privato per prevenire l'istanziazione diretta
     private MongoDBConnector() {
-        ConnectionString connString = new ConnectionString("mongodb://localhost:27017");
-        MongoClientSettings settings = MongoClientSettings.builder()
-            .applyConnectionString(connString)
-            .retryWrites(true)
-            .build();
-        mongoClient = MongoClients.create(settings);
-        database = mongoClient.getDatabase(DATABASE_NAME);
+        try {
+            ConnectionString connString = new ConnectionString("mongodb://localhost:27017");
+            MongoClientSettings settings = MongoClientSettings.builder()
+                    .applyConnectionString(connString)
+                    .retryWrites(true)
+                    .build();
+            mongoClient = MongoClients.create(settings);
+            database = mongoClient.getDatabase(DATABASE_NAME);
+        } catch (Exception e) {
+            System.err.println("Errore durante la connessione al database: " + e.getMessage());
+        }
     }
 
     // Metodo pubblico statico per ottenere l'istanza
@@ -44,8 +48,12 @@ public class MongoDBConnector {
     // Metodo per chiudere la connessione al database
     // Nota: Considera attentamente quando chiamare questo metodo in un ambiente Singleton
     public void closeConnection() {
-        if (mongoClient != null) {
-            mongoClient.close();
+        try {
+            if (mongoClient != null) {
+                mongoClient.close();
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante la chiusura della connessione al database: " + e.getMessage());
         }
     }
 }
