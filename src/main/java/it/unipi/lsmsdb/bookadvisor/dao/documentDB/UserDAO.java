@@ -6,6 +6,8 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import it.unipi.lsmsdb.bookadvisor.model.User;
+import it.unipi.lsmsdb.bookadvisor.utils.HashingUtility;
+
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -24,11 +26,16 @@ public class UserDao {
     // Insert user into MongoDB
     public void insertUser(User user) {
         try {
+            // Hash the password before saving
+            String hashedPassword = HashingUtility.hashPassword(user.getPassword());
+            user.setPassword(hashedPassword);
+
             collection.insertOne(user.toDocument());
         } catch (Exception e) {
             System.err.println("Errore durante l'inserimento dell'utente: " + e.getMessage());
         }
     }
+
 
     // Find a user by their ID
     public User findUserById(String id) {
@@ -55,13 +62,18 @@ public class UserDao {
     // Update a user's information
     public boolean updateUser(String id, User user) {
         try {
-            UpdateResult result = collection.updateOne(Filters.eq("_id", new ObjectId(id)), new Document("$set", user.toDocument()));
+            // Hash the password if it's updated
+            String hashedPassword = HashingUtility.hashPassword(user.getPassword());
+            user.setPassword(hashedPassword);
+    
+            UpdateResult result = collection.updateOne(Filters.eq("_id", new ObjectId(id)), 
+                                                      new Document("$set", user.toDocument()));
             return result.getModifiedCount() > 0;
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiornamento dell'utente: " + e.getMessage());
             return false;
         }
-    }
+    }    
 
     // Delete a user from the database
     public boolean deleteUser(String id) {
