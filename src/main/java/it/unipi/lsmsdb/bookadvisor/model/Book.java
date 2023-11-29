@@ -1,0 +1,99 @@
+package it.unipi.lsmsdb.bookadvisor.model;
+
+public class Book {
+    private String id;
+    private int sumStars;
+    private int numRatings;
+    private String language;
+    private String title;
+    private String[] genre;
+    private int year;
+    private String imageUrl;
+    private int numPages;
+
+    public Book(String id, int sumStars, int numRatings, String language, String title, String[] genre, int year, String imageUrl, int numPages) {
+        this.id = id;
+        this.sumStars = sumStars;
+        this.numRatings = numRatings;
+        this.language = language;
+        this.title = title;
+        this.genre = genre;
+        this.year = year;
+        this.imageUrl = imageUrl;
+        this.numPages = numPages;
+    }
+
+    // Getters and setters
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public int getSumStars() {
+        return sumStars;
+    }
+
+    public void setSumStars(int sumStars) {
+        this.sumStars = sumStars;
+    }
+
+    public int getNumRatings() {
+        return numRatings;
+    }
+
+    public void setNumRatings(int numRatings) {
+        this.numRatings = numRatings;
+    }
+
+    public String getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(String language) {
+        this.language = language;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public String[] getGenre() {
+        return genre;
+    }
+
+    public void setGenre(String[] genre) {
+        this.genre = genre;
+    }
+
+    public int getYear() {
+        return year;
+    }
+
+    public void setYear(int year) {
+        this.year = year;
+    }
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    public void setImageUrl(String imageUrl) {
+        this.imageUrl = imageUrl;
+    }
+
+    public int getNumPages() {
+        return numPages;
+    }
+
+    public void setNumPages(int numPages) {
+        this.numPages = numPages;
+    }
+}
