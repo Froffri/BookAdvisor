@@ -4,33 +4,31 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
+
+import it.unipi.lsmsdb.bookadvisor.model.Book;
 import org.bson.Document;
 import org.bson.types.ObjectId;
-
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
+import java.util.List;
+import java.util.ArrayList;
 
 public class BookDao {
-    private static final String COLLECTION_NAME = "books";
     private MongoCollection<Document> collection;
 
+    // Constructor
     public BookDao(MongoDBConnector connector) {
         MongoDatabase database = connector.getDatabase();
-        collection = database.getCollection(COLLECTION_NAME);
+        collection = database.getCollection("books");
     }
 
     // Insert a new book into the database
     public void insertBook(Book book) {
-        Document doc = new Document("title", book.getTitle())
-            .append("author", book.getAuthor())
-            .append("genre", book.getGenre())
-            .append("year", book.getYear())
-            .append("language", book.getLanguage())
-            .append("numPages", book.getNumPages())
-            .append("sumStars", book.getSumStars())
-            .append("numRatings", book.getNumRatings());
-        collection.insertOne(doc);
+        try {
+            Document doc = book.toDocument();
+            collection.insertOne(doc);
+        } catch (Exception e) {
+            // Handle exception
+        }
     }
 
     // Find a book by its ID

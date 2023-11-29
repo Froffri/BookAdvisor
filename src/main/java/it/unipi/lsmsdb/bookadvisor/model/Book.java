@@ -1,30 +1,45 @@
 package it.unipi.lsmsdb.bookadvisor.model;
 
+import org.bson.Document;
+
 public class Book {
     private String id;
     private int sumStars;
     private int numRatings;
     private String language;
     private String title;
+    private String author; // Aggiunto campo author
     private String[] genre;
     private int year;
     private String imageUrl;
     private int numPages;
 
-    public Book(String id, int sumStars, int numRatings, String language, String title, String[] genre, int year, String imageUrl, int numPages) {
-        this.id = id;
-        this.sumStars = sumStars;
-        this.numRatings = numRatings;
-        this.language = language;
-        this.title = title;
-        this.genre = genre;
-        this.year = year;
-        this.imageUrl = imageUrl;
-        this.numPages = numPages;
+    // Constructor
+    public Book(String id, int sumStars, int numRatings, String language, 
+                String title, String author, String[] genre, int year, 
+                String imageUrl, int numPages) {
+        // Initialize fields
     }
 
-    // Getters and setters
+    // Constructor that accepts a Document object
+    public Book(Document doc) {
+        // Initialize fields from Document
+        this.author = doc.getString("author"); // Aggiungi l'inizializzazione di author
+    }
 
+    // Method to convert a Book object to a Document
+    public Document toDocument() {
+        return new Document("title", title)
+                .append("author", author)
+                .append("genre", genre)
+                .append("year", year)
+                .append("language", language)
+                .append("numPages", numPages)
+                .append("sumStars", sumStars)
+                .append("numRatings", numRatings);
+    }
+    // Getters and setters
+    
     public String getId() {
         return id;
     }
@@ -47,6 +62,14 @@ public class Book {
 
     public void setNumRatings(int numRatings) {
         this.numRatings = numRatings;
+    }
+
+    public String getAuthor() {
+        return author;
+    }
+
+    public void setAuthor(String author) {
+        this.author = author;
     }
 
     public String getLanguage() {

@@ -21,10 +21,9 @@ public class UserDao {
         collection = database.getCollection(COLLECTION_NAME);
     }
 
-    // Insert a new user into the database
+    // Insert user into MongoDB
     public void insertUser(User user) {
-        Document doc = user.toDocument();
-        collection.insertOne(doc);
+        collection.insertOne(user.toDocument());
     }
 
     // Find a user by their ID

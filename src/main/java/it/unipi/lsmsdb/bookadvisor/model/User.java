@@ -1,21 +1,39 @@
 package it.unipi.lsmsdb.bookadvisor.model;
 
-import java.time.LocalDateTime;
+import org.bson.Document;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 public class User {
     private String id;
     private String name;
     private String nickname;
     private String password;
-    private LocalDateTime birthdate;
+    private LocalDate birthdate;
     private String gender;
 
-    public User(String name, String nickname, String password, LocalDateTime birthdate, String gender) {
+    public User(String name, String nickname, String password, LocalDate birthdate, String gender) {
         this.name = name;
         this.nickname = nickname;
         this.password = password;
         this.birthdate = birthdate;
         this.gender = gender;
+    }
+
+    public User(Document doc) {
+        this.id = doc.getString("id");
+        this.name = doc.getString("name");
+        this.nickname = doc.getString("nickname");
+        this.password = doc.getString("password"); // Gestisci la sicurezza qui
+        this.gender = doc.getString("gender");
+
+        // Conversione della stringa di data in LocalDate
+        String birthdateStr = doc.getString("birthdate");
+        if (birthdateStr != null && !birthdateStr.isEmpty()) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            this.birthdate = LocalDate.parse(birthdateStr, formatter);
+        }
     }
 
     public String getId() {
@@ -50,11 +68,11 @@ public class User {
         this.password = password;
     }
 
-    public LocalDateTime getBirthdate() {
+    public LocalDate getBirthdate() {
         return birthdate;
     }
 
-    public void setBirthdate(LocalDateTime birthdate) {
+    public void setBirthdate(LocalDate birthdate) {
         this.birthdate = birthdate;
     }
 
@@ -76,6 +94,16 @@ public class User {
                 ", birthdate='" + birthdate + '\'' +
                 ", gender='" + gender + '\'' +
                 '}';
+    }
+
+    // Convert to MongoDB Document
+    public Document toDocument() {
+        return new Document("id", id)
+                .append("name", name)
+                .append("nickname", nickname)
+                .append("password", password) // Assicurati di gestire la sicurezza qui
+                .append("birthdate", birthdate)
+                .append("gender", gender);
     }
 }
     

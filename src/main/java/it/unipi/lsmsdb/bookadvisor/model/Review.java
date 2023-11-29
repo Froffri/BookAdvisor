@@ -1,5 +1,6 @@
 package it.unipi.lsmsdb.bookadvisor.model;
 
+import org.bson.Document;
 import org.bson.types.ObjectId;
 
 public class Review {
@@ -17,6 +18,23 @@ public class Review {
         this.stars = stars;
     }
 
+    // Costruttore che accetta un Document
+    public Review(Document doc) {
+        this.id = doc.getObjectId("_id");
+        this.userId = doc.getObjectId("userId");
+        this.bookId = doc.getObjectId("bookId");
+        this.text = doc.getString("text");
+        this.stars = doc.getInteger("stars", 0);
+    }
+
+    // Metodo per convertire in Document
+    public Document toDocument() {
+        return new Document("userId", userId)
+                .append("bookId", bookId)
+                .append("text", text)
+                .append("stars", stars);
+    }
+ 
     public ObjectId getId() {
         return id;
     }

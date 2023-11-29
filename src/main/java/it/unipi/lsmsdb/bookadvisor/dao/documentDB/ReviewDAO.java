@@ -23,8 +23,12 @@ public class ReviewDao {
 
     // Insert a new review into the database
     public void insertReview(Review review) {
-        Document doc = review.toDocument();
-        collection.insertOne(doc);
+        try {
+            Document doc = review.toDocument();
+            collection.insertOne(doc);
+        } catch (Exception e) {
+            // Handle exception
+        }
     }
 
     // Find a review by its ID
