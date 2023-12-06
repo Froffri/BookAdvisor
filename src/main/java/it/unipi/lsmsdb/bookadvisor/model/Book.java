@@ -8,7 +8,7 @@ public class Book {
     private int numRatings;
     private String language;
     private String title;
-    private String author; // Aggiunto campo author
+    private String author;
     private String[] genre;
     private int year;
     private String imageUrl;
@@ -24,7 +24,6 @@ public class Book {
     // Constructor that accepts a Document object
     public Book(Document doc) {
         // Initialize fields from Document
-        this.author = doc.getString("author"); // Aggiungi l'inizializzazione di author
     }
 
     // Method to convert a Book object to a Document

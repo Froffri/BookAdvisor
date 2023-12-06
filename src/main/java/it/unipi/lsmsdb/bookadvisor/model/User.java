@@ -25,7 +25,7 @@ public class User {
         this.id = doc.getString("id");
         this.name = doc.getString("name");
         this.nickname = doc.getString("nickname");
-        this.password = doc.getString("password"); // Gestisci la sicurezza qui
+        this.password = doc.getString("password");
         this.gender = doc.getString("gender");
 
         // Conversione della stringa di data in LocalDate
@@ -101,7 +101,7 @@ public class User {
         return new Document("id", id)
                 .append("name", name)
                 .append("nickname", nickname)
-                .append("password", password) // Assicurati di gestire la sicurezza qui
+                .append("password", password)
                 .append("birthdate", birthdate)
                 .append("gender", gender);
     }
