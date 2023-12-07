@@ -1,4 +1,4 @@
-package it.unipi.lsmsdb.bookadvisor.model;
+package it.unipi.lsmsdb.bookadvisor.model.user;
 
 import org.bson.Document;
 
@@ -6,13 +6,19 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class User {
-    private String id;
+    private Integer id;
     private String name;
     private String nickname;
     private String password;
     private LocalDate birthdate;
     private String gender;
 
+    // Default constructor
+    public User() {
+        // This constructor is intentionally empty. Nothing special is needed here.
+    }
+
+    // Parameterized constructor
     public User(String name, String nickname, String password, LocalDate birthdate, String gender) {
         this.name = name;
         this.nickname = nickname;
@@ -21,8 +27,8 @@ public class User {
         this.gender = gender;
     }
 
+    // Parameterized constructor with document
     public User(Document doc) {
-        this.id = doc.getString("id");
         this.name = doc.getString("name");
         this.nickname = doc.getString("nickname");
         this.password = doc.getString("password");
@@ -36,11 +42,13 @@ public class User {
         }
     }
 
-    public String getId() {
+    // Getters and setters
+
+    public Integer getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(Integer id) {
         this.id = id;
     }
 
@@ -84,6 +92,7 @@ public class User {
         this.gender = gender;
     }
 
+    // toString method for debugging and logging
     @Override
     public String toString() {
         return "User{" +
@@ -106,5 +115,3 @@ public class User {
                 .append("gender", gender);
     }
 }
-    
-    

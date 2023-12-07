@@ -5,7 +5,9 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
-import it.unipi.lsmsdb.bookadvisor.model.Review;
+
+import it.unipi.lsmsdb.bookadvisor.model.review.Review;
+
 import org.bson.Document;
 import org.bson.types.ObjectId;
 

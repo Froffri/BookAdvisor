@@ -1,4 +1,4 @@
-package it.unipi.lsmsdb.bookadvisor.model;
+package it.unipi.lsmsdb.bookadvisor.model.book;
 
 import org.bson.Document;
 

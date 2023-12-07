@@ -5,7 +5,8 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 
-import it.unipi.lsmsdb.bookadvisor.model.Book;
+import it.unipi.lsmsdb.bookadvisor.model.book.Book;
+
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import java.util.Optional;
