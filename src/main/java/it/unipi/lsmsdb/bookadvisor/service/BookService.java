@@ -26,13 +26,13 @@ public class BookService {
 
     public void addBook(Book book, User user) {
         if (user instanceof Author) {
-            bookDao.insertBook(book);
+            bookDao.addBook(book);
         } else {
             throw new IllegalArgumentException("Solo gli autori possono inserire libri.");
         }
     }
 
-    public void updateBookDetails(Book book, User user) {
+    public void updateBook(Book book, User user) {
         if (user instanceof Author) {
             Author author = (Author) user;
             if (Arrays.asList(book.getAuthor()).contains(author.getId())) {
@@ -64,5 +64,39 @@ public class BookService {
         }
     }
     
-    
+    public List<Book> getBooksByTitle(String title) {
+        return bookDao.getBooksByTitle(title);
+    }
+
+    public List<Book> getBooksByAuthor(String authorId) {
+        return bookDao.getBooksByAuthor(new ObjectId(authorId));
+    }
+
+    public List<Book> getBooksByGenre(String genre) {
+        return bookDao.getBooksByGenre(genre);
+    }
+
+    public List<Book> getBooksByYear(int year) {
+        return bookDao.getBooksByYear(year);
+    }
+
+    public List<Book> getBooksByLanguage(String language) {
+        return bookDao.getBooksByLanguage(language);
+    }
+
+    public List<Book> getBooksByRating(double targetRating, boolean greaterOrEqual) {
+        return bookDao.getBooksByRating(targetRating, greaterOrEqual);
+    }
+
+    public List<Book> getBooksByNumPages(int numPages, boolean greaterOrEqual) {
+        return bookDao.getBooksByNumPages(numPages, greaterOrEqual);
+    }
+
+    public List<Book> getBooksByAuthors(List<ObjectId> authors, boolean isAnd){
+        return bookDao.getBooksByAuthors(authors, isAnd);
+    }
+
+    public List<Book> getBooksByGenres(List<String> genres, boolean isAnd){
+        return bookDao.getBooksByGenres(genres, isAnd);
+    }
 }

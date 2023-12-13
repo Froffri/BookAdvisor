@@ -19,7 +19,7 @@ public class AuthenticationService {
         }
         String hashedPassword = HashingUtility.hashPassword(password);
         User newUser = new User(name, username, hashedPassword, birthdate, gender);
-        userDao.insertUser(newUser);
+        userDao.addUser(newUser);
         return true;
     }
 

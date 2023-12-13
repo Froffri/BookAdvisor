@@ -12,22 +12,6 @@ public class UserService {
         this.userDao = userDao;
     }
 
-    // Registrazione di un nuovo utente
-    public boolean signup(User newUser) {
-        newUser.setPassword(HashingUtility.hashPassword(newUser.getPassword()));
-        return userDao.insertUser(newUser);
-    }
-
-    // Login utente
-    public User login(String username, String password) {
-        User user = userDao.findUserByUsername(username);
-        if (user != null && HashingUtility.hashPassword(password).equals(user.getPassword())) {
-            // Implementa la logica di gestione delle sessioni o dei token qui
-            return user;
-        }
-        return null;
-    }
-
     // Cambiare la password dell'utente
     public boolean changePassword(String userId, String newPassword) {
         User user = userDao.findUserById(new ObjectId(userId));
@@ -48,7 +32,7 @@ public class UserService {
         return userDao.updateUser(updatedUser);
     }
 
-    // Eliminazione del conto personale
+    // Eliminazione del profilo personale
     public boolean deletePersonalAccount(String userId) {
         return userDao.deleteUser(new ObjectId(userId));
     }

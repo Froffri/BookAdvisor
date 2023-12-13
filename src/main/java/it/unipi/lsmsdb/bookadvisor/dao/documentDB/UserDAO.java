@@ -7,7 +7,6 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
-import it.unipi.lsmsdb.bookadvisor.utils.HashingUtility;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -25,7 +24,7 @@ public class UserDao {
     }
 
     // Insert user into MongoDB
-    public boolean insertUser(User user) {
+    public boolean addUser(User user) {
         try {
             // Inserimento dell'utente nel database
             collection.insertOne(user.toDocument());
@@ -35,8 +34,7 @@ public class UserDao {
             System.err.println("Errore durante l'inserimento dell'utente: " + e.getMessage());
             return false;
         }
-    }
-    
+    } 
 
     // Find a user by their ID
     public User findUserById(ObjectId id) {
@@ -63,8 +61,6 @@ public class UserDao {
     // Update a user's information
     public boolean updateUser(User user) {
         try {
-            String hashedPassword = HashingUtility.hashPassword(user.getPassword());
-            user.setPassword(hashedPassword);
             UpdateResult result = collection.updateOne(Filters.eq("_id", user.getId()), 
                                                       new Document("$set", user.toDocument()));
             return result.getModifiedCount() > 0;
