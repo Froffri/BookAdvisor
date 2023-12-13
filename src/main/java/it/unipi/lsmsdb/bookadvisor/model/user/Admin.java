@@ -1,6 +1,8 @@
 package it.unipi.lsmsdb.bookadvisor.model.user;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
+
 import java.time.LocalDate;
 
 public class Admin extends User {
@@ -14,9 +16,9 @@ public class Admin extends User {
     }
 
     // Parameterized constructor
-    public Admin(String name, String nickname, String password, LocalDate birthdate,
+    public Admin(ObjectId id, String name, String nickname, String password, LocalDate birthdate,
                  String gender, boolean isAdmin) {
-        super(name, nickname, password, birthdate, gender);
+        super(id, name, nickname, password, birthdate, gender);
         this.isAdmin = isAdmin;
     }
 

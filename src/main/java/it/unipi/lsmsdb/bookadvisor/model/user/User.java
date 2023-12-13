@@ -1,12 +1,13 @@
 package it.unipi.lsmsdb.bookadvisor.model.user;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class User {
-    private Integer id;
+    private ObjectId id;
     private String name;
     private String nickname;
     private String password;
@@ -19,7 +20,8 @@ public class User {
     }
 
     // Parameterized constructor
-    public User(String name, String nickname, String password, LocalDate birthdate, String gender) {
+    public User(ObjectId id, String name, String nickname, String password, LocalDate birthdate, String gender) {
+        this.id = id;
         this.name = name;
         this.nickname = nickname;
         this.password = password;
@@ -29,6 +31,7 @@ public class User {
 
     // Parameterized constructor with document
     public User(Document doc) {
+        this.id = doc.getObjectId("_id");
         this.name = doc.getString("name");
         this.nickname = doc.getString("nickname");
         this.password = doc.getString("password");
@@ -44,11 +47,11 @@ public class User {
 
     // Getters and setters
 
-    public Integer getId() {
+    public ObjectId getId() {
         return id;
     }
 
-    public void setId(Integer id) {
+    public void setId(ObjectId id) {
         this.id = id;
     }
 

@@ -74,4 +74,20 @@ public class BookDao {
             System.err.println("Errore durante la cancellazione del libro: " + e.getMessage());
         }
     }
+
+    // Update the rating of a book
+    protected void updateBookRating(ObjectId bookId, int rating) {
+        try {
+            Document book = collection.find(Filters.eq("_id", bookId)).first();
+            if (book != null) {
+                int sumStars = book.getInteger("sumStars", 0) + rating;
+                int numRatings = book.getInteger("numRatings", 0) + 1;
+                collection.updateOne(Filters.eq("_id", bookId), 
+                                         Updates.combine(Updates.set("sumStars", sumStars),
+                                                         Updates.set("numRatings", numRatings)));
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiornamento dei rating del libro: " + e.getMessage());
+        }
+    }
 }

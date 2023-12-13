@@ -3,6 +3,7 @@ package it.unipi.lsmsdb.bookadvisor.model.user;
 import java.util.List;
 import java.time.LocalDate;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 public class RegisteredUser extends User {
     private String nationality;
@@ -15,9 +16,9 @@ public class RegisteredUser extends User {
     }
 
     // Parameterized constructor
-    public RegisteredUser(String name, String nickname, String password, LocalDate birthdate,
+    public RegisteredUser(ObjectId id, String name, String nickname, String password, LocalDate birthdate,
                           String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages) {
-        super(name, nickname, password, birthdate, gender);
+        super(id, name, nickname, password, birthdate, gender);
         this.nationality = nationality;
         this.favouriteGenres = favouriteGenres;
         this.spokenLanguages = spokenLanguages;

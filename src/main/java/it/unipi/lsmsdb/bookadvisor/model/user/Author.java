@@ -1,6 +1,8 @@
 package it.unipi.lsmsdb.bookadvisor.model.user;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
+
 import java.util.List;
 import java.time.LocalDate;
 
@@ -13,10 +15,10 @@ public class Author extends RegisteredUser {
     }
 
     // Parameterized constructor
-    public Author(String name, String nickname, String password, LocalDate birthdate,
+    public Author(ObjectId id, String name, String nickname, String password, LocalDate birthdate,
                   String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages, 
                   List<String> genres) {
-        super(name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
+        super(id, name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
         this.genres = genres;
     }
 

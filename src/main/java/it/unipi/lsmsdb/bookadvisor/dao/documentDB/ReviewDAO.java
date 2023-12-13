@@ -17,19 +17,21 @@ import java.util.List;
 public class ReviewDao {
     private static final String COLLECTION_NAME = "reviews";
     private MongoCollection<Document> collection;
+    private BookDao bookDao;
 
     public ReviewDao(MongoDBConnector connector) {
         MongoDatabase database = connector.getDatabase();
         collection = database.getCollection(COLLECTION_NAME);
+        this.bookDao = new BookDao(connector);
     }
 
     // Insert a new review into the database
-    public void insertReview(Review review) {
+    public void addReview(Review review) {
         try {
-            Document doc = review.toDocument();
-            collection.insertOne(doc);
+            collection.insertOne(review.toDocument());
+            bookDao.updateBookRating(review.getBookId(), review.getStars());
         } catch (Exception e) {
-            System.err.println("Errore durante l'inserimento della recensione: " + e.getMessage());
+            System.err.println("Errore durante l'aggiunta della recensione: " + e.getMessage());
         }
     }
 
