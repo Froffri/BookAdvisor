@@ -5,7 +5,8 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 
-import it.unipi.lsmsdb.bookadvisor.model.Book;
+import it.unipi.lsmsdb.bookadvisor.model.book.Book;
+
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import java.util.Optional;
@@ -71,6 +72,22 @@ public class BookDao {
             collection.deleteOne(Filters.eq("_id", new ObjectId(id)));
         } catch (Exception e) {
             System.err.println("Errore durante la cancellazione del libro: " + e.getMessage());
+        }
+    }
+
+    // Update the rating of a book
+    protected void updateBookRating(ObjectId bookId, int rating) {
+        try {
+            Document book = collection.find(Filters.eq("_id", bookId)).first();
+            if (book != null) {
+                int sumStars = book.getInteger("sumStars", 0) + rating;
+                int numRatings = book.getInteger("numRatings", 0) + 1;
+                collection.updateOne(Filters.eq("_id", bookId), 
+                                         Updates.combine(Updates.set("sumStars", sumStars),
+                                                         Updates.set("numRatings", numRatings)));
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiornamento dei rating del libro: " + e.getMessage());
         }
     }
 }

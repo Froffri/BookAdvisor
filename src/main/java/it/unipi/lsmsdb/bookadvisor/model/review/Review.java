@@ -1,4 +1,4 @@
-package it.unipi.lsmsdb.bookadvisor.model;
+package it.unipi.lsmsdb.bookadvisor.model.review;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;

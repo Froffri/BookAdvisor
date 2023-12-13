@@ -1,30 +1,48 @@
-package it.unipi.lsmsdb.bookadvisor.model;
+package it.unipi.lsmsdb.bookadvisor.model.book;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 public class Book {
-    private String id;
+    private ObjectId id;
     private int sumStars;
     private int numRatings;
     private String language;
     private String title;
-    private String author; // Aggiunto campo author
+    private String author;
     private String[] genre;
     private int year;
     private String imageUrl;
     private int numPages;
 
     // Constructor
-    public Book(String id, int sumStars, int numRatings, String language, 
+    public Book(ObjectId id, int sumStars, int numRatings, String language, 
                 String title, String author, String[] genre, int year, 
                 String imageUrl, int numPages) {
-        // Initialize fields
+        this.id = id;
+        this.sumStars = sumStars;
+        this.numRatings = numRatings;
+        this.language = language;
+        this.title = title;
+        this.author = author;
+        this.genre = genre;
+        this.year = year;
+        this.imageUrl = imageUrl;
+        this.numPages = numPages;
     }
 
     // Constructor that accepts a Document object
     public Book(Document doc) {
-        // Initialize fields from Document
-        this.author = doc.getString("author"); // Aggiungi l'inizializzazione di author
+        this.id = doc.getObjectId("_id");
+        this.sumStars = doc.getInteger("sumStars");
+        this.numRatings = doc.getInteger("numRatings");
+        this.language = doc.getString("language");
+        this.title = doc.getString("title");
+        this.author = doc.getString("author");
+        this.genre = (String[]) doc.get("genre");
+        this.year = doc.getInteger("year");
+        this.imageUrl = doc.getString("imageUrl");
+        this.numPages = doc.getInteger("numPages");
     }
 
     // Method to convert a Book object to a Document
@@ -40,11 +58,11 @@ public class Book {
     }
     // Getters and setters
     
-    public String getId() {
+    public ObjectId getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(ObjectId id) {
         this.id = id;
     }
 

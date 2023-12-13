@@ -1,19 +1,27 @@
-package it.unipi.lsmsdb.bookadvisor.model;
+package it.unipi.lsmsdb.bookadvisor.model.user;
 
 import org.bson.Document;
+import org.bson.types.ObjectId;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 public class User {
-    private String id;
+    private ObjectId id;
     private String name;
     private String nickname;
     private String password;
     private LocalDate birthdate;
     private String gender;
 
-    public User(String name, String nickname, String password, LocalDate birthdate, String gender) {
+    // Default constructor
+    public User() {
+        // This constructor is intentionally empty. Nothing special is needed here.
+    }
+
+    // Parameterized constructor
+    public User(ObjectId id, String name, String nickname, String password, LocalDate birthdate, String gender) {
+        this.id = id;
         this.name = name;
         this.nickname = nickname;
         this.password = password;
@@ -21,11 +29,12 @@ public class User {
         this.gender = gender;
     }
 
+    // Parameterized constructor with document
     public User(Document doc) {
-        this.id = doc.getString("id");
+        this.id = doc.getObjectId("_id");
         this.name = doc.getString("name");
         this.nickname = doc.getString("nickname");
-        this.password = doc.getString("password"); // Gestisci la sicurezza qui
+        this.password = doc.getString("password");
         this.gender = doc.getString("gender");
 
         // Conversione della stringa di data in LocalDate
@@ -36,11 +45,13 @@ public class User {
         }
     }
 
-    public String getId() {
+    // Getters and setters
+
+    public ObjectId getId() {
         return id;
     }
 
-    public void setId(String id) {
+    public void setId(ObjectId id) {
         this.id = id;
     }
 
@@ -84,6 +95,7 @@ public class User {
         this.gender = gender;
     }
 
+    // toString method for debugging and logging
     @Override
     public String toString() {
         return "User{" +
@@ -101,10 +113,8 @@ public class User {
         return new Document("id", id)
                 .append("name", name)
                 .append("nickname", nickname)
-                .append("password", password) // Assicurati di gestire la sicurezza qui
+                .append("password", password)
                 .append("birthdate", birthdate)
                 .append("gender", gender);
     }
 }
-    
-    
