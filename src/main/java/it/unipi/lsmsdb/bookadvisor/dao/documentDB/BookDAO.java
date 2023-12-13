@@ -24,8 +24,8 @@ public class BookDao {
     }
 
     // Find a book by its ID
-    public Optional<Book> findBookById(String id) {
-        Document doc = collection.find(Filters.eq("_id", new ObjectId(id))).first();
+    public Optional<Book> findBookById(ObjectId id) {
+        Document doc = collection.find(Filters.eq("_id", id)).first();
         return Optional.ofNullable(doc).map(Book::new);
     }
 
@@ -49,9 +49,9 @@ public class BookDao {
     }
 
     // Update a book's information
-    public void updateBook(String id, Book book) {
+    public void updateBook(Book book) {
         try {
-            collection.updateOne(Filters.eq("_id", new ObjectId(id)),
+            collection.updateOne(Filters.eq("_id", book.getId()),
                 Updates.combine(
                     Updates.set("author", book.getAuthor()),
                     Updates.set("genre", book.getGenre()),
@@ -67,12 +67,30 @@ public class BookDao {
     }
 
     // Delete a book from the database
-    public void deleteBook(String id) {
+    public void deleteBook(ObjectId id) {
         try {
-            collection.deleteOne(Filters.eq("_id", new ObjectId(id)));
+            collection.deleteOne(Filters.eq("_id", id));
         } catch (Exception e) {
             System.err.println("Errore durante la cancellazione del libro: " + e.getMessage());
         }
+    }
+
+    // Get all books by a given author
+    public List<Book> getBooksByAuthor(String author) {
+        List<Book> books = new ArrayList<>();
+        for (Document doc : collection.find(Filters.eq("author", author))) {
+            books.add(new Book(doc));
+        }
+        return books;
+    }
+
+    // Get all books of a given genre
+    public List<Book> getBooksByGenre(String genre) {
+        List<Book> books = new ArrayList<>();
+        for (Document doc : collection.find(Filters.eq("genre", genre))) {
+            books.add(new Book(doc));
+        }
+        return books;
     }
 
     // Update the rating of a book

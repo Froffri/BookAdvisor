@@ -9,7 +9,7 @@ public class Book {
     private int numRatings;
     private String language;
     private String title;
-    private String author;
+    private ObjectId[] author;
     private String[] genre;
     private int year;
     private String imageUrl;
@@ -17,7 +17,7 @@ public class Book {
 
     // Constructor
     public Book(ObjectId id, int sumStars, int numRatings, String language, 
-                String title, String author, String[] genre, int year, 
+                String title, ObjectId[] author, String[] genre, int year, 
                 String imageUrl, int numPages) {
         this.id = id;
         this.sumStars = sumStars;
@@ -38,7 +38,7 @@ public class Book {
         this.numRatings = doc.getInteger("numRatings");
         this.language = doc.getString("language");
         this.title = doc.getString("title");
-        this.author = doc.getString("author");
+        this.author = (ObjectId[]) doc.get("author");
         this.genre = (String[]) doc.get("genre");
         this.year = doc.getInteger("year");
         this.imageUrl = doc.getString("imageUrl");
@@ -82,11 +82,11 @@ public class Book {
         this.numRatings = numRatings;
     }
 
-    public String getAuthor() {
+    public ObjectId[] getAuthor() {
         return author;
     }
 
-    public void setAuthor(String author) {
+    public void setAuthor(ObjectId[] author) {
         this.author = author;
     }
 

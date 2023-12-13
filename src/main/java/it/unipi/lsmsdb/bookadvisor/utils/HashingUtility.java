@@ -19,7 +19,14 @@ public class HashingUtility {
             }
             return hexString.toString();
         } catch (NoSuchAlgorithmException e) {
-            return null;
+            throw new RuntimeException("Failed to hash the password", e);
         }
+    }
+
+    public static boolean checkPassword(String plainPassword, String hashedPassword) {
+        // Generate the hashed version of the plain password
+        String generatedHash = hashPassword(plainPassword);
+        // Compare the generated hash with the stored hash
+        return generatedHash != null && generatedHash.equals(hashedPassword);
     }
 }

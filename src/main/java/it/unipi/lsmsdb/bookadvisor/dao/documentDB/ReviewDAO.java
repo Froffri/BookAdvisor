@@ -36,9 +36,9 @@ public class ReviewDao {
     }
 
     // Find a review by its ID
-    public Review findReviewById(String id) {
+    public Review findReviewById(ObjectId id) {
         try {
-            Document doc = collection.find(Filters.eq("_id", new ObjectId(id))).first();
+            Document doc = collection.find(Filters.eq("_id", id)).first();
             return doc != null ? new Review(doc) : null;
         } catch (Exception e) {
             System.err.println("Errore durante la ricerca della recensione per ID: " + e.getMessage());
@@ -47,10 +47,10 @@ public class ReviewDao {
     }
 
     // Find reviews by book ID
-    public List<Review> findReviewsByBookId(String bookId) {
+    public List<Review> findReviewsByBookId(ObjectId bookId) {
         List<Review> reviews = new ArrayList<>();
         try {
-            for (Document doc : collection.find(Filters.eq("bookId", new ObjectId(bookId)))) {
+            for (Document doc : collection.find(Filters.eq("bookId", bookId))) {
                 reviews.add(new Review(doc));
             }
         } catch (Exception e) {
@@ -60,9 +60,9 @@ public class ReviewDao {
     }
 
     // Update a review's information
-    public boolean updateReview(String id, Review review) {
+    public boolean updateReview(Review review) {
         try {
-            UpdateResult result = collection.updateOne(Filters.eq("_id", new ObjectId(id)), new Document("$set", review.toDocument()));
+            UpdateResult result = collection.updateOne(Filters.eq("_id", review.getId()), new Document("$set", review.toDocument()));
             return result.getModifiedCount() > 0;
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiornamento della recensione: " + e.getMessage());
@@ -71,9 +71,9 @@ public class ReviewDao {
     }
 
     // Delete a review from the database
-    public boolean deleteReview(String id) {
+    public boolean deleteReview(ObjectId id) {
         try {
-            DeleteResult result = collection.deleteOne(Filters.eq("_id", new ObjectId(id)));
+            DeleteResult result = collection.deleteOne(Filters.eq("_id", id));
             return result.getDeletedCount() > 0;
         } catch (Exception e) {
             System.err.println("Errore durante la cancellazione della recensione: " + e.getMessage());
