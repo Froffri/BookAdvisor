@@ -33,7 +33,7 @@ public class UserService {
         return userDao.findUserById(new ObjectId(userId));
     }
 
-    // Esempio per updateAccountInformation
+    // Aggiornamento dei dettagli utente
     public boolean updateAccountInformation(String userId, User updatedUser) {
         User existingUser = userDao.findUserById(new ObjectId(userId));
         if (existingUser instanceof Admin || existingUser.getId().equals(updatedUser.getId())) {
@@ -42,10 +42,13 @@ public class UserService {
         throw new IllegalArgumentException("Non hai i permessi per modificare questo utente.");
     }
 
-
-    // Eliminazione del profilo personale
-    public boolean deletePersonalAccount(String userId) {
-        return userDao.deleteUser(new ObjectId(userId));
+    // Metodo per eliminare un account utente
+    public boolean deleteAccount(String requestingUserId, String targetUserId) {
+        User requestingUser = userDao.findUserById(new ObjectId(requestingUserId));
+        if (requestingUser instanceof Admin || requestingUserId.equals(targetUserId)) {
+            return userDao.deleteUser(new ObjectId(targetUserId));
+        }
+        throw new IllegalArgumentException("Non hai i permessi per eliminare questo utente.");
     }
 
     // Visualizzazione della lista degli utenti
@@ -55,8 +58,6 @@ public class UserService {
 
     // Logout utente
     public void logout(String userId) {
-        // Implementa qui la logica di invalidazione della sessione o del token
+        
     }
-
-    // Altri metodi specifici per il tipo di utente (Admin, Author, RegisteredUser) possono essere aggiunti qui
 }

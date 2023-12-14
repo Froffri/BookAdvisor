@@ -36,7 +36,7 @@ public class AuthenticationService {
         return true;
     }
 
-    public User login(String username, String password) {
+    public User logIn(String username, String password) {
         User user = userDao.findUserByUsername(username);
         if (user != null && HashingUtility.checkPassword(password, user.getPassword())) {
             // Successful login
