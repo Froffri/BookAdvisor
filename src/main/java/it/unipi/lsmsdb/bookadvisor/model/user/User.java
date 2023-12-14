@@ -29,6 +29,14 @@ public class User {
         this.gender = gender;
     }
 
+    public User(String name, String nickname, String password, LocalDate birthdate, String gender) {
+        this.name = name;
+        this.nickname = nickname;
+        this.password = password;
+        this.birthdate = birthdate;
+        this.gender = gender;
+    }
+
     // Parameterized constructor with document
     public User(Document doc) {
         this.id = doc.getObjectId("_id");
