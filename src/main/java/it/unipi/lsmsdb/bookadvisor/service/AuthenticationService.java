@@ -2,7 +2,7 @@ package it.unipi.lsmsdb.bookadvisor.service;
 
 import it.unipi.lsmsdb.bookadvisor.model.user.User;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
-import it.unipi.lsmsdb.bookadvisor.utils.HashingUtility;
+import it.unipi.lsmsdb.bookadvisor.utils.*;
 import java.time.LocalDate;
 
 public class AuthenticationService {
@@ -13,12 +13,25 @@ public class AuthenticationService {
     }
 
     public boolean signUp(String username, String password, String name, String gender, LocalDate birthdate) {
-        if (userDao.findUserByUsername(username) != null) {
-            // User already exists
+        // Verifica che la password soddisfi i criteri stabiliti
+        if (!PasswordValidator.newPasswordMeetsCriteria(password)) {
+            // La password non soddisfa i criteri
             return false;
         }
+
+        // Verifica se l'utente esiste già
+        if (userDao.findUserByUsername(username) != null) {
+            // L'utente esiste già
+            return false;
+        }
+
+        // Hash della password
         String hashedPassword = HashingUtility.hashPassword(password);
+
+        // Creazione di un nuovo utente
         User newUser = new User(name, username, hashedPassword, birthdate, gender);
+
+        // Aggiunta dell'utente al database
         userDao.addUser(newUser);
         return true;
     }
