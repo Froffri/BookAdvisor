@@ -7,7 +7,6 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
-import it.unipi.lsmsdb.bookadvisor.utils.HashingUtility;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -25,20 +24,22 @@ public class UserDao {
     }
 
     // Insert user into MongoDB
-    public void insertUser(User user) {
+    public boolean addUser(User user) {
         try {
-            String hashedPassword = HashingUtility.hashPassword(user.getPassword());
-            user.setPassword(hashedPassword);
+            // Inserimento dell'utente nel database
             collection.insertOne(user.toDocument());
+            System.out.println("Inserimento dell'utente riuscito.");
+            return true;
         } catch (Exception e) {
             System.err.println("Errore durante l'inserimento dell'utente: " + e.getMessage());
+            return false;
         }
-    }
+    } 
 
     // Find a user by their ID
-    public User findUserById(String id) {
+    public User findUserById(ObjectId id) {
         try {
-            Document doc = collection.find(Filters.eq("_id", new ObjectId(id))).first();
+            Document doc = collection.find(Filters.eq("_id", id)).first();
             return createUserFromDocument(doc);
         } catch (Exception e) {
             System.err.println("Errore durante la ricerca dell'utente per ID: " + e.getMessage());
@@ -58,11 +59,9 @@ public class UserDao {
     }
 
     // Update a user's information
-    public boolean updateUser(String id, User user) {
+    public boolean updateUser(User user) {
         try {
-            String hashedPassword = HashingUtility.hashPassword(user.getPassword());
-            user.setPassword(hashedPassword);
-            UpdateResult result = collection.updateOne(Filters.eq("_id", new ObjectId(id)), 
+            UpdateResult result = collection.updateOne(Filters.eq("_id", user.getId()), 
                                                       new Document("$set", user.toDocument()));
             return result.getModifiedCount() > 0;
         } catch (Exception e) {
@@ -72,9 +71,9 @@ public class UserDao {
     }
 
     // Delete a user from the database
-    public boolean deleteUser(String id) {
+    public boolean deleteUser(ObjectId id) {
         try {
-            DeleteResult result = collection.deleteOne(Filters.eq("_id", new ObjectId(id)));
+            DeleteResult result = collection.deleteOne(Filters.eq("_id", id));
             return result.getDeletedCount() > 0;
         } catch (Exception e) {
             System.err.println("Errore durante la cancellazione dell'utente: " + e.getMessage());
@@ -114,5 +113,4 @@ public class UserDao {
         // Se non è né Admin né Author, allora è un RegisteredUser
         return new RegisteredUser(doc);
     }
-
 }

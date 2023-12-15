@@ -35,10 +35,55 @@ public class ReviewDao {
         }
     }
 
-    // Find a review by its ID
-    public Review findReviewById(String id) {
+    // Update a review's information
+    public boolean updateReview(Review review) {
         try {
-            Document doc = collection.find(Filters.eq("_id", new ObjectId(id))).first();
+            // Trova la recensione vecchia prima dell'aggiornamento
+            Review oldReview = findReviewById(review.getId());
+    
+            // Aggiorna la recensione nel database
+            UpdateResult result = collection.updateOne(Filters.eq("_id", review.getId()), new Document("$set", review.toDocument()));
+    
+            // Se la recensione è stata effettivamente aggiornata
+            if (result.getModifiedCount() > 0) {
+                // Sottrai il valore vecchio prima di aggiungere il nuovo valore
+                bookDao.updateBookRating(review.getBookId(), -oldReview.getStars());
+                bookDao.updateBookRating(review.getBookId(), review.getStars());
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiornamento della recensione: " + e.getMessage());
+            return false;
+        }
+    }    
+
+    // Delete a review from the database
+    public boolean deleteReview(ObjectId id) {
+        try {
+            // Trova la recensione prima dell'eliminazione
+            Review deletedReview = findReviewById(id);
+
+            // Elimina la recensione dal database
+            DeleteResult result = collection.deleteOne(Filters.eq("_id", id));
+
+            // Se la recensione è stata effettivamente eliminata
+            if (result.getDeletedCount() > 0) {
+                // Sottrai il punteggio della recensione eliminata dal punteggio totale del libro
+                bookDao.updateBookRating(deletedReview.getBookId(), -deletedReview.getStars());
+                return true;
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Errore durante la cancellazione della recensione: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Find a review by its ID
+    public Review findReviewById(ObjectId id) {
+        try {
+            Document doc = collection.find(Filters.eq("_id", id)).first();
             return doc != null ? new Review(doc) : null;
         } catch (Exception e) {
             System.err.println("Errore durante la ricerca della recensione per ID: " + e.getMessage());
@@ -47,10 +92,10 @@ public class ReviewDao {
     }
 
     // Find reviews by book ID
-    public List<Review> findReviewsByBookId(String bookId) {
+    public List<Review> findReviewsByBookId(ObjectId bookId) {
         List<Review> reviews = new ArrayList<>();
         try {
-            for (Document doc : collection.find(Filters.eq("bookId", new ObjectId(bookId)))) {
+            for (Document doc : collection.find(Filters.eq("bookId", bookId))) {
                 reviews.add(new Review(doc));
             }
         } catch (Exception e) {
@@ -59,25 +104,103 @@ public class ReviewDao {
         return reviews;
     }
 
-    // Update a review's information
-    public boolean updateReview(String id, Review review) {
+    // Find reviews by user ID
+    public List<Review> findReviewsByUserId(ObjectId userId) {
+        List<Review> reviews = new ArrayList<>();
         try {
-            UpdateResult result = collection.updateOne(Filters.eq("_id", new ObjectId(id)), new Document("$set", review.toDocument()));
-            return result.getModifiedCount() > 0;
+            for (Document doc : collection.find(Filters.eq("userId", userId))) {
+                reviews.add(new Review(doc));
+            }
         } catch (Exception e) {
-            System.err.println("Errore durante l'aggiornamento della recensione: " + e.getMessage());
-            return false;
+            System.err.println("Errore durante la ricerca delle recensioni per ID utente: " + e.getMessage());
+        }
+        return reviews;
+    }
+
+    // Find reviews by user ID and book ID
+    public Review findReviewByUserIdAndBookId(ObjectId userId, ObjectId bookId) {
+        try {
+            Document doc = collection.find(Filters.and(Filters.eq("userId", userId), Filters.eq("bookId", bookId))).first();
+            return doc != null ? new Review(doc) : null;
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca della recensione per ID utente e ID libro: " + e.getMessage());
+            return null;
         }
     }
 
-    // Delete a review from the database
-    public boolean deleteReview(String id) {
+    // Find reviews by book's name
+    public List<Review> findReviewsByBookName(String bookName) {
+        List<Review> reviews = new ArrayList<>();
         try {
-            DeleteResult result = collection.deleteOne(Filters.eq("_id", new ObjectId(id)));
-            return result.getDeletedCount() > 0;
+            for (Document doc : collection.find(Filters.eq("bookName", bookName))) {
+                reviews.add(new Review(doc));
+            }
         } catch (Exception e) {
-            System.err.println("Errore durante la cancellazione della recensione: " + e.getMessage());
-            return false;
+            System.err.println("Errore durante la ricerca delle recensioni per nome libro: " + e.getMessage());
         }
+        return reviews;
+    }
+
+    // Find reviews by user's username
+    public List<Review> findReviewsByUsername(String username) {
+        List<Review> reviews = new ArrayList<>();
+        try {
+            for (Document doc : collection.find(Filters.eq("username", username))) {
+                reviews.add(new Review(doc));
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca delle recensioni per username: " + e.getMessage());
+        }
+        return reviews;
+    }
+
+    // Find reviews by user name and book name
+    public Review findReviewByUsernameAndBookName(String username, String bookName) {
+        try {
+            Document doc = collection.find(Filters.and(Filters.eq("username", username), Filters.eq("bookName", bookName))).first();
+            return doc != null ? new Review(doc) : null;
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca della recensione per username e nome libro: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // Find reviews by stars
+    public List<Review> findReviewsByStars(int stars) {
+        List<Review> reviews = new ArrayList<>();
+        try {
+            for (Document doc : collection.find(Filters.eq("stars", stars))) {
+                reviews.add(new Review(doc));
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca delle recensioni per numero di stelle: " + e.getMessage());
+        }
+        return reviews;
+    }
+
+    // Find reviews by stars and book name
+    public List<Review> findReviewsByStarsAndBookName(int stars, String bookName) {
+        List<Review> reviews = new ArrayList<>();
+        try {
+            for (Document doc : collection.find(Filters.and(Filters.eq("stars", stars), Filters.eq("bookName", bookName)))) {
+                reviews.add(new Review(doc));
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca delle recensioni per numero di stelle e nome libro: " + e.getMessage());
+        }
+        return reviews;
+    }
+
+    // Find reviews by stars and user name
+    public List<Review> findReviewsByStarsAndUsername(int stars, String username) {
+        List<Review> reviews = new ArrayList<>();
+        try {
+            for (Document doc : collection.find(Filters.and(Filters.eq("stars", stars), Filters.eq("username", username)))) {
+                reviews.add(new Review(doc));
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca delle recensioni per numero di stelle e username: " + e.getMessage());
+        }
+        return reviews;
     }
 }
