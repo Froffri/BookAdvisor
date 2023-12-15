@@ -29,7 +29,7 @@ public class UserService {
     }
 
     // Visualizzazione dei dettagli utente
-    public User viewPersonalAccount(String userId) {
+    public User viewInfoAccount(String userId) {
         return userDao.findUserById(new ObjectId(userId));
     }
 
@@ -57,7 +57,7 @@ public class UserService {
     }
 
     // Logout utente
-    public void logout(String userId) {
-        
+    public boolean logout(String userId) {
+        return true;
     }
 }
