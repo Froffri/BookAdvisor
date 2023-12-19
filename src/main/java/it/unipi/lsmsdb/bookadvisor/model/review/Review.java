@@ -10,6 +10,7 @@ public class Review {
     private String text;
     private int stars;
 
+    // Costruttore
     public Review(ObjectId id, ObjectId userId, ObjectId bookId, String text, int stars) {
         this.id = id;
         this.userId = userId;

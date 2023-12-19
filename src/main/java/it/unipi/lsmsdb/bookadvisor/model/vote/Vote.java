@@ -4,19 +4,35 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 
 public class Vote {
-
+    private ObjectId id;
     private ObjectId userId;
     private ObjectId reviewId;
     private boolean upVote; // true for upvote, false for downvote
 
-    // Constructor
-    public Vote(ObjectId userId, ObjectId reviewId, boolean upVote) {
+    public Vote(ObjectId id, ObjectId userId, ObjectId reviewId, boolean upVote) {
+        this.id = id;
         this.userId = userId;
         this.reviewId = reviewId;
         this.upVote = upVote;
     }
 
+    // Constructor that accepts a Document
+    public Vote(Document doc) {
+        this.id = doc.getObjectId("_id");
+        this.userId = doc.getObjectId("userId");
+        this.reviewId = doc.getObjectId("reviewId");
+        this.upVote = doc.getBoolean("upVote");
+    }
+
     // Getters and Setters
+    public ObjectId getId() {
+        return id;
+    }
+
+    public void setId(ObjectId id) {
+        this.id = id;
+    }
+
     public ObjectId getUserId() {
         return userId;
     }

@@ -1,42 +1,30 @@
 package it.unipi.lsmsdb.bookadvisor.model.follow;
 
-import org.bson.Document;
-import org.bson.types.ObjectId;
-
 public class Follow {
+    private Long followerId;
+    private Long followedId;
 
-    private ObjectId followerId;
-    private ObjectId followedId;
-
-    // Constructor
-    public Follow(ObjectId followerId, ObjectId followedId) {
+    // Constructor for Neo4j
+    public Follow(Long followerId, Long followedId) {
         this.followerId = followerId;
         this.followedId = followedId;
     }
 
     // Getters and Setters
-    public ObjectId getFollowerId() {
+    public Long getFollowerId() {
         return followerId;
     }
 
-    public void setFollowerId(ObjectId followerId) {
+    public void setFollowerId(Long followerId) {
         this.followerId = followerId;
     }
 
-    public ObjectId getFollowedId() {
+    public Long getFollowedId() {
         return followedId;
     }
 
-    public void setFollowedId(ObjectId followedId) {
+    public void setFollowedId(Long followedId) {
         this.followedId = followedId;
-    }
-
-    // Method to convert to a database Document if using MongoDB
-    public Document toDocument() {
-        Document doc = new Document();
-        doc.append("followerId", this.followerId);
-        doc.append("followedId", this.followedId);
-        return doc;
     }
 
     // ToString method for debugging
@@ -46,5 +34,18 @@ public class Follow {
                 "followerId=" + followerId +
                 ", followedId=" + followedId +
                 '}';
+    }
+
+    // Method to create a follow relationship in Neo4j
+    public static void createFollowRelationship(org.neo4j.driver.Driver driver, Long followerId, Long followedId) {
+        try (org.neo4j.driver.Session session = driver.session()) {
+            String cypherQuery = "MATCH (follower:User), (followed:User) " +
+                                 "WHERE ID(follower) = $followerId AND ID(followed) = $followedId " +
+                                 "CREATE (follower)-[:FOLLOWS]->(followed)";
+            session.run(cypherQuery, org.neo4j.driver.Values.parameters(
+                    "followerId", followerId,
+                    "followedId", followedId
+            ));
+        }
     }
 }
