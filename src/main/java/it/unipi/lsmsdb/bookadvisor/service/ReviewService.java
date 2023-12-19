@@ -2,6 +2,7 @@ package it.unipi.lsmsdb.bookadvisor.service;
 
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.ReviewDao;
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
+import it.unipi.lsmsdb.bookadvisor.model.user.*;
 import org.bson.types.ObjectId;
 
 import java.util.List;
@@ -20,14 +21,43 @@ public class ReviewService {
     }
 
     // Aggiorna le informazioni di una recensione
-    public boolean updateReview(Review review) {    
-        validateStars(review.getStars());
-        return reviewDao.updateReview(review);
+    public boolean updateReview(Review updatedReview, User currentUser) {
+        // Validate the rating
+        validateStars(updatedReview.getStars());
+
+        // Retrieve the existing review
+        Review existingReview = reviewDao.findReviewById(updatedReview.getId());
+
+        if (existingReview == null) {
+            System.err.println("Recensione non trovata.");
+            return false;
+        }
+
+        // Check if the current user is the author of the review
+        if (existingReview.getUserId().equals(currentUser.getId())) {
+            return reviewDao.updateReview(updatedReview);
+        } else {
+            System.err.println("L'utente non ha i permessi per modificare questa recensione.");
+            return false;
+        }
     }
 
     // Elimina una recensione dal database
-    public boolean deleteReview(ObjectId id) {
-        return reviewDao.deleteReview(id);
+    public boolean deleteReview(ObjectId reviewId, User currentUser) {
+        Review review = reviewDao.findReviewById(reviewId);
+
+        if (review == null) {
+            System.err.println("Recensione non trovata.");
+            return false;
+        }
+
+        // Check if the current user is the author of the review or an admin
+        if (currentUser instanceof Admin || review.getUserId().equals(currentUser.getId())) {
+            return reviewDao.deleteReview(reviewId);
+        } else {
+            System.err.println("L'utente non ha i permessi per eliminare questa recensione.");
+            return false;
+        }
     }
 
     // Trova una recensione per ID
