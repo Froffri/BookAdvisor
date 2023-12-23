@@ -61,5 +61,33 @@ public class VoteDao {
             return false;
         }
     }
-}
 
+    // Method to get a vote by its id
+    public Vote getVoteById(ObjectId voteId) {
+        try {
+            Document voteDoc = collection.find(Filters.eq("_id", voteId)).first();
+            if (voteDoc == null) return null;
+            return new Vote(voteDoc);
+        } catch (Exception e) {
+            System.err.println("Error getting vote by id: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // Method to get a vote by its review id and user id
+    public Vote getVoteByReviewAndUser(ObjectId reviewId, String userId) {
+        try {
+            Document voteDoc = collection.find(
+                    Filters.and(
+                            Filters.eq("reviewId", reviewId),
+                            Filters.eq("userId", userId)
+                    )
+            ).first();
+            if (voteDoc == null) return null;
+            return new Vote(voteDoc);
+        } catch (Exception e) {
+            System.err.println("Error getting vote by review and user: " + e.getMessage());
+            return null;
+        }
+    }
+}
