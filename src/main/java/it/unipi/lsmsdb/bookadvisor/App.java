@@ -1,5 +1,7 @@
 package it.unipi.lsmsdb.bookadvisor;
 
+import it.unipi.lsmsdb.bookadvisor.dao.documentDB.MongoDBConnector;
+
 /**
  * Hello world!
  *
@@ -8,6 +10,6 @@ public class App
 {
     public static void main( String[] args )
     {
-        System.out.println( "Hello World!" );
+        MongoDBConnector.getInstance().getDatabase().getCollection("books");
     }
 }
