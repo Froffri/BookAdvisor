@@ -2,6 +2,7 @@ package it.unipi.lsmsdb.bookadvisor.model.user;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.neo4j.driver.types.Node;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -47,6 +48,22 @@ public class User {
 
         // Conversione della stringa di data in LocalDate
         String birthdateStr = doc.getString("birthdate");
+        if (birthdateStr != null && !birthdateStr.isEmpty()) {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+            this.birthdate = LocalDate.parse(birthdateStr, formatter);
+        }
+    }
+
+
+    /// @TODO FIX THIS (CREATE CONSTRUCTOR FROM NEO4J NODE)
+    public User(Node node) {
+        this.name = node.get("name").asString();
+        this.nickname = node.get("nickname").asString();
+        this.password = node.get("password").asString();
+        this.gender = node.get("gender").asString();
+
+        // Conversione della stringa di data in LocalDate
+        String birthdateStr = node.get("birthdate").asString();
         if (birthdateStr != null && !birthdateStr.isEmpty()) {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             this.birthdate = LocalDate.parse(birthdateStr, formatter);
