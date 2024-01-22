@@ -28,6 +28,12 @@ public class Author extends RegisteredUser {
         this.genres = doc.getList("genres", String.class);
     }
 
+    // Constructor from Neo4j Node
+    public Author(org.neo4j.driver.types.Node node) {
+        super(node);
+        this.genres = node.get("genres").asList(org.neo4j.driver.Value::asString);
+    }
+
     // Getter and setter for genres
     public List<String> getGenres() {
         return genres;

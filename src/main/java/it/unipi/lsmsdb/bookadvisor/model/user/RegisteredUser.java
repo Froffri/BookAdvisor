@@ -4,6 +4,8 @@ import java.util.List;
 import java.time.LocalDate;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.types.*;
 
 public class RegisteredUser extends User {
     private String nationality;
@@ -30,7 +32,14 @@ public class RegisteredUser extends User {
         this.nationality = doc.getString("nationality");
         this.favouriteGenres = doc.getList("favouriteGenres", String.class);
         this.spokenLanguages = doc.getList("spokenLanguages", String.class);
-    }    
+    }   
+    
+    // Constructor from Neo4j Node
+    public RegisteredUser(Node node) {
+        super(node);
+        this.favouriteGenres = node.get("fav_genres").asList(Value::asString);
+        this.spokenLanguages = node.get("spoken_lang").asList(Value::asString);
+    }
 
     // Getters and Setters
 

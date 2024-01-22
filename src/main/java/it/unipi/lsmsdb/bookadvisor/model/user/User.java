@@ -54,20 +54,9 @@ public class User {
         }
     }
 
-
-    /// @TODO FIX THIS (CREATE CONSTRUCTOR FROM NEO4J NODE)
+    /// Constructor from Neo4j Node
     public User(Node node) {
-        this.name = node.get("name").asString();
-        this.nickname = node.get("nickname").asString();
-        this.password = node.get("password").asString();
-        this.gender = node.get("gender").asString();
-
-        // Conversione della stringa di data in LocalDate
-        String birthdateStr = node.get("birthdate").asString();
-        if (birthdateStr != null && !birthdateStr.isEmpty()) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            this.birthdate = LocalDate.parse(birthdateStr, formatter);
-        }
+        this.id = new ObjectId(node.get("id").asString());
     }
 
     // Getters and setters
