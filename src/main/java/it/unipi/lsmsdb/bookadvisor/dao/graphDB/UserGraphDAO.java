@@ -76,28 +76,12 @@ public class UserGraphDAO {
      */
     public void addFollow(RegisteredUser follower, RegisteredUser followed) {
         try (Session session = driver.session()) {
-            // Check if the "follower" and "followed" nodes exist
-            Result checkResult = session.run(
-                "MATCH (fwer:User {id: $follower}) " +
-                "MATCH (fwed:User {id: $followed}) " +
-                "RETURN fwer, fwed", 
+            session.run(
+                "MATCH (fwer:User {id: $follower}), (fwed:User {id: $followed}) " +
+                "WHERE NOT (fwer)-[:FOLLOWS]->(fwed)" +
+                "CREATE (fwer)-[:FOLLOWS]->(fwed)", 
                 parameters("follower", follower.getId(), "followed", followed.getId())
             );
-
-            if (checkResult.hasNext()) {
-                // Nodes exist; create the "follow" relationship
-                session.run(
-                    "MATCH (fwer:User {id: $follower}) " +
-                    "MATCH (fwed:User {id: $followed}) " +
-                    "CREATE (fwer)-[:FOLLOWS]->(fwed)", 
-                    parameters("follower", follower.getId(), "followed", followed.getId())
-                );
-            } else {
-                //@TODO
-                // Handle the case where one or both nodes do not exist
-                // You can log an error or handle the situation as needed
-                System.out.println("One or both nodes do not exist.");
-            }
         } 
     }
 

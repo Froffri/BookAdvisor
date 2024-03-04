@@ -54,7 +54,7 @@ public class User {
         }
     }
 
-    /// Constructor from Neo4j Node
+    // Constructor from Neo4j Node
     public User(Node node) {
         this.id = new ObjectId(node.get("id").asString());
     }
