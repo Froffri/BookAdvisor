@@ -2,6 +2,7 @@ package it.unipi.lsmsdb.bookadvisor.model.review;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.neo4j.driver.types.Node;
 
 public class Review {
     private ObjectId id;
@@ -26,6 +27,15 @@ public class Review {
         this.bookId = doc.getObjectId("bookId");
         this.text = doc.getString("text");
         this.stars = doc.getInteger("stars", 0);
+    }
+
+    // Costruttore che accetta un Node
+    public Review(Node node) {
+        this.id = null;
+        this.userId = new ObjectId(node.get("userId").asString());
+        this.bookId = new ObjectId(node.get("bookId").asString());
+        this.text = null;
+        this.stars = node.get("stars").asInt();
     }
 
     // Metodo per convertire in Document

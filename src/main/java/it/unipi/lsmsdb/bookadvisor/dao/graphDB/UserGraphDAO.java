@@ -173,7 +173,7 @@ public class UserGraphDAO {
     // DELETE OPERATIONS
 
     /**
-     * Delete a follow relationship between an author and a user
+     * Delete a follow relationship between an user and another
      * @param follower
      * @param followed
      */
