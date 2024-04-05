@@ -1,11 +1,14 @@
 package it.unipi.lsmsdb.bookadvisor.dao.graphDB;
 import static org.neo4j.driver.Values.parameters;
 
+import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
 import org.neo4j.driver.exceptions.Neo4jException;
 import org.neo4j.driver.types.Node;
 
+import it.unipi.lsmsdb.bookadvisor.model.book.Book;
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
+import it.unipi.lsmsdb.bookadvisor.model.user.RegisteredUser;
 
 public class ReviewGraphDAO {
     private final Driver driver;
@@ -90,12 +93,13 @@ public class ReviewGraphDAO {
     }
 
     // DELETE
+
     /**
      * Delete a review from the graph database
      * @param userId
      * @param bookId
      */
-    public void deleteReview(String userId, String bookId) {
+    public void deleteReview(ObjectId userId, ObjectId bookId) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (usr:User {id: $user}), (bk:Book {id: $book})" +
@@ -103,6 +107,23 @@ public class ReviewGraphDAO {
                 "DELETE r",
                 parameters("user", userId, 
                             "book", bookId)
+            );
+        }
+    }
+
+    /**
+     * Delete a review from the graph database
+     * @param user
+     * @param book
+     */
+    public void deleteReview(RegisteredUser user, Book book) {
+        try (Session session = driver.session()) {
+            session.run(
+                "MATCH (usr:User {id: $user}), (bk:Book {id: $book})" +
+                "WHERE (usr)-[r:RATES]->(bk)" +
+                "DELETE r",
+                parameters("user", user.getId(), 
+                            "book", book.getId())
             );
         }
     }

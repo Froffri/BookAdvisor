@@ -64,22 +64,6 @@ public class UserGraphDAO {
             );
         }
     }
-    
-    /**
-     * Add a follow relationship between two users
-     * @param follow
-     */
-    public void addFollow(Follow follow) {
-        try (Session session = driver.session()) {
-            session.run(
-                "MATCH (fwer:User {id: $follower}), (fwed:User {id: $followed}) " +
-                "WHERE NOT (fwer)-[:FOLLOWS]->(fwed)" +
-                "CREATE (fwer)-[:FOLLOWS]->(fwed)", 
-                parameters("follower", follow.getFollowerId(), 
-                            "followed", follow.getFollowedId())
-            );
-        } 
-    }
 
     // READ OPERATIONS
 
