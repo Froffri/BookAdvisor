@@ -121,7 +121,7 @@ public class FollowGraphDAO {
             session.run(
                 "MATCH (fwr:User {id: $follower}), (fwd:User {id: $followed})" +
                 "WHERE (fwr)-[f:FOLLOWS]->(fwd)" +
-                "DELETE r",
+                "DELETE f",
                 parameters("user", follower.getId(), 
                             "followed", followed.getId())
             );
@@ -138,7 +138,7 @@ public class FollowGraphDAO {
             session.run(
                 "MATCH (fwr:User {id: $follower}), (fwd:User {id: $followed})" +
                 "WHERE (fwr)-[f:FOLLOWS]->(fwd)" +
-                "DELETE r",
+                "DELETE f",
                 parameters("user", followerId, 
                             "followed", followedId)
             );
