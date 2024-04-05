@@ -1,12 +1,10 @@
 package it.unipi.lsmsdb.bookadvisor.dao.graphDB;
 
-import org.neo4j.driver.Driver;
-import org.neo4j.driver.GraphDatabase;
-import org.neo4j.driver.Result;
-import org.neo4j.driver.Session;
+import org.neo4j.driver.*;
 import org.neo4j.driver.exceptions.Neo4jException;
 import org.neo4j.driver.types.Node;
 
+import it.unipi.lsmsdb.bookadvisor.model.follow.Follow;
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
 
 import static org.neo4j.driver.Values.parameters;
@@ -14,11 +12,9 @@ import static org.neo4j.driver.Values.parameters;
 import java.util.*;
 
 import org.bson.types.ObjectId;
-import org.neo4j.driver.AuthTokens;
 
 public class UserGraphDAO {
-
-    private Driver driver;
+    private final Driver driver;
 
     public UserGraphDAO(String uri, String user, String password) {
         this.driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
@@ -29,7 +25,7 @@ public class UserGraphDAO {
     }
 
     public void close() {
-        driver.close();
+        this.driver.close();
     }
 
     // CREATE OPERATIONS
@@ -71,16 +67,16 @@ public class UserGraphDAO {
     
     /**
      * Add a follow relationship between two users
-     * @param follower
-     * @param followed
+     * @param follow
      */
-    public void addFollow(RegisteredUser follower, RegisteredUser followed) {
+    public void addFollow(Follow follow) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (fwer:User {id: $follower}), (fwed:User {id: $followed}) " +
                 "WHERE NOT (fwer)-[:FOLLOWS]->(fwed)" +
                 "CREATE (fwer)-[:FOLLOWS]->(fwed)", 
-                parameters("follower", follower.getId(), "followed", followed.getId())
+                parameters("follower", follow.getFollowerId(), 
+                            "followed", follow.getFollowedId())
             );
         } 
     }
@@ -174,32 +170,16 @@ public class UserGraphDAO {
 
     /**
      * Delete a follow relationship between an user and another
-     * @param follower
-     * @param followed
+     * @param follow
      */
-    public void deleteFollow(RegisteredUser follower, RegisteredUser followed) {
+    public void deleteFollow(Follow follow) {
         try (Session session = driver.session()) {
-            // Check if the "follower" and "followed" nodes exist
-            Result checkResult = session.run(
-                "MATCH (fwer:User {id: $follower}) " +
-                "MATCH (fwed:User {id: $followed}) " +
-                "RETURN fwer, fwed", 
-                parameters("follower", follower.getId(), "followed", followed.getId())
+            session.run(
+                "MATCH (fwer:User {id: $follower})-[f:FOLLOWS]->(fwed:User {id: $followed}) " +
+                "DELETE f", 
+                parameters("follower", follow.getFollowerId(), 
+                            "followed", follow.getFollowedId())
             );
-
-            if (checkResult.hasNext()) {
-                // Nodes exist; delete the "follow" relationship
-                session.run(
-                    "MATCH (fwer:User {id: $follower})-[r:FOLLOWS]->(fwed:User {id: $followed}) " +
-                    "DELETE r", 
-                    parameters("follower", follower.getId(), "followed", followed.getId())
-                );
-            } else {
-                //@TODO
-                // Handle the case where one or both nodes do not exist
-                // You can log an error or handle the situation as needed
-                System.out.println("One or both nodes do not exist.");
-            }
         } 
     }
 
@@ -213,6 +193,19 @@ public class UserGraphDAO {
                 "MATCH (u:User {id: $id}) " +
                 "DETACH DELETE u", 
                 parameters("id", user.getId())
+            );
+        }
+    }
+    /**
+     * Delete a user from the graph database using their id
+     * @param userId
+     */
+    public void deleteUserById(ObjectId userId) {
+        try (Session session = driver.session()) {
+            session.run(
+                "MATCH (u:User {id: $id}) " +
+                "DETACH DELETE u", 
+                parameters("id", userId)
             );
         }
     }

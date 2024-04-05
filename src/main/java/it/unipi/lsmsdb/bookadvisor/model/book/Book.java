@@ -2,6 +2,7 @@ package it.unipi.lsmsdb.bookadvisor.model.book;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.neo4j.driver.types.Node;
 
 public class Book {
     private ObjectId id;
@@ -43,6 +44,20 @@ public class Book {
         this.year = doc.getInteger("year");
         this.imageUrl = doc.getString("imageUrl");
         this.numPages = doc.getInteger("numPages");
+    }
+
+    // Constructor that accepts a Neo4j Node object
+    public Book(Node node) {
+        this.id = new ObjectId(node.get("id").asString());
+        this.sumStars = node.get("sumStars").asInt();
+        this.numRatings = node.get("numRatings").asInt();
+        this.language = node.get("language").asString();
+        this.title = null;
+        this.author = null;
+        this.genre = node.get("genre").asList(value -> value.asString()).toArray(new String[0]);
+        this.year = 0;
+        this.imageUrl = null;
+        this.numPages = 0;
     }
 
     // Method to convert a Book object to a Document

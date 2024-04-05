@@ -2,13 +2,16 @@ package it.unipi.lsmsdb.bookadvisor.dao.graphDB;
 import static org.neo4j.driver.Values.parameters;
 
 import org.neo4j.driver.*;
+import org.neo4j.driver.exceptions.Neo4jException;
 import org.neo4j.driver.types.Node;
+
+import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 
 public class ReviewGraphDAO {
     private final Driver driver;
 
     public ReviewGraphDAO(String uri, String username, String password) {
-        driver = GraphDatabase.driver(uri, AuthTokens.basic(username, password));
+        this.driver = GraphDatabase.driver(uri, AuthTokens.basic(username, password));
     }
 
     public ReviewGraphDAO(Driver driver) {
@@ -16,63 +19,91 @@ public class ReviewGraphDAO {
     }
 
     public void close() {
-        driver.close();
+        this.driver.close();
     }
 
-    // CREATE OPERATIONS
-
+    // CREATE 
     /**
      * Create a review relationship in the graph database
      * @param userId
      * @param bookId
      * @param rating
      */
-    public void createReview(String userId, String bookId, int rating) {
+    public void addReview(String userId, String bookId, int rating) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (usr:User {id: $user}), (bk:Book {id: $book}) " +
                 "WHERE NOT (usr)-[:RATES]->(bk)" +
                 "CREATE (usr)-[:RATES {stars: $rating}]->(bk)", 
-                parameters("user", userId, "book", bookId, "rating", rating)
+                parameters("user", userId, 
+                            "book", bookId, 
+                            "rating", rating)
             );
         }
     }
 
-// @TODO: RIGUARDA TUTTOOOOOOO
-
-    public void updateReview(String reviewId, String content, int rating) {
+    // READ
+    /**
+     * Get a review from the graph database
+     * @param userId
+     * @param bookId
+     */
+    public Review getReview(String userId, String bookId) {
         try (Session session = driver.session()) {
-            session.writeTransaction(tx -> {
-                tx.run("MATCH (r:Review {id: $reviewId}) SET r.content = $content, r.rating = $rating",
-                        Values.parameters("reviewId", reviewId, "content", content, "rating", rating));
-                return null;
-            });
+            Result result = session.run(
+                "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book})" +
+                "RETURN r.stars AS rating",
+                parameters("user", userId, 
+                            "book", bookId)
+            );
+
+            if (result.hasNext()) {
+                Record record = result.next();
+                Node node = record.get("rating").asNode();
+                return new Review(node);
+            }
+            return null;
         }
     }
 
-    public void deleteReview(String reviewId) {
+    // UPDATE
+    /**
+     * Update a review in the graph database
+     * @param userId 
+     * @param bookId
+     * @param rating
+     */
+    public boolean updateReview(String userId, String bookId, int rating) {
         try (Session session = driver.session()) {
-            session.writeTransaction(tx -> {
-                tx.run("MATCH (r:Review {id: $reviewId}) DELETE r",
-                        Values.parameters("reviewId", reviewId));
-                return null;
-            });
+            session.run(
+                "MATCH (usr:User {id: $user}), (bk:Book {id: $book})" +
+                "WHERE (usr)-[r:RATES]->(bk)" +
+                "SET r.rating = $rating",
+                parameters("user", userId, 
+                            "book", bookId, 
+                            "rating", rating) 
+            );
+        } catch (Neo4jException e) {
+            return false;
         }
+        return true;
     }
 
-    public void getReview(String reviewId) {
+    // DELETE
+    /**
+     * Delete a review from the graph database
+     * @param userId
+     * @param bookId
+     */
+    public void deleteReview(String userId, String bookId) {
         try (Session session = driver.session()) {
-            session.readTransaction(tx -> {
-                Result result = tx.run("MATCH (r:Review {id: $reviewId}) RETURN r",
-                        Values.parameters("reviewId", reviewId));
-                while (result.hasNext()) {
-                    Record record = result.next();
-                    Node reviewNode = record.get("r").asNode();
-                    // Process the review node
-                    System.out.println(reviewNode);
-                }
-                return null;
-            });
+            session.run(
+                "MATCH (usr:User {id: $user}), (bk:Book {id: $book})" +
+                "WHERE (usr)-[r:RATES]->(bk)" +
+                "DELETE r",
+                parameters("user", userId, 
+                            "book", bookId)
+            );
         }
     }
 
