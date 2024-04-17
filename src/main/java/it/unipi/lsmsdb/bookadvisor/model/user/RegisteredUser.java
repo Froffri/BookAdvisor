@@ -55,12 +55,28 @@ public class RegisteredUser extends User {
         return favouriteGenres;
     }
 
+    public String getFavouriteGenresString() {
+        String genres = "[";
+        for (String genre : favouriteGenres) {
+            genres += "'" + genre + "', ";
+        }
+        return genres.substring(0, genres.length() - 2) + "]";
+    }
+
     public void setFavouriteGenres(List<String> favouriteGenres) {
         this.favouriteGenres = favouriteGenres;
     }
 
     public List<String> getSpokenLanguages() {
         return spokenLanguages;
+    }
+
+    public String getSpokenLanguagesString() {
+        String languages = "[";
+        for (String language : spokenLanguages) {
+            languages += "'" + language + "', ";
+        }
+        return languages.substring(0, languages.length() - 2) + "]";
     }
 
     public void setSpokenLanguages(List<String> spokenLanguages) {

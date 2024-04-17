@@ -49,7 +49,9 @@ public class FollowGraphDAO {
     public void addFollow(RegisteredUser follower, RegisteredUser followed) {
         try (Session session = driver.session()) {
             session.run(
-                "MATCH (fwer:User {id: $follower}), (fwed:User {id: $followed}) " +
+                "MATCH (fwer:User {id: $follower})" +
+                "WITH fwer" +
+                "MATCH (fwed:User {id: $followed}) " +
                 "WHERE NOT (fwer)-[:FOLLOWS]->(fwed)" +
                 "CREATE (fwer)-[:FOLLOWS]->(fwed)", 
                 parameters("follower", follower.getId(), 
@@ -66,7 +68,9 @@ public class FollowGraphDAO {
     public void addFollowByIds(ObjectId followerId, ObjectId followedId) {
         try (Session session = driver.session()) {
             session.run(
-                "MATCH (fwer:User {id: $follower}), (fwed:User {id: $followed}) " +
+                "MATCH (fwer:User {id: $follower})" +
+                "WITH fwer" +
+                "MATCH (fwed:User {id: $followed}) " +
                 "WHERE NOT (fwer)-[:FOLLOWS]->(fwed)" +
                 "CREATE (fwer)-[:FOLLOWS]->(fwed)", 
                 parameters("follower", followerId, 
@@ -81,7 +85,7 @@ public class FollowGraphDAO {
         try (Session session = driver.session()) {
             Result result = session.run(
                 "MATCH (fwr:User {id: $follower})-[f:FOLLOWS]->(fwd:User {id: $followed})" +
-                "RETURN f",
+                "RETURN fwr, f, fwd",
                 parameters("follower", follower.getId(), 
                             "followed", followed.getId())
             );
@@ -126,6 +130,21 @@ public class FollowGraphDAO {
                             "followed", followed.getId())
             );
         }
+    }
+
+    /**
+     * Delete a follow relationship between an user and another
+     * @param follow
+     */
+    public void deleteFollow(Follow follow) {
+        try (Session session = driver.session()) {
+            session.run(
+                "MATCH (fwer:User {id: $follower})-[f:FOLLOWS]->(fwed:User {id: $followed}) " +
+                "DELETE f", 
+                parameters("follower", follow.getFollowerId(), 
+                            "followed", follow.getFollowedId())
+            );
+        } 
     }
 
     /**

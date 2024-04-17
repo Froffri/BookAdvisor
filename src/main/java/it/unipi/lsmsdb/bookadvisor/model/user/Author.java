@@ -39,6 +39,14 @@ public class Author extends RegisteredUser {
         return genres;
     }
 
+    public String getGenresString() {
+        String genres = "[";
+        for (String genre : this.genres) {
+            genres += genre + ", ";
+        }
+        return genres.substring(0, genres.length() - 2) + "]";
+    }
+
     public void setGenres(List<String> genres) {
         this.genres = genres;
     }

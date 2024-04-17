@@ -4,7 +4,6 @@ import org.neo4j.driver.*;
 import org.neo4j.driver.exceptions.Neo4jException;
 import org.neo4j.driver.types.Node;
 
-import it.unipi.lsmsdb.bookadvisor.model.follow.Follow;
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
 
 import static org.neo4j.driver.Values.parameters;
@@ -41,9 +40,9 @@ public class UserGraphDAO {
                 "MERGE (u:User {id: $id}) " + 
                 "ON CREATE SET u.fav_genres = $fav_genres, u.genres = $genres, u.spoken_lang = $spoken_lang", 
                 parameters("id", author.getId(), 
-                            "fav_genres", author.getFavouriteGenres(), 
-                            "genres", author.getGenres(), 
-                            "spoken_lang", author.getSpokenLanguages())
+                            "fav_genres", author.getFavouriteGenresString(), 
+                            "genres", author.getGenresString(), 
+                            "spoken_lang", author.getSpokenLanguagesString())
             );
         }
     }
@@ -59,8 +58,8 @@ public class UserGraphDAO {
                 "MERGE (u:User {id: $id}) " + 
                 "ON CREATE SET u.fav_genres = $fav_genres, u.spoken_lang = $spoken_lang", 
                 parameters("id", user.getId(), 
-                            "fav_genres", user.getFavouriteGenres(), 
-                            "spoken_lang", user.getSpokenLanguages())
+                            "fav_genres", user.getFavouriteGenresString(), 
+                            "spoken_lang", user.getSpokenLanguagesString())
             );
         }
     }
@@ -125,8 +124,8 @@ public class UserGraphDAO {
                 "MATCH (u:User {id: $id}) " +
                 "SET u.fav_genres = $fav_genres, u.spoken_lang = $spoken_lang",
                 parameters("id", id, 
-                            "fav_genres", user.getFavouriteGenres(), 
-                            "spoken_lang", user.getSpokenLanguages())
+                            "fav_genres", user.getFavouriteGenresString(), 
+                            "spoken_lang", user.getSpokenLanguagesString())
             );
         } catch (Neo4jException e) {
             return false;
@@ -140,9 +139,9 @@ public class UserGraphDAO {
                 "MATCH (u:User {id: $id}) " +
                 "SET u.fav_genres = $fav_genres, u.genres = $genres, u.spoken_lang = $spoken_lang",
                 parameters("id", id, 
-                            "fav_genres", author.getFavouriteGenres(), 
-                            "genres", author.getGenres(), 
-                            "spoken_lang", author.getSpokenLanguages())
+                            "fav_genres", author.getFavouriteGenresString(), 
+                            "genres", author.getGenresString(), 
+                            "spoken_lang", author.getSpokenLanguagesString())
             );
         } catch (Neo4jException e) {
             return false;
@@ -151,21 +150,6 @@ public class UserGraphDAO {
     }
 
     // DELETE OPERATIONS
-
-    /**
-     * Delete a follow relationship between an user and another
-     * @param follow
-     */
-    public void deleteFollow(Follow follow) {
-        try (Session session = driver.session()) {
-            session.run(
-                "MATCH (fwer:User {id: $follower})-[f:FOLLOWS]->(fwed:User {id: $followed}) " +
-                "DELETE f", 
-                parameters("follower", follow.getFollowerId(), 
-                            "followed", follow.getFollowedId())
-            );
-        } 
-    }
 
     /**
      * Delete a user from the graph database
