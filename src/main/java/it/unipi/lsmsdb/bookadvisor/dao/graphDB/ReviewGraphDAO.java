@@ -35,7 +35,9 @@ public class ReviewGraphDAO {
     public void addReview(String userId, String bookId, int rating) {
         try (Session session = driver.session()) {
             session.run(
-                "MATCH (usr:User {id: $user}), (bk:Book {id: $book}) " +
+                "MATCH (usr:User {id: $user})" +
+                "WITH usr" +
+                "MATCH (bk:Book {id: $book})" +
                 "WHERE NOT (usr)-[:RATES]->(bk)" +
                 "CREATE (usr)-[:RATES {stars: $rating}]->(bk)", 
                 parameters("user", userId, 
@@ -79,7 +81,9 @@ public class ReviewGraphDAO {
     public boolean updateReview(String userId, String bookId, int rating) {
         try (Session session = driver.session()) {
             session.run(
-                "MATCH (usr:User {id: $user}), (bk:Book {id: $book})" +
+                "MATCH (usr:User {id: $user})" +
+                "WITH usr" +
+                "MATCH (bk:Book {id: $book})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "SET r.rating = $rating",
                 parameters("user", userId, 
@@ -102,7 +106,9 @@ public class ReviewGraphDAO {
     public void deleteReview(ObjectId userId, ObjectId bookId) {
         try (Session session = driver.session()) {
             session.run(
-                "MATCH (usr:User {id: $user}), (bk:Book {id: $book})" +
+                "MATCH (usr:User {id: $user})" +
+                "WITH usr" +
+                "MATCH (bk:Book {id: $book})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "DELETE r",
                 parameters("user", userId, 
@@ -119,7 +125,9 @@ public class ReviewGraphDAO {
     public void deleteReview(RegisteredUser user, Book book) {
         try (Session session = driver.session()) {
             session.run(
-                "MATCH (usr:User {id: $user}), (bk:Book {id: $book})" +
+                "MATCH (usr:User {id: $user})" +
+                "WITH usr" +
+                "MATCH (bk:Book {id: $book})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "DELETE r",
                 parameters("user", user.getId(), 

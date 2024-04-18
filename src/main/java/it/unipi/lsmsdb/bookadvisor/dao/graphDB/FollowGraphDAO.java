@@ -32,7 +32,9 @@ public class FollowGraphDAO {
     public void addFollow(Follow follow) {
         try (Session session = driver.session()) {
             session.run(
-                "MATCH (fwer:User {id: $follower}), (fwed:User {id: $followed}) " +
+                "MATCH (fwer:User {id: $follower})" +
+                "WITH fwer" +
+                "MATCH (fwed:User {id: $followed})" +
                 "WHERE NOT (fwer)-[:FOLLOWS]->(fwed)" +
                 "CREATE (fwer)-[:FOLLOWS]->(fwed)", 
                 parameters("follower", follow.getFollowerId(), 
@@ -85,7 +87,7 @@ public class FollowGraphDAO {
         try (Session session = driver.session()) {
             Result result = session.run(
                 "MATCH (fwr:User {id: $follower})-[f:FOLLOWS]->(fwd:User {id: $followed})" +
-                "RETURN fwr, f, fwd",
+                "RETURN f",
                 parameters("follower", follower.getId(), 
                             "followed", followed.getId())
             );
@@ -123,7 +125,9 @@ public class FollowGraphDAO {
     public void deleteFollow(RegisteredUser follower, RegisteredUser followed) {
         try (Session session = driver.session()) {
             session.run(
-                "MATCH (fwr:User {id: $follower}), (fwd:User {id: $followed})" +
+                "MATCH (fwr:User {id: $follower})" +
+                "WITH fwr" +
+                "MATCH (fwd:User {id: $followed})" +
                 "WHERE (fwr)-[f:FOLLOWS]->(fwd)" +
                 "DELETE f",
                 parameters("user", follower.getId(), 
