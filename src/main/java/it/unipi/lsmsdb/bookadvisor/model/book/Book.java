@@ -1,7 +1,13 @@
 package it.unipi.lsmsdb.bookadvisor.model.book;
 
+import java.util.List;
+import java.util.Map;
+
 import org.bson.Document;
 import org.bson.types.ObjectId;
+
+import it.unipi.lsmsdb.bookadvisor.utils.RatingAggregate;
+import it.unipi.lsmsdb.bookadvisor.utils.BookReview;
 
 public class Book {
     private ObjectId id;
@@ -14,6 +20,8 @@ public class Book {
     private int year;
     private String imageUrl;
     private int numPages;
+    private Map<String, RatingAggregate> reviewsAggByNat;
+    private List<BookReview> most10UsefulReviews;
 
     // Constructor
     public Book(ObjectId id, int sumStars, int numRatings, String language, 
