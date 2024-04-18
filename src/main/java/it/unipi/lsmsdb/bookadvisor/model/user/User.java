@@ -2,6 +2,7 @@ package it.unipi.lsmsdb.bookadvisor.model.user;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.neo4j.driver.types.Node;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -51,6 +52,11 @@ public class User {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
             this.birthdate = LocalDate.parse(birthdateStr, formatter);
         }
+    }
+
+    // Constructor from Neo4j Node
+    public User(Node node) {
+        this.id = new ObjectId(node.get("id").asString());
     }
 
     // Getters and setters

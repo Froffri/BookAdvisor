@@ -4,6 +4,8 @@ import java.util.List;
 import java.time.LocalDate;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.neo4j.driver.Value;
+import org.neo4j.driver.types.*;
 
 public class RegisteredUser extends User {
     private String nationality;
@@ -37,6 +39,13 @@ public class RegisteredUser extends User {
         this.downVotedReviews = doc.getList("downVotedReviews", ObjectId.class);
         this.upVotedReviews = doc.getList("upVotedReviews", ObjectId.class);
     }    
+    
+    // Constructor from Neo4j Node
+    public RegisteredUser(Node node) {
+        super(node);
+        this.favouriteGenres = node.get("fav_genres").asList(Value::asString);
+        this.spokenLanguages = node.get("spoken_lang").asList(Value::asString);
+    }
 
     // Getters and Setters
 
@@ -52,12 +61,28 @@ public class RegisteredUser extends User {
         return favouriteGenres;
     }
 
+    public String getFavouriteGenresString() {
+        String genres = "[";
+        for (String genre : favouriteGenres) {
+            genres += "'" + genre + "', ";
+        }
+        return genres.substring(0, genres.length() - 2) + "]";
+    }
+
     public void setFavouriteGenres(List<String> favouriteGenres) {
         this.favouriteGenres = favouriteGenres;
     }
 
     public List<String> getSpokenLanguages() {
         return spokenLanguages;
+    }
+
+    public String getSpokenLanguagesString() {
+        String languages = "[";
+        for (String language : spokenLanguages) {
+            languages += "'" + language + "', ";
+        }
+        return languages.substring(0, languages.length() - 2) + "]";
     }
 
     public void setSpokenLanguages(List<String> spokenLanguages) {
