@@ -217,10 +217,10 @@ public class Book {
         }
     }
 
-    public void addReview(String nat, int rating, String body, String lang, int nUpvotes, int nDownvotes) {
-        BookReview review = new Review(0, body, lang, nUpvotes, nDownvotes);
+    public void addReview(ObjectId id, ObjectId userId, ObjectId bookId, String text, String nat,  int stars, int countUpVote, int countDownVote) {
+        Review review = new Review(id, userId, bookId, text, nat, stars, countUpVote, countDownVote);
         most10UsefulReviews.add(review);
-        addReview(nat, rating);
+        addReview(nat, stars);
     }
 
 
