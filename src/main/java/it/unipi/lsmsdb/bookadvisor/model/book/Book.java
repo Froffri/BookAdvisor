@@ -8,7 +8,8 @@ import org.bson.types.ObjectId;
 import org.neo4j.driver.types.Node;
 
 import it.unipi.lsmsdb.bookadvisor.utils.RatingAggregate;
-import it.unipi.lsmsdb.bookadvisor.utils.BookReview;
+import it.unipi.lsmsdb.bookadvisor.model.review.Review;
+  
 
 public class Book {
     private ObjectId id;
@@ -21,8 +22,8 @@ public class Book {
     private int year;
     private String imageUrl;
     private int numPages;
-    private Map<String, RatingAggregate> reviewsAggByNat;
-    private List<BookReview> most10UsefulReviews;
+    private Map<String, RatingAggregate> ratingsAggByNat;
+    private List<Review> most10UsefulReviews;
 
     // Constructor
     public Book(ObjectId id, int sumStars, int numRatings, String language, 
@@ -74,7 +75,7 @@ public class Book {
                 .append("author", author)
                 .append("genre", genre)
                 .append("year", year)
-                .append("language", language)
+                .append("lodel.review.Review;anguage", language)
                 .append("numPages", numPages)
                 .append("sumStars", sumStars)
                 .append("numRatings", numRatings);
@@ -160,4 +161,67 @@ public class Book {
     public void setNumPages(int numPages) {
         this.numPages = numPages;
     }
+
+    public Map<String, RatingAggregate> getRatingsAggByNat() {
+        return ratingsAggByNat;
+    }
+
+    public void setRatingsAggByNat(Map<String, RatingAggregate> reviewsAggByNat) {
+        this.ratingsAggByNat = reviewsAggByNat;
+    }
+
+    public List<Review> getMost10UsefulReviews() {
+        return most10UsefulReviews;
+    }
+
+    public void setMost10UsefulReviews(List<Review> most10UsefulReviews) {
+        this.most10UsefulReviews = most10UsefulReviews;
+    }
+
+    @Override
+    public String toString() {
+        return "Book{" +
+                "id=" + id +
+                ", sumStars=" + sumStars +
+                ", numRatings=" + numRatings +
+                ", language='" + language + '\'' +
+                ", title='" + title + '\'' +
+                ", author=" + author +
+                ", genre=" + genre +
+                ", year=" + year +
+                ", imageUrl='" + imageUrl + '\'' +
+                ", numPages=" + numPages +
+                '}';
+    }
+
+    public void addReview(String nat, int rating) {
+        RatingAggregate ratingAggregate = ratingsAggByNat.get(nat);
+        if (ratingAggregate == null) {
+            ratingAggregate = new RatingAggregate();
+            ratingsAggByNat.put(nat, ratingAggregate);
+        }
+        ratingAggregate.addRating(rating);
+    }
+
+    public void removeReview(String nat, int rating) {
+        RatingAggregate ratingAggregate = ratingsAggByNat.get(nat);
+        if (ratingAggregate != null) {
+            ratingAggregate.removeRating(rating);
+        }
+    }
+
+    public void updateReview(String nat, int oldRating, int newRating) {
+        RatingAggregate ratingAggregate = ratingsAggByNat.get(nat);
+        if (ratingAggregate != null) {
+            ratingAggregate.updateRating(oldRating, newRating);
+        }
+    }
+
+    public void addReview(String nat, int rating, String body, String lang, int nUpvotes, int nDownvotes) {
+        BookReview review = new Review(0, body, lang, nUpvotes, nDownvotes);
+        most10UsefulReviews.add(review);
+        addReview(nat, rating);
+    }
+
+
 }

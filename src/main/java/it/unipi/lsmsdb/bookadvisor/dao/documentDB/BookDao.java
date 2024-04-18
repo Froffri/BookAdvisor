@@ -13,6 +13,54 @@ import java.util.Optional;
 import java.util.List;
 import java.util.ArrayList;
 
+
+// The structure of the mongoDB document for the book is as follows:
+// {
+//     "_id": ObjectId("623a45b7123b450a432b1c45"),
+//     "sumStars": 1250,
+//     "numRatings": 300,
+//     "language": "English",
+//     "title": "The Great Adventure",
+//     "author": [ObjectId("623a45b7123b450a432b1a34")],
+//     "genre": ["Adventure", "Mystery"],
+//     "year": 2021,
+//     "imageUrl": "http://example.com/images/the-great-adventure.jpg",
+//     "numPages": 320,
+//     "ratingsAggByNat": {
+//       "US": {
+//         "sumRating": 820,
+//         "cardinality": 150
+//       },
+//       "UK": {
+//         "sumRating": 430,
+//         "cardinality": 100
+//       }
+//     },
+//     "most10UsefulReviews": [
+//       {
+//         "reviewId": ObjectId("623a45b7123b450a432b1f56"),
+//         "userId": ObjectId("623a45b7123b450a432b1b23"),
+//         "userName": "JohnDoe92",
+//         "text": "A thrilling journey through uncharted lands!",
+//         "stars": 5,
+//         "date": ISODate("2022-03-15T14:00:00Z"),
+//         "helpfulVotes": 112,
+//         "language": "en"
+//       }
+//       {
+//         "reviewId": ObjectId("623a45b7123b450a432b1f57"),
+//         "userId": ObjectId("623a45b7123b450a432b1b24"),
+//         "userName": "Leia93",
+//         "text": "An unexpected turns of events",
+//         "stars": 4,
+//         "date": ISODate("2022-01-15T14:00:00Z"),
+//         "helpfulVotes": 93,
+//         "language": "en"
+//       }
+//     ]
+//   }
+
+
 public class BookDao {
     private static final String COLLECTION_NAME = "books";
     private MongoCollection<Document> collection;
@@ -197,4 +245,79 @@ public class BookDao {
             System.err.println("Errore durante l'aggiornamento dei rating del libro: " + e.getMessage());
         }
     }
+
+    // Methods to update the ratings of a book when a review is added, removed, or updated
+    public void addRating(ObjectId bookId, int rating) {
+        updateBookRating(bookId, rating);
+    }
+
+    public void removeRating(ObjectId bookId, int rating) {
+        updateBookRating(bookId, -rating);
+    }
+
+    // Methods to update the aggregate rating by nationality of a book when a review is added, removed, or updated
+    public void addRatingByNat(ObjectId bookId, String nat, int rating) {
+        try {
+            Document book = collection.find(Filters.eq("_id", bookId)).first();
+            if (book != null) {
+                Document ratingsAggByNat = book.get("ratingsAggByNat", new Document());
+                Document ratingAgg = ratingsAggByNat.get(nat, new Document());
+                int sumRating = ratingAgg.getInteger("sumRating", 0) + rating;
+                int cardinality = ratingAgg.getInteger("cardinality", 0) + 1;
+                ratingsAggByNat.put(nat, new Document("sumRating", sumRating).append("cardinality", cardinality));
+                collection.updateOne(Filters.eq("_id", bookId), Updates.set("ratingsAggByNat", ratingsAggByNat));
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiornamento dei rating del libro per nazionalità: " + e.getMessage());
+        }
+    }
+
+    public void removeRatingByNat(ObjectId bookId, String nat, int rating) {
+        try {
+            Document book = collection.find(Filters.eq("_id", bookId)).first();
+            if (book != null) {
+                Document ratingsAggByNat = book.get("ratingsAggByNat", new Document());
+                Document ratingAgg = ratingsAggByNat.get(nat, new Document());
+                int sumRating = ratingAgg.getInteger("sumRating", 0) - rating;
+                int cardinality = ratingAgg.getInteger("cardinality", 0) - 1;
+                ratingsAggByNat.put(nat, new Document("sumRating", sumRating).append("cardinality", cardinality));
+                collection.updateOne(Filters.eq("_id", bookId), Updates.set("ratingsAggByNat", ratingsAggByNat));
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante la rimozione dei rating del libro per nazionalità: " + e.getMessage());
+        }
+    }
+
+    public void updateRatingByNat(ObjectId bookId, String nat, int oldRating, int newRating) {
+        try {
+            Document book = collection.find(Filters.eq("_id", bookId)).first();
+            if (book != null) {
+                Document ratingsAggByNat = book.get("ratingsAggByNat", new Document());
+                Document ratingAgg = ratingsAggByNat.get(nat, new Document());
+                int sumRating = ratingAgg.getInteger("sumRating", 0) - oldRating + newRating;
+                ratingsAggByNat.put(nat, new Document("sumRating", sumRating).append("cardinality", ratingAgg.getInteger("cardinality", 0)));
+                collection.updateOne(Filters.eq("_id", bookId), Updates.set("ratingsAggByNat", ratingsAggByNat));
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiornamento dei rating del libro per nazionalità: " + e.getMessage());
+        }
+    }
+
+    // Methods to update the most useful reviews of a book according to the book document structure
+    public void addMostUsefulReview(ObjectId bookId, Document review) {
+        try {
+            collection.updateOne(Filters.eq
+                ("_id", bookId), Updates.push("most10UsefulReviews", review));
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiornamento delle recensioni più utili del libro: " + e.getMessage());
+        }
+    }
+
+
+
+
+
+
+
+    
 }
