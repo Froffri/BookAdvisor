@@ -17,6 +17,7 @@ import java.util.List;
 public class UserDao {
     private static final String COLLECTION_NAME = "users";
     private MongoCollection<Document> collection;
+    private ReviewDao reviewDao;
 
     public UserDao(MongoDBConnector connector) {
         MongoDatabase database = connector.getDatabase();
@@ -92,6 +93,30 @@ public class UserDao {
             System.err.println("Errore durante l'elenco di tutti gli utenti: " + e.getMessage());
         }
         return users;
+    }
+
+    // Vote for a review (upvote or downvote)
+    public boolean voteForReview(User user, ObjectId reviewId, int vote) {
+        String voteType = (vote > 0) ? "upvotedReviews" : "downvotedReviews";
+        int increment = (vote > 0) ? 1 : -1;
+
+        try {
+            UpdateResult result = collection.updateOne(
+                Filters.eq("_id", user.getId()),
+                new Document(
+                    (vote > 0) ? "$addToSet" : "$pull",
+                    new Document(voteType, reviewId)
+                )
+            );
+
+            // Update the vote count in the reviewDao
+            reviewDao.updateVoteCount(reviewId, (vote > 0) ? "countupvote" : "countdownvote", increment);
+
+            return result.getModifiedCount() > 0;
+        } catch (Exception e) {
+            System.err.println("Error while voting for a review: " + e.getMessage());
+            return false;
+        }
     }
 
     // Helper method to create a User object from a MongoDB document

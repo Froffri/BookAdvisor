@@ -203,5 +203,17 @@ public class ReviewDao {
         }
         return reviews;
     }
-}
 
+    // Update the vote count of a review
+    protected void updateVoteCount(ObjectId reviewId, String voteType, int count) {
+        try {
+            UpdateResult result = collection.updateOne(Filters.eq("_id", reviewId), new Document("$inc", new Document(voteType, count)));
+            if (result.getModifiedCount() == 0) {
+                System.err.println("Errore: recensione non trovata con ID: " + reviewId);
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiornamento del conteggio dei voti della recensione: " + e.getMessage());
+        }
+    }
+    
+}
