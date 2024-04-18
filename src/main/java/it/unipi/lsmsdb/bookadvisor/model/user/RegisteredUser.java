@@ -11,6 +11,8 @@ public class RegisteredUser extends User {
     private String nationality;
     private List<String> favouriteGenres;
     private List<String> spokenLanguages;
+    private List<ObjectId> upVotedReviews;
+    private List<ObjectId> downVotedReviews;
 
     // Default constructor
     public RegisteredUser() {
@@ -24,6 +26,8 @@ public class RegisteredUser extends User {
         this.nationality = nationality;
         this.favouriteGenres = favouriteGenres;
         this.spokenLanguages = spokenLanguages;
+        this.downVotedReviews = null;
+        this.upVotedReviews = null;
     }
 
     // Constructor from MongoDB Document
@@ -32,7 +36,9 @@ public class RegisteredUser extends User {
         this.nationality = doc.getString("nationality");
         this.favouriteGenres = doc.getList("favouriteGenres", String.class);
         this.spokenLanguages = doc.getList("spokenLanguages", String.class);
-    }   
+        this.downVotedReviews = doc.getList("downVotedReviews", ObjectId.class);
+        this.upVotedReviews = doc.getList("upVotedReviews", ObjectId.class);
+    }    
     
     // Constructor from Neo4j Node
     public RegisteredUser(Node node) {
@@ -83,6 +89,22 @@ public class RegisteredUser extends User {
         this.spokenLanguages = spokenLanguages;
     }
 
+    public List<ObjectId> getUpVotedReviews() {
+        return upVotedReviews;
+    }
+
+    public void setUpVotedReviews(List<ObjectId> upVotedReviews) {
+        this.upVotedReviews = upVotedReviews;
+    }
+
+    public List<ObjectId> getDownVotedReviews() {
+        return downVotedReviews;
+    }
+
+    public void setDownVotedReviews(List<ObjectId> downVotedReviews) {
+        this.downVotedReviews = downVotedReviews;
+    }
+
     // toString method for debugging and logging
     @Override
     public String toString() {
@@ -99,7 +121,9 @@ public class RegisteredUser extends User {
         Document doc = super.toDocument();
         doc.append("nationality", nationality)
         .append("favouriteGenres", favouriteGenres)
-        .append("spokenLanguages", spokenLanguages);
+        .append("spokenLanguages", spokenLanguages)
+        .append("upVotedReviews", upVotedReviews)
+        .append("downVotedReviews", downVotedReviews);
         return doc;
     }
 }
