@@ -3,7 +3,7 @@ package it.unipi.lsmsdb.bookadvisor.service;
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
-import it.unipi.lsmsdb.bookadvisor.dao.documentDB.ReviewDao; // Import ReviewDao
+import it.unipi.lsmsdb.bookadvisor.dao.documentDB.ReviewDao;
 import it.unipi.lsmsdb.bookadvisor.utils.*;
 
 import java.util.List;
@@ -99,14 +99,11 @@ public class UserService {
                 && review.getText() != null && !review.getText().isEmpty(); // Ensure the associated review has non-empty text
     }
     
-    // Additional business logic for checking if a vote is from the same user
+    // Additional business logic for checking if a user is authorized
     private boolean isUserAuthorized(String userId) {
-        // Perform user authorization logic here
-        // For example, check if the user has necessary permissions or roles
-        // Return true if the user is authorized, false otherwise
-        // You can use information from the userId to determine authorization
-        return true; // Placeholder for authorization logic
+        // Verifica se l'ID utente è valido e corrisponde a un utente nel sistema
+        User user = userDao.findUserById(new ObjectId(userId));
+        return user != null;
     }
-    
-    
+       
 }
