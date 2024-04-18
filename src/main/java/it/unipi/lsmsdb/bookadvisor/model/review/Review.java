@@ -8,15 +8,21 @@ public class Review {
     private ObjectId userId;
     private ObjectId bookId;
     private String text;
+    private String country;
     private int stars;
+    private int countUpVote;
+    private int countDownVote;
 
     // Costruttore
-    public Review(ObjectId id, ObjectId userId, ObjectId bookId, String text, int stars) {
+    public Review(ObjectId id, ObjectId userId, ObjectId bookId, String text, String country,  int stars, int countUpVote, int countDownVote) {
         this.id = id;
         this.userId = userId;
         this.bookId = bookId;
         this.text = text;
+        this.country = country;
         this.stars = stars;
+        this.countUpVote = countUpVote;
+        this.countDownVote = countDownVote;
     }
 
     // Costruttore che accetta un Document
@@ -25,7 +31,10 @@ public class Review {
         this.userId = doc.getObjectId("userId");
         this.bookId = doc.getObjectId("bookId");
         this.text = doc.getString("text");
+        this.country = doc.getString("country");
         this.stars = doc.getInteger("stars", 0);
+        this.countUpVote = doc.getInteger("countUpVote", 0);
+        this.countDownVote = doc.getInteger("countDownVote", 0);
     }
 
     // Metodo per convertire in Document
@@ -33,7 +42,10 @@ public class Review {
         return new Document("userId", userId)
                 .append("bookId", bookId)
                 .append("text", text)
-                .append("stars", stars);
+                .append("country", country)
+                .append("stars", stars)
+                .append("countUpVote", countUpVote)
+                .append("countDownVote", countDownVote);
     }
  
     public ObjectId getId() {
@@ -68,11 +80,35 @@ public class Review {
         this.text = text;
     }
 
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
     public int getStars() {
         return stars;
     }
 
     public void setStars(int stars) {
         this.stars = stars;
+    }
+
+    public int getcountUpVote() {
+        return countUpVote;
+    }
+
+    public void setcountUpVote(int countUpVote) {
+        this.countUpVote = countUpVote;
+    }
+
+    public int getcountDownVote() {
+        return countDownVote;
+    }
+
+    public void setcountDownVote(int countDownVote) {
+        this.countDownVote = countDownVote;
     }
 }
