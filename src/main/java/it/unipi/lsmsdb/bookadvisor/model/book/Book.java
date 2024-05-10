@@ -28,7 +28,7 @@ public class Book {
     // Constructor
     public Book(ObjectId id, int sumStars, int numRatings, String language, 
                 String title, ObjectId[] author, String[] genre, int year, 
-                String imageUrl, int numPages) {
+                String imageUrl, int numPages, Map<String, RatingAggregate> ratingsAggByNat, List<Review> most10UsefulReviews) {
         this.id = id;
         this.sumStars = sumStars;
         this.numRatings = numRatings;
@@ -39,6 +39,8 @@ public class Book {
         this.year = year;
         this.imageUrl = imageUrl;
         this.numPages = numPages;
+        this.ratingsAggByNat = ratingsAggByNat;
+        this.most10UsefulReviews = most10UsefulReviews;
     }
 
     // Constructor that accepts a Document object
@@ -53,6 +55,8 @@ public class Book {
         this.year = doc.getInteger("year");
         this.imageUrl = doc.getString("imageUrl");
         this.numPages = doc.getInteger("numPages");
+        this.ratingsAggByNat = (Map<String, RatingAggregate>) doc.get("ratingsAggByNat");
+        this.most10UsefulReviews = (List<Review>) doc.get("most10UsefulReviews");
     }
 
     // Constructor that accepts a Neo4j Node object
@@ -67,6 +71,8 @@ public class Book {
         this.year = 0;
         this.imageUrl = null;
         this.numPages = 0;
+        this.ratingsAggByNat = null;
+        this.most10UsefulReviews = null;
     }
 
     // Method to convert a Book object to a Document
@@ -78,7 +84,9 @@ public class Book {
                 .append("lodel.review.Review;anguage", language)
                 .append("numPages", numPages)
                 .append("sumStars", sumStars)
-                .append("numRatings", numRatings);
+                .append("numRatings", numRatings)
+                .append("ratingsAggByNat", ratingsAggByNat)
+                .append("most10UsefulReviews", most10UsefulReviews);
     }
     // Getters and setters
     
@@ -191,6 +199,8 @@ public class Book {
                 ", year=" + year +
                 ", imageUrl='" + imageUrl + '\'' +
                 ", numPages=" + numPages +
+                ", ratingsAggByNat=" + ratingsAggByNat +
+                ", most10UsefulReviews=" + most10UsefulReviews +
                 '}';
     }
 
