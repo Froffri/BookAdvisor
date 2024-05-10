@@ -1,7 +1,9 @@
 package it.unipi.lsmsdb.bookadvisor.service;
 
+import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
+import it.unipi.lsmsdb.bookadvisor.dao.documentDB.ReviewDao;
 import it.unipi.lsmsdb.bookadvisor.utils.*;
 
 import java.util.List;
@@ -10,9 +12,11 @@ import org.bson.types.ObjectId;
 
 public class UserService {
     private UserDao userDao;
+    private ReviewDao reviewDao;
 
-    public UserService(UserDao userDao) {
+    public UserService(UserDao userDao, ReviewDao reviewDao) {
         this.userDao = userDao;
+        this.reviewDao = reviewDao;
     }
 
     // Cambiare la password dell'utente
@@ -60,4 +64,46 @@ public class UserService {
     public boolean logout(String userId) {
         return true;
     }
+
+    public boolean voteForReview(String userId, ObjectId reviewId, int vote) {
+        // Check if the user exists and is authorized to vote
+        if (isUserAuthorized(userId)) {
+            User user = userDao.findUserById(new ObjectId(userId));
+            if (user != null) {
+                // Fetch the review associated with the reviewId
+                Review review = reviewDao.findReviewById(reviewId);
+                if (review != null) {
+                    // Validate the vote
+                    if (isValidVote(user, review)) {
+                        // Call the userDao method to vote for the review
+                        return userDao.voteForReview(user, reviewId, vote);
+                    } else {
+                        System.err.println("Errore: Il voto non è valido.");
+                    }
+                } else {
+                    System.err.println("Errore: Recensione non trovata.");
+                }
+            } else {
+                System.err.println("Errore: Utente non trovato.");
+            }
+        } else {
+            System.err.println("Errore: Utente non autorizzato.");
+        }
+        return false;
+    }
+    
+    // Additional business logic for validating a vote
+    private boolean isValidVote(User user, Review review) {
+        return review != null
+                && !review.getUserId().equals(user.getId()) // Ensure the vote is not from the same user
+                && review.getText() != null && !review.getText().isEmpty(); // Ensure the associated review has non-empty text
+    }
+    
+    // Additional business logic for checking if a user is authorized
+    private boolean isUserAuthorized(String userId) {
+        // Verifica se l'ID utente è valido e corrisponde a un utente nel sistema
+        User user = userDao.findUserById(new ObjectId(userId));
+        return user != null;
+    }
+       
 }
