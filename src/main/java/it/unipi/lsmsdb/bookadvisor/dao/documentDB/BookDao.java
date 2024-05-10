@@ -230,76 +230,33 @@ public class BookDao {
     }
 
     // Update the rating of a book
-    protected void updateBookRating(ObjectId bookId, int rating) {
+    protected void updateBookRating(ObjectId bookId, int rating, String nationality) {
         try {
             Document book = collection.find(Filters.eq("_id", bookId)).first();
             if (book != null) {
                 int sumStars = book.getInteger("sumStars", 0) + rating;
                 int numRatings = book.getInteger("numRatings", 0);
                 numRatings = rating > 0 ? numRatings + 1 : numRatings - 1;
-                collection.updateOne(Filters.eq("_id", bookId), 
-                                         Updates.combine(Updates.set("sumStars", sumStars),
-                                                         Updates.set("numRatings", numRatings)));
+
+                // Aggiornamento del sumRating e della cardinality in base alla nazionalità
+                Document ratingsAggByNat = book.get("ratingsAggByNat", Document.class);
+                Document nationalityStats = ratingsAggByNat.get(nationality, Document.class);
+                int sumRatingByNat = nationalityStats.getInteger("sumRating", 0) + rating;
+                int cardinality = nationalityStats.getInteger("cardinality", 0);
+                cardinality = rating > 0 ? cardinality + 1 : cardinality - 1;
+                
+                collection.updateOne(
+                    Filters.eq("_id", bookId),
+                    Updates.combine(
+                        Updates.set("sumStars", sumStars),
+                        Updates.set("numRatings", numRatings),
+                        Updates.set("ratingsAggByNat." + nationality + ".sumRating", sumRatingByNat),
+                        Updates.set("ratingsAggByNat." + nationality + ".cardinality", cardinality)
+                    )
+                );
             }
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiornamento dei rating del libro: " + e.getMessage());
-        }
-    }
-
-    // Methods to update the ratings of a book when a review is added, removed, or updated
-    public void addRating(ObjectId bookId, int rating) {
-        updateBookRating(bookId, rating);
-    }
-
-    public void removeRating(ObjectId bookId, int rating) {
-        updateBookRating(bookId, -rating);
-    }
-
-    // Methods to update the aggregate rating by nationality of a book when a review is added, removed, or updated
-    public void addRatingByNat(ObjectId bookId, String nat, int rating) {
-        try {
-            Document book = collection.find(Filters.eq("_id", bookId)).first();
-            if (book != null) {
-                Document ratingsAggByNat = book.get("ratingsAggByNat", new Document());
-                Document ratingAgg = ratingsAggByNat.get(nat, new Document());
-                int sumRating = ratingAgg.getInteger("sumRating", 0) + rating;
-                int cardinality = ratingAgg.getInteger("cardinality", 0) + 1;
-                ratingsAggByNat.put(nat, new Document("sumRating", sumRating).append("cardinality", cardinality));
-                collection.updateOne(Filters.eq("_id", bookId), Updates.set("ratingsAggByNat", ratingsAggByNat));
-            }
-        } catch (Exception e) {
-            System.err.println("Errore durante l'aggiornamento dei rating del libro per nazionalità: " + e.getMessage());
-        }
-    }
-
-    public void removeRatingByNat(ObjectId bookId, String nat, int rating) {
-        try {
-            Document book = collection.find(Filters.eq("_id", bookId)).first();
-            if (book != null) {
-                Document ratingsAggByNat = book.get("ratingsAggByNat", new Document());
-                Document ratingAgg = ratingsAggByNat.get(nat, new Document());
-                int sumRating = ratingAgg.getInteger("sumRating", 0) - rating;
-                int cardinality = ratingAgg.getInteger("cardinality", 0) - 1;
-                ratingsAggByNat.put(nat, new Document("sumRating", sumRating).append("cardinality", cardinality));
-                collection.updateOne(Filters.eq("_id", bookId), Updates.set("ratingsAggByNat", ratingsAggByNat));
-            }
-        } catch (Exception e) {
-            System.err.println("Errore durante la rimozione dei rating del libro per nazionalità: " + e.getMessage());
-        }
-    }
-
-    public void updateRatingByNat(ObjectId bookId, String nat, int oldRating, int newRating) {
-        try {
-            Document book = collection.find(Filters.eq("_id", bookId)).first();
-            if (book != null) {
-                Document ratingsAggByNat = book.get("ratingsAggByNat", new Document());
-                Document ratingAgg = ratingsAggByNat.get(nat, new Document());
-                int sumRating = ratingAgg.getInteger("sumRating", 0) - oldRating + newRating;
-                ratingsAggByNat.put(nat, new Document("sumRating", sumRating).append("cardinality", ratingAgg.getInteger("cardinality", 0)));
-                collection.updateOne(Filters.eq("_id", bookId), Updates.set("ratingsAggByNat", ratingsAggByNat));
-            }
-        } catch (Exception e) {
-            System.err.println("Errore durante l'aggiornamento dei rating del libro per nazionalità: " + e.getMessage());
         }
     }
 
@@ -312,14 +269,5 @@ public class BookDao {
             System.err.println("Errore durante l'aggiornamento delle recensioni più utili del libro: " + e.getMessage());
         }
     }
-
-    
-
-
-
-
-
-
-
-    
+   
 }

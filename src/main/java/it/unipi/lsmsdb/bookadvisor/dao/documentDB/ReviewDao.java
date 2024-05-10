@@ -29,7 +29,7 @@ public class ReviewDao {
     public void addReview(Review review) {
         try {
             collection.insertOne(review.toDocument());
-            bookDao.updateBookRating(review.getBookId(), review.getStars());
+            bookDao.updateBookRating(review.getBookId(), review.getStars(), review.getCountry());
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiunta della recensione: " + e.getMessage());
         }
@@ -47,8 +47,8 @@ public class ReviewDao {
             // Se la recensione è stata effettivamente aggiornata
             if (result.getModifiedCount() > 0) {
                 // Sottrai il valore vecchio prima di aggiungere il nuovo valore
-                bookDao.updateBookRating(review.getBookId(), -oldReview.getStars());
-                bookDao.updateBookRating(review.getBookId(), review.getStars());
+                bookDao.updateBookRating(review.getBookId(), -oldReview.getStars(), oldReview.getCountry());
+                bookDao.updateBookRating(review.getBookId(), review.getStars(), review.getCountry());
                 return true;
             }
             return false;
@@ -70,7 +70,7 @@ public class ReviewDao {
             // Se la recensione è stata effettivamente eliminata
             if (result.getDeletedCount() > 0) {
                 // Sottrai il punteggio della recensione eliminata dal punteggio totale del libro
-                bookDao.updateBookRating(deletedReview.getBookId(), -deletedReview.getStars());
+                bookDao.updateBookRating(deletedReview.getBookId(), -deletedReview.getStars(), deletedReview.getCountry());
                 return true;
             }
             return false;

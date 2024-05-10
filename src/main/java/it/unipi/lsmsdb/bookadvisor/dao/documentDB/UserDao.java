@@ -96,21 +96,23 @@ public class UserDao {
     }
 
     // Vote for a review (upvote or downvote)
-    public boolean voteForReview(User user, ObjectId reviewId, int vote) {
-        String voteType = (vote > 0) ? "upvotedReviews" : "downvotedReviews";
-        int increment = (vote > 0) ? 1 : -1;
+    // If addVote is true, the vote is added; otherwise, it is removed
+    // If vote is true, the vote is an upvote; otherwise, it is a downvote
+    public boolean voteForReview(User user, ObjectId reviewId, boolean vote, boolean addVote) {
+        String voteType = (vote) ? "upvotedReviews" : "downvotedReviews";
+        int increment = (addVote) ? 1 : -1;
 
         try {
             UpdateResult result = collection.updateOne(
                 Filters.eq("_id", user.getId()),
                 new Document(
-                    (vote > 0) ? "$addToSet" : "$pull",
+                    (addVote) ? "$addToSet" : "$pull",
                     new Document(voteType, reviewId)
                 )
             );
 
             // Update the vote count in the reviewDao
-            reviewDao.updateVoteCount(reviewId, (vote > 0) ? "countupvote" : "countdownvote", increment);
+            reviewDao.updateVoteCount(reviewId, (vote) ? "countupvote" : "countdownvote", increment);
 
             return result.getModifiedCount() > 0;
         } catch (Exception e) {

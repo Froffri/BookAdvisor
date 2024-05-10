@@ -65,7 +65,9 @@ public class UserService {
         return true;
     }
 
-    public boolean voteForReview(String userId, ObjectId reviewId, int vote) {
+    // If addVote is true, the vote is added; otherwise, it is removed
+    // If vote is true, the vote is an upvote; otherwise, it is a downvote
+    public boolean voteForReview(String userId, ObjectId reviewId, boolean vote, boolean addVote) {
         // Check if the user exists and is authorized to vote
         if (isUserAuthorized(userId)) {
             User user = userDao.findUserById(new ObjectId(userId));
@@ -76,7 +78,7 @@ public class UserService {
                     // Validate the vote
                     if (isValidVote(user, review)) {
                         // Call the userDao method to vote for the review
-                        return userDao.voteForReview(user, reviewId, vote);
+                        return userDao.voteForReview(user, reviewId, vote, addVote);
                     } else {
                         System.err.println("Errore: Il voto non è valido.");
                     }
