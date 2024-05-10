@@ -1,7 +1,5 @@
 package it.unipi.lsmsdb.bookadvisor.dao.documentDB;
 
-import it.unipi.lsmsdb.bookadvisor.model.vote.Vote;
-
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
