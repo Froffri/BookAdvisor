@@ -1,6 +1,7 @@
 package it.unipi.lsmsdb.bookadvisor.service;
 
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.ReviewDao;
+import it.unipi.lsmsdb.bookadvisor.dao.graphDB.ReviewGraphDAO;
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
 import org.bson.types.ObjectId;
@@ -9,15 +10,27 @@ import java.util.List;
 
 public class ReviewService {
     private ReviewDao reviewDao;
+    private ReviewGraphDAO reviewGraphDao;
 
     public ReviewService(ReviewDao reviewDao, BookService bookService) {
         this.reviewDao = reviewDao;
     }
 
     // Aggiungi una nuova recensione al database
-    public void addReview(Review review) {
+    public boolean addReview(Review review) {
         validateStars(review.getStars());
-        reviewDao.addReview(review);
+        if(reviewDao.addReview(review)){
+            // Successfully added the review in mongodb
+            if(reviewGraphDao.addReview(review)){
+                // Successfully added the review in neo4j
+                return true;
+            } else {
+                // Failed to add the review in neo4j
+                reviewDao.deleteReview(review.getId());
+                return false;
+            }
+        }
+        return false;
     }
 
     // Aggiorna le informazioni di una recensione
@@ -35,7 +48,18 @@ public class ReviewService {
 
         // Check if the current user is the author of the review
         if (existingReview.getUserId().equals(currentUser.getId())) {
-            return reviewDao.updateReview(updatedReview);
+            if(reviewDao.updateReview(updatedReview)){
+                // Successfully updated the review in mongodb
+                if(reviewGraphDao.updateReview(updatedReview)){
+                    // Successfully updated the review in neo4j
+                    return true;
+                } else {
+                    // Failed to update the review in neo4j
+                    reviewDao.updateReview(existingReview);
+                    return false;
+                }
+            }
+            return false;
         } else {
             System.err.println("L'utente non ha i permessi per modificare questa recensione.");
             return false;
@@ -53,7 +77,19 @@ public class ReviewService {
 
         // Check if the current user is the author of the review or an admin
         if (currentUser instanceof Admin || review.getUserId().equals(currentUser.getId())) {
-            return reviewDao.deleteReview(reviewId);
+
+            if(reviewDao.deleteReview(reviewId)){
+                // Successfully deleted the review from mongodb
+                if(reviewGraphDao.deleteReview(review)){
+                    // Successfully deleted the review from neo4j
+                    return true;
+                } else {
+                    // Failed to delete the review from neo4j
+                    reviewDao.addReview(review);
+                    return false;
+                }
+            }
+            return false;
         } else {
             System.err.println("L'utente non ha i permessi per eliminare questa recensione.");
             return false;

@@ -31,7 +31,7 @@ public class BookGraphDAO {
      * Create a book node in the graph database
      * @param book
      */
-    public void addBook(Book book) {
+    public boolean addBook(Book book) {
         try (Session session = driver.session()) {
             session.run(
                 "MERGE (b:Book {id: $id}) " + 
@@ -42,7 +42,10 @@ public class BookGraphDAO {
                             "language", book.getLanguage(), 
                             "genre", book.getGenre())
             );
+        } catch (Neo4jException e) {
+            return false;
         }
+        return true;
     }
 
     // READ
@@ -68,15 +71,14 @@ public class BookGraphDAO {
     // UPDATE
     /**
      * Update a book node in the graph database
-     * @param bookId
      * @param book
      */
-    public boolean updateBook(ObjectId bookId, Book book) {
+    public boolean updateBook(Book book) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (b:Book {id: $id})" +
                 "SET b.sum_stars = $sumStars, b.num_ratings = $numRatings, b.language = '$language', b.genre = '$genre'",
-                parameters("id", bookId,
+                parameters("id", book.getId(),
                                     "sumStars", book.getSumStars(),
                                     "numRatings", book.getNumRatings(),
                                     "language", book.getLanguage(),
@@ -94,26 +96,32 @@ public class BookGraphDAO {
      * Delete a book node in the graph database
      * @param book
      */
-    public void deleteBook(Book book) {
+    public boolean deleteBook(Book book) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (b:Book {id: $id}) DELETE b",
                 parameters("id", book.getId())
             );
+        } catch(Neo4jException e) {
+            return false;
         }
+        return true;
     }
 
     /**
      * Delete a book node in the graph database
      * @param bookId
      */
-    public void deleteBookById(ObjectId bookId) {
+    public boolean deleteBookById(ObjectId bookId) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (b:Book {id: $id}) DELETE b",
                 parameters("id", bookId)
             );
+        } catch (Neo4jException e) {
+            return false;
         }
+        return true;
     }
 
 }

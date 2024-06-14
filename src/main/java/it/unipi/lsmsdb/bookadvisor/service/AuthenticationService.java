@@ -33,6 +33,8 @@ public class AuthenticationService {
         // Creazione di un nuovo utente
         User newUser = new User(name, username, hashedPassword, birthdate, gender);
 
+        // @TODO: Aggiungere la nazionalità, i generi preferiti e le lingue parlate
+        // NON DOVREBBE ESSERE USER MA REGISTEREDUSER
         // Aggiunta dell'utente al database
         if(userDao.addUser(newUser)){
             // Insertion in document successful
