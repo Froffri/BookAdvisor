@@ -2,11 +2,13 @@ package it.unipi.lsmsdb.bookadvisor.service;
 
 import it.unipi.lsmsdb.bookadvisor.model.user.User;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
+import it.unipi.lsmsdb.bookadvisor.dao.graphDB.UserGraphDAO;
 import it.unipi.lsmsdb.bookadvisor.utils.*;
 import java.time.LocalDate;
 
 public class AuthenticationService {
     private UserDao userDao;
+    private UserGraphDAO userGraphDAO;
 
     public AuthenticationService(UserDao userDao) {
         this.userDao = userDao;
@@ -32,8 +34,19 @@ public class AuthenticationService {
         User newUser = new User(name, username, hashedPassword, birthdate, gender);
 
         // Aggiunta dell'utente al database
-        userDao.addUser(newUser);
-        return true;
+        if(userDao.addUser(newUser)){
+            // Insertion in document successful
+            if(userGraphDAO.addUser(newUser)){
+                // Insertion in graph successful
+                return true;
+            } else {
+                // Insertion in graph failed
+                userDao.deleteUser(newUser.getId());
+                return false;
+            }
+        }
+        // Insertion in document failed
+        return false;
     }
 
     public User logIn(String username, String password) {

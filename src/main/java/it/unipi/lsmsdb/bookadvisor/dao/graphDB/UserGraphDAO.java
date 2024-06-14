@@ -33,7 +33,7 @@ public class UserGraphDAO {
      * Add an author to the graph database
      * @param author
      */
-    public void addUser(Author author) {
+    public boolean addUser(Author author) {
         try (Session session = driver.session()) {
             // Create the node only if it hasn't been created
             session.run(
@@ -44,14 +44,18 @@ public class UserGraphDAO {
                             "genres", author.getGenresString(), 
                             "spoken_lang", author.getSpokenLanguagesString())
             );
+        } catch (Exception e) {
+            System.err.println("Error while inserting author: " + e.getMessage());
+            return false;
         }
+        return true;
     }
 
     /**
      * Add a user to the graph database
      * @param user 
      */
-    public void addUser(RegisteredUser user) {
+    public boolean addUser(RegisteredUser user) {
         try (Session session = driver.session()) {
             // Create the node only if it hasn't been created
             session.run(
@@ -61,7 +65,30 @@ public class UserGraphDAO {
                             "fav_genres", user.getFavouriteGenresString(), 
                             "spoken_lang", user.getSpokenLanguagesString())
             );
+        } catch (Exception e) {
+            System.err.println("Error while inserting user: " + e.getMessage());
+            return false;
         }
+        return true;
+    }
+
+    /**
+     * Add a user to the graph database
+     * @param user 
+     */
+    public boolean addUser(User user) {
+        try (Session session = driver.session()) {
+            // Create the node only if it hasn't been created
+            session.run(
+                "MERGE (u:User {id: $id}) "/* + 
+                "ON CREATE SET u.fav_genres = $fav_genres, u.spoken_lang = $spoken_lang", 
+                parameters("id", user.getId())*/
+            );
+        } catch (Exception e) {
+            System.err.println("Error while inserting user: " + e.getMessage());
+            return false;
+        }
+        return true;
     }
 
     // READ OPERATIONS
