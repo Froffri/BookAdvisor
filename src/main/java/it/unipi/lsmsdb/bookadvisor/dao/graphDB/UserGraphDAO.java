@@ -145,12 +145,21 @@ public class UserGraphDAO {
 
     // UPDATE OPERATIONS
 
-    public boolean updateUser(ObjectId id, RegisteredUser user) {
+    public boolean updateUser(User user) {
+        if(user instanceof Author)
+            return updateUser((Author) user);
+        else if(user instanceof RegisteredUser)
+            return updateUser((RegisteredUser) user);
+
+        throw new IllegalArgumentException("User type not supported");
+    }
+
+    public boolean updateUser(RegisteredUser user) {
         try(Session session = driver.session()) {
             session.run(
                 "MATCH (u:User {id: $id}) " +
                 "SET u.fav_genres = $fav_genres, u.spoken_lang = $spoken_lang",
-                parameters("id", id, 
+                parameters("id", user.getId(), 
                             "fav_genres", user.getFavouriteGenresString(), 
                             "spoken_lang", user.getSpokenLanguagesString())
             );
@@ -160,12 +169,12 @@ public class UserGraphDAO {
         return true;
     }
 
-    public boolean updateUser(ObjectId id, Author author) {
+    public boolean updateUser(Author author) {
         try(Session session = driver.session()) {
             session.run(
                 "MATCH (u:User {id: $id}) " +
                 "SET u.fav_genres = $fav_genres, u.genres = $genres, u.spoken_lang = $spoken_lang",
-                parameters("id", id, 
+                parameters("id", author.getId(), 
                             "fav_genres", author.getFavouriteGenresString(), 
                             "genres", author.getGenresString(), 
                             "spoken_lang", author.getSpokenLanguagesString())
@@ -182,27 +191,36 @@ public class UserGraphDAO {
      * Delete a user from the graph database
      * @param user
      */
-    public void deleteUser(User user) {
+    public boolean deleteUser(User user) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (u:User {id: $id}) " +
                 "DETACH DELETE u", 
                 parameters("id", user.getId())
             );
+        } catch (Neo4jException e) {
+            System.err.println("Error while deleting user: " + e.getMessage());
+            return false;
         }
+        return true;
     }
+    
     /**
      * Delete a user from the graph database using their id
      * @param userId
      */
-    public void deleteUserById(ObjectId userId) {
+    public boolean deleteUserById(ObjectId userId) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (u:User {id: $id}) " +
                 "DETACH DELETE u", 
                 parameters("id", userId)
             );
+        } catch (Neo4jException e) {
+            System.err.println("Error while deleting user: " + e.getMessage());
+            return false;
         }
+        return true;
     }
 
 }

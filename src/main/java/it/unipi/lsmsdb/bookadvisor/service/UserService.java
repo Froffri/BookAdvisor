@@ -3,6 +3,7 @@ package it.unipi.lsmsdb.bookadvisor.service;
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
+import it.unipi.lsmsdb.bookadvisor.dao.graphDB.UserGraphDAO;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.ReviewDao;
 import it.unipi.lsmsdb.bookadvisor.utils.*;
 
@@ -12,10 +13,12 @@ import org.bson.types.ObjectId;
 
 public class UserService {
     private UserDao userDao;
+    private UserGraphDAO userGraphDao;
     private ReviewDao reviewDao;
 
-    public UserService(UserDao userDao, ReviewDao reviewDao) {
+    public UserService(UserDao userDao, ReviewDao reviewDao, UserGraphDAO userGraphDao) {
         this.userDao = userDao;
+        this.userGraphDao = userGraphDao;
         this.reviewDao = reviewDao;
     }
 
@@ -37,11 +40,24 @@ public class UserService {
         return userDao.findUserById(new ObjectId(userId));
     }
 
+    // CHANGED USER TO REGISTEREDUSER
     // Aggiornamento dei dettagli utente
     public boolean updateAccountInformation(String userId, User updatedUser) {
         User existingUser = userDao.findUserById(new ObjectId(userId));
         if (existingUser instanceof Admin || existingUser.getId().equals(updatedUser.getId())) {
-            return userDao.updateUser(updatedUser);
+
+            if(userDao.updateUser(updatedUser)){
+                // Successfully updated the user in mongodb
+                if(userGraphDao.updateUser(updatedUser)){
+                    // Successfully updated the user in neo4j
+                    return true;
+                } else {
+                    // Failed to update the user in neo4j
+                    userDao.updateUser(existingUser);
+                    return false;
+                }
+            }
+            return false;
         }
         throw new IllegalArgumentException("Non hai i permessi per modificare questo utente.");
     }
@@ -50,7 +66,21 @@ public class UserService {
     public boolean deleteAccount(String requestingUserId, String targetUserId) {
         User requestingUser = userDao.findUserById(new ObjectId(requestingUserId));
         if (requestingUser instanceof Admin || requestingUserId.equals(targetUserId)) {
-            return userDao.deleteUser(new ObjectId(targetUserId));
+
+            User targetUser = userDao.findUserById(new ObjectId(targetUserId));
+
+            if(userDao.deleteUser(new ObjectId(targetUserId))){
+                // Successfully deleted the user in mongodb
+                if(userGraphDao.deleteUserById(new ObjectId(targetUserId))){
+                    // Successfully deleted the user in neo4j
+                    return true;
+                } else {
+                    // Failed to delete the user in neo4j
+                    userDao.addUser(targetUser);
+                    return false;
+                }
+            }
+            return false;
         }
         throw new IllegalArgumentException("Non hai i permessi per eliminare questo utente.");
     }
