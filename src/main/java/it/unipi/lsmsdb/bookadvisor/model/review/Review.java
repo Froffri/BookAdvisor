@@ -8,6 +8,7 @@ public class Review {
     private ObjectId id;
     private ObjectId userId;
     private ObjectId bookId;
+    private String nickname;
     private String text;
     private String country;
     private int stars;
