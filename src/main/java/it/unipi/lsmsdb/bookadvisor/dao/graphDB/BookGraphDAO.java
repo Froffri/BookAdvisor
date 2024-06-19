@@ -35,12 +35,10 @@ public class BookGraphDAO {
         try (Session session = driver.session()) {
             session.run(
                 "MERGE (b:Book {id: $id}) " + 
-                "ON CREATE SET b.sum_stars = $sumStars, b.num_ratings = $numRatings, b.language = '$language', b.genre = '$genre'", 
+                "ON CREATE SET b.title = $title, b.language = '$language'", 
                 parameters("id", book.getId(), 
-                            "sumStars", book.getSumStars(), 
-                            "numRatings", book.getNumRatings(), 
-                            "language", book.getLanguage(), 
-                            "genre", book.getGenre())
+                            "title", book.getTitle(), 
+                            "language", book.getLanguage())
             );
         } catch (Neo4jException e) {
             return false;
@@ -77,12 +75,10 @@ public class BookGraphDAO {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (b:Book {id: $id})" +
-                "SET b.sum_stars = $sumStars, b.num_ratings = $numRatings, b.language = '$language', b.genre = '$genre'",
+                "SET b.title = $title, b.language = '$language'",
                 parameters("id", book.getId(),
-                                    "sumStars", book.getSumStars(),
-                                    "numRatings", book.getNumRatings(),
-                                    "language", book.getLanguage(),
-                                    "genre", book.getGenre())
+                                    "title", book.getTitle(),
+                                    "language", book.getLanguage())
                 );
         } catch (Neo4jException e) {
             return false;

@@ -43,8 +43,8 @@ public class RegisteredUser extends User {
     // Constructor from Neo4j Node
     public RegisteredUser(Node node) {
         super(node);
-        this.favouriteGenres = node.get("fav_genres").asList(Value::asString);
-        this.spokenLanguages = node.get("spoken_lang").asList(Value::asString);
+        this.favouriteGenres = node.get("favouriteGenres").asList(Value::asString);
+        this.spokenLanguages = null;
     }
 
     // Getters and Setters
