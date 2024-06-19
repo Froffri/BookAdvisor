@@ -49,6 +49,11 @@ public class UserGraphDAO {
     //     return true;
     // }
 
+    // TEMPORARY FIX
+    public boolean addUser(User user){
+        return addUser((RegisteredUser) user);
+    }
+
     /**
      * Add a user to the graph database
      * @param user 
