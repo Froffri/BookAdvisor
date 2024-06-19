@@ -21,6 +21,12 @@ public class Author extends RegisteredUser {
         super(id, name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
         this.genres = genres;
     }
+    public Author(String name, String nickname, String password, LocalDate birthdate,
+                  String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages, 
+                  List<String> genres) {
+        super(name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
+        this.genres = genres;
+    }
 
     // Constructor from MongoDB Document
     public Author(Document doc) {

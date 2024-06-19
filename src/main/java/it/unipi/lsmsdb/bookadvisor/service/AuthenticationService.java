@@ -1,10 +1,13 @@
 package it.unipi.lsmsdb.bookadvisor.service;
 
+import it.unipi.lsmsdb.bookadvisor.model.user.Author;
+import it.unipi.lsmsdb.bookadvisor.model.user.RegisteredUser;
 import it.unipi.lsmsdb.bookadvisor.model.user.User;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
 import it.unipi.lsmsdb.bookadvisor.dao.graphDB.UserGraphDAO;
 import it.unipi.lsmsdb.bookadvisor.utils.*;
 import java.time.LocalDate;
+import java.util.List;
 
 public class AuthenticationService {
     private UserDao userDao;
@@ -14,7 +17,7 @@ public class AuthenticationService {
         this.userDao = userDao;
     }
 
-    public boolean signUp(String username, String password, String name, String gender, LocalDate birthdate) {
+    public boolean signUp(String username, String password, String name, String gender, LocalDate birthdate, String nationality, List<String> favouriteGenres, List<String> spokenLanguages, List<String> genres) {
         // Verifica che la password soddisfi i criteri stabiliti
         if (!PasswordValidator.newPasswordMeetsCriteria(password)) {
             // La password non soddisfa i criteri
@@ -31,22 +34,54 @@ public class AuthenticationService {
         String hashedPassword = HashingUtility.hashPassword(password);
 
         // Creazione di un nuovo utente
-        User newUser = new User(name, username, hashedPassword, birthdate, gender);
-
-        // @TODO: Aggiungere la nazionalità, i generi preferiti e le lingue parlate
-        // NON DOVREBBE ESSERE USER MA REGISTEREDUSER
-        // Aggiunta dell'utente al database
-        if(userDao.addUser(newUser)){
-            // Insertion in document successful
-            if(userGraphDAO.addUser(newUser)){
-                // Insertion in graph successful
-                return true;
-            } else {
-                // Insertion in graph failed
-                userDao.deleteUser(newUser.getId());
-                return false;
+        if(genres != null){
+            Author newUser = new Author(name, username, hashedPassword, birthdate, gender, nationality, favouriteGenres, spokenLanguages, genres);
+            
+            // Aggiunta dell'utente al database
+            if(userDao.addUser(newUser)){
+                // Insertion in document successful
+                if(userGraphDAO.addUser(newUser)){
+                    // Insertion in graph successful
+                    return true;
+                } else {
+                    // Insertion in graph failed
+                    userDao.deleteUser(newUser.getId());
+                    return false;
+                }
             }
         }
+        else if(favouriteGenres != null){
+            RegisteredUser newUser = new RegisteredUser(name, username, hashedPassword, birthdate, gender, nationality, favouriteGenres, spokenLanguages); 
+            
+            // Aggiunta dell'utente al database
+            if(userDao.addUser(newUser)){
+                // Insertion in document successful
+                if(userGraphDAO.addUser(newUser)){
+                    // Insertion in graph successful
+                    return true;
+                } else {
+                    // Insertion in graph failed
+                    userDao.deleteUser(newUser.getId());
+                    return false;
+                }
+            }
+        }
+        else{
+            User newUser = new User(name, username, hashedPassword, birthdate, gender);
+
+            // Aggiunta dell'utente al database
+            if(userDao.addUser(newUser)){
+                // Insertion in document successful
+                if(userGraphDAO.addUser(newUser)){
+                    // Insertion in graph successful
+                    return true;
+                } else {
+                    // Insertion in graph failed
+                    userDao.deleteUser(newUser.getId());
+                    return false;
+                }
+            }
+        }    
         // Insertion in document failed
         return false;
     }
