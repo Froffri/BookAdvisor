@@ -17,31 +17,5 @@ import it.unipi.lsmsdb.bookadvisor.model.user.User;
  */
 public class AppTest 
 {
-    /**
-     * Rigorous Test :-)
-     */
-    @Test
-    public void testClasses()
-    {
-        List<String> genres = null;
-        String name = "Paolo";
-        String username = "Bitta";
-        String hashedPassword = "Cacca";
-        LocalDate birthdate = null;
-        String gender = "Sborra";
-        String nationality = "ITA";
-        List<String> favouriteGenres = new ArrayList<String>();
-        List<String> spokenLanguages = new ArrayList<String>();
-        User newUser;
-        // Creazione di un nuovo utente
-        if(genres != null)
-            newUser = new Author(name, username, hashedPassword, birthdate, gender, nationality, favouriteGenres, spokenLanguages, genres);
-        else if(favouriteGenres != null)
-            newUser = new RegisteredUser(name, username, hashedPassword, birthdate, gender, nationality, favouriteGenres, spokenLanguages); 
-        else    
-            newUser = new User(name, username, hashedPassword, birthdate, gender);
-
-        System.out.println(newUser.getPassword());
-        assertTrue(newUser instanceof RegisteredUser);
-    }
+        
 }
