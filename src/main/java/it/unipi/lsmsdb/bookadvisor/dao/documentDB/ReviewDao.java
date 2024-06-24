@@ -26,13 +26,15 @@ public class ReviewDao {
     }
 
     // Insert a new review into the database
-    public void addReview(Review review) {
+    public boolean addReview(Review review) {
         try {
             collection.insertOne(review.toDocument());
             bookDao.updateBookRating(review.getBookId(), review.getStars(), review.getCountry());
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiunta della recensione: " + e.getMessage());
+            return false;
         }
+        return true;
     }
 
     // Update a review's information

@@ -21,6 +21,12 @@ public class Author extends RegisteredUser {
         super(id, name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
         this.genres = genres;
     }
+    public Author(String name, String nickname, String password, LocalDate birthdate,
+                  String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages, 
+                  List<String> genres) {
+        super(name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
+        this.genres = genres;
+    }
 
     // Constructor from MongoDB Document
     public Author(Document doc) {
@@ -31,7 +37,7 @@ public class Author extends RegisteredUser {
     // Constructor from Neo4j Node
     public Author(org.neo4j.driver.types.Node node) {
         super(node);
-        this.genres = node.get("genres").asList(org.neo4j.driver.Value::asString);
+        this.genres = null;
     }
 
     // Getter and setter for genres

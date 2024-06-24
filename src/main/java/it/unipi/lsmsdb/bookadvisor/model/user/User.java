@@ -57,6 +57,11 @@ public class User {
     // Constructor from Neo4j Node
     public User(Node node) {
         this.id = new ObjectId(node.get("id").asString());
+        this.name = null;
+        this.nickname = node.get("nickname").asString();
+        this.password = null;
+        this.birthdate = null;
+        this.gender = null;   
     }
 
     // Getters and setters

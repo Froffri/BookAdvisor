@@ -31,18 +31,19 @@ public class BookGraphDAO {
      * Create a book node in the graph database
      * @param book
      */
-    public void addBook(Book book) {
+    public boolean addBook(Book book) {
         try (Session session = driver.session()) {
             session.run(
                 "MERGE (b:Book {id: $id}) " + 
-                "ON CREATE SET b.sum_stars = $sumStars, b.num_ratings = $numRatings, b.language = '$language', b.genre = '$genre'", 
+                "ON CREATE SET b.title = $title, b.language = '$language'", 
                 parameters("id", book.getId(), 
-                            "sumStars", book.getSumStars(), 
-                            "numRatings", book.getNumRatings(), 
-                            "language", book.getLanguage(), 
-                            "genre", book.getGenre())
+                            "title", book.getTitle(), 
+                            "language", book.getLanguage())
             );
+        } catch (Neo4jException e) {
+            return false;
         }
+        return true;
     }
 
     // READ
@@ -68,19 +69,16 @@ public class BookGraphDAO {
     // UPDATE
     /**
      * Update a book node in the graph database
-     * @param bookId
      * @param book
      */
-    public boolean updateBook(ObjectId bookId, Book book) {
+    public boolean updateBook(Book book) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (b:Book {id: $id})" +
-                "SET b.sum_stars = $sumStars, b.num_ratings = $numRatings, b.language = '$language', b.genre = '$genre'",
-                parameters("id", bookId,
-                                    "sumStars", book.getSumStars(),
-                                    "numRatings", book.getNumRatings(),
-                                    "language", book.getLanguage(),
-                                    "genre", book.getGenre())
+                "SET b.title = $title, b.language = '$language'",
+                parameters("id", book.getId(),
+                                    "title", book.getTitle(),
+                                    "language", book.getLanguage())
                 );
         } catch (Neo4jException e) {
             return false;
@@ -94,26 +92,32 @@ public class BookGraphDAO {
      * Delete a book node in the graph database
      * @param book
      */
-    public void deleteBook(Book book) {
+    public boolean deleteBook(Book book) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (b:Book {id: $id}) DELETE b",
                 parameters("id", book.getId())
             );
+        } catch(Neo4jException e) {
+            return false;
         }
+        return true;
     }
 
     /**
      * Delete a book node in the graph database
      * @param bookId
      */
-    public void deleteBookById(ObjectId bookId) {
+    public boolean deleteBookById(ObjectId bookId) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (b:Book {id: $id}) DELETE b",
                 parameters("id", bookId)
             );
+        } catch (Neo4jException e) {
+            return false;
         }
+        return true;
     }
 
 }

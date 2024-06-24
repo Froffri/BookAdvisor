@@ -62,12 +62,12 @@ public class Book {
     // Constructor that accepts a Neo4j Node object
     public Book(Node node) {
         this.id = new ObjectId(node.get("id").asString());
-        this.sumStars = node.get("sumStars").asInt();
-        this.numRatings = node.get("numRatings").asInt();
+        this.sumStars = 0;
+        this.numRatings = 0;
         this.language = node.get("language").asString();
-        this.title = null;
+        this.title = node.get("title").asString();
         this.author = null;
-        this.genre = node.get("genre").asList(value -> value.asString()).toArray(new String[0]);
+        this.genre = null;
         this.year = 0;
         this.imageUrl = null;
         this.numPages = 0;

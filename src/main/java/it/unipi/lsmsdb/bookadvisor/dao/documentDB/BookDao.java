@@ -87,17 +87,19 @@ public class BookDao {
     }
 
     // Insert a new book into the database
-    public void addBook(Book book) {
+    public boolean addBook(Book book) {
         try {
             Document doc = book.toDocument();
             collection.insertOne(doc);
         } catch (Exception e) {
             System.err.println("Errore durante l'inserimento del libro: " + e.getMessage());
+            return false;
         }
+        return true;
     }
 
     // Update a book's information
-    public void updateBook(Book book) {
+    public boolean updateBook(Book book) {
         try {
             collection.updateOne(Filters.eq("_id", book.getId()),
                 Updates.combine(
@@ -111,16 +113,20 @@ public class BookDao {
                 ));
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiornamento del libro: " + e.getMessage());
+            return false;
         }
+        return true;
     }
 
     // Delete a book from the database
-    public void deleteBook(ObjectId id) {
+    public boolean deleteBook(ObjectId id) {
         try {
             collection.deleteOne(Filters.eq("_id", id));
         } catch (Exception e) {
             System.err.println("Errore durante la cancellazione del libro: " + e.getMessage());
+            return false;
         }
+        return true;
     }
 
     // Get all books by th title

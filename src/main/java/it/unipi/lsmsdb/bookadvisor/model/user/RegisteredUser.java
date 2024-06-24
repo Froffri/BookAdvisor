@@ -30,6 +30,16 @@ public class RegisteredUser extends User {
         this.upVotedReviews = null;
     }
 
+    public RegisteredUser(String name, String nickname, String password, LocalDate birthdate,
+                          String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages) {
+        super(name, nickname, password, birthdate, gender);
+        this.nationality = nationality;
+        this.favouriteGenres = favouriteGenres;
+        this.spokenLanguages = spokenLanguages;
+        this.downVotedReviews = null;
+        this.upVotedReviews = null;
+    }
+
     // Constructor from MongoDB Document
     public RegisteredUser(Document doc) {
         super(doc);
@@ -43,8 +53,8 @@ public class RegisteredUser extends User {
     // Constructor from Neo4j Node
     public RegisteredUser(Node node) {
         super(node);
-        this.favouriteGenres = node.get("fav_genres").asList(Value::asString);
-        this.spokenLanguages = node.get("spoken_lang").asList(Value::asString);
+        this.favouriteGenres = node.get("favouriteGenres").asList(Value::asString);
+        this.spokenLanguages = null;
     }
 
     // Getters and Setters

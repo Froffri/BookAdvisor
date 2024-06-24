@@ -33,7 +33,7 @@ public class ReviewGraphDAO {
      * @param bookId
      * @param rating
      */
-    public void addReview(String userId, String bookId, int rating) {
+    public boolean addReview(String userId, String bookId, int rating) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +
@@ -45,7 +45,31 @@ public class ReviewGraphDAO {
                             "book", bookId, 
                             "rating", rating)
             );
+        } catch (Neo4jException e) {
+            return false;
         }
+        return true;
+    }
+    /**
+     * Create a review relationship in the graph database
+     * @param review
+     */
+    public boolean addReview(Review review) {
+        try (Session session = driver.session()) {
+            session.run(
+                "MATCH (usr:User {id: $user})" +
+                "WITH usr" +
+                "MATCH (bk:Book {id: $book})" +
+                "WHERE NOT (usr)-[:RATES]->(bk)" +
+                "CREATE (usr)-[:RATES {stars: $rating}]->(bk)", 
+                parameters("user", review.getUserId(), 
+                            "book", review.getBookId(), 
+                            "rating", review.getStars())
+            );
+        } catch (Neo4jException e) {
+            return false;
+        }
+        return true;
     }
 
     // READ
@@ -97,6 +121,28 @@ public class ReviewGraphDAO {
         return true;
     }
 
+    /**
+     * Update a review in the graph database
+     * @param review
+     */
+    public boolean updateReview(Review review) {
+        try (Session session = driver.session()) {
+            session.run(
+                "MATCH (usr:User {id: $user})" +
+                "WITH usr" +
+                "MATCH (bk:Book {id: $book})" +
+                "WHERE (usr)-[r:RATES]->(bk)" +
+                "SET r.rating = $rating",
+                parameters("user", review.getUserId(), 
+                            "book", review.getBookId(), 
+                            "rating", review.getStars()) 
+            );
+        } catch (Neo4jException e) {
+            return false;
+        }
+        return true;
+    }
+
     // DELETE
 
     /**
@@ -104,7 +150,7 @@ public class ReviewGraphDAO {
      * @param userId
      * @param bookId
      */
-    public void deleteReview(ObjectId userId, ObjectId bookId) {
+    public boolean deleteReview(ObjectId userId, ObjectId bookId) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +
@@ -115,7 +161,32 @@ public class ReviewGraphDAO {
                 parameters("user", userId, 
                             "book", bookId)
             );
+        } catch (Neo4jException e) {
+            return false;
         }
+        return true;
+    }
+
+    /**
+     * Delete a review from the graph database
+     * @param userId
+     * @param bookId
+     */
+    public boolean deleteReview(Review review) {
+        try (Session session = driver.session()) {
+            session.run(
+                "MATCH (usr:User {id: $user})" +
+                "WITH usr" +
+                "MATCH (bk:Book {id: $book})" +
+                "WHERE (usr)-[r:RATES]->(bk)" +
+                "DELETE r",
+                parameters("user", review.getUserId(), 
+                            "book", review.getBookId())
+            );
+        } catch (Neo4jException e) {
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -123,7 +194,7 @@ public class ReviewGraphDAO {
      * @param user
      * @param book
      */
-    public void deleteReview(RegisteredUser user, Book book) {
+    public boolean deleteReview(RegisteredUser user, Book book) {
         try (Session session = driver.session()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +
@@ -134,7 +205,10 @@ public class ReviewGraphDAO {
                 parameters("user", user.getId(), 
                             "book", book.getId())
             );
+        } catch (Neo4jException e) {
+            return false;
         }
+        return true;
     }
 
 }
