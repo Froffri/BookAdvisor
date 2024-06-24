@@ -13,18 +13,10 @@ import java.util.*;
 import org.bson.types.ObjectId;
 
 public class UserGraphDAO {
-    private final Driver driver;
+    private final Neo4jConnector connector;
 
-    public UserGraphDAO(String uri, String user, String password) {
-        this.driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
-    }
-    
-    public UserGraphDAO(Driver driver) {
-        this.driver = driver;
-    }
-
-    public void close() {
-        this.driver.close();
+    public UserGraphDAO(Neo4jConnector connector) {
+        this.connector = connector;
     }
 
     // CREATE OPERATIONS
@@ -34,7 +26,7 @@ public class UserGraphDAO {
     //  * @param author
     //  */
     // public boolean addUser(Author author) {
-    //     try (Session session = driver.session()) {
+    //     try (Session session = connector.getSession()) {
     //         // Create the node only if it hasn't been created
     //         session.run(
     //             "MERGE (u:User {id: $id}) " + 
@@ -59,7 +51,7 @@ public class UserGraphDAO {
      * @param user 
      */
     public boolean addUser(RegisteredUser user) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             // Create the node only if it hasn't been created
             session.run(
                 "MERGE (u:User {id: $id}) " + 
@@ -79,7 +71,7 @@ public class UserGraphDAO {
     //  * @param user 
     //  */
     // public boolean addUser(User user) {
-    //     try (Session session = driver.session()) {
+    //     try (Session session = connector.getSession()) {
     //         // Create the node only if it hasn't been created
     //         session.run(
     //             "MERGE (u:User {id: $id}) "/* + 
@@ -96,7 +88,7 @@ public class UserGraphDAO {
     // READ OPERATIONS
 
     public List<User> getAllUsers() {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             Result result = session.run(
                 "MATCH (u:User) " +
                 "RETURN u"
@@ -121,7 +113,7 @@ public class UserGraphDAO {
     }
 
     public User getUserById(ObjectId id) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             Result result = session.run(
                 "MATCH (u:User {id: $id}) " +
                 "RETURN u", 
@@ -157,7 +149,7 @@ public class UserGraphDAO {
     }
 
     public boolean updateUser(RegisteredUser user) {
-        try(Session session = driver.session()) {
+        try(Session session = connector.getSession()) {
             session.run(
                 "MATCH (u:User {id: $id}) " +
                 "SET u.fav_genres = $fav_genres",
@@ -171,7 +163,7 @@ public class UserGraphDAO {
     }
 
     // public boolean updateUser(Author author) {
-    //     try(Session session = driver.session()) {
+    //     try(Session session = connector.getSession()) {
     //         session.run(
     //             "MATCH (u:User {id: $id}) " +
     //             "SET u.fav_genres = $fav_genres, u.genres = $genres, u.spoken_lang = $spoken_lang",
@@ -193,7 +185,7 @@ public class UserGraphDAO {
      * @param user
      */
     public boolean deleteUser(User user) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (u:User {id: $id}) " +
                 "DETACH DELETE u", 
@@ -211,7 +203,7 @@ public class UserGraphDAO {
      * @param userId
      */
     public boolean deleteUserById(ObjectId userId) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (u:User {id: $id}) " +
                 "DETACH DELETE u", 
