@@ -11,18 +11,10 @@ import it.unipi.lsmsdb.bookadvisor.model.book.Book;
 
 
 public class BookGraphDAO {
-    private final Driver driver;
+    private final Neo4jConnector connector;
 
-    public BookGraphDAO(String uri, String username, String password) {
-        this.driver = GraphDatabase.driver(uri, AuthTokens.basic(username, password));
-    }
-
-    public BookGraphDAO(Driver driver) {
-        this.driver = driver;
-    }
-
-    public void close() {
-        this.driver.close();
+    public BookGraphDAO(Neo4jConnector connector) {
+        this.connector = connector;
     }
 
     // CREATE
@@ -32,7 +24,7 @@ public class BookGraphDAO {
      * @param book
      */
     public boolean addBook(Book book) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MERGE (b:Book {id: $id}) " + 
                 "ON CREATE SET b.title = $title, b.language = '$language'", 
@@ -49,7 +41,7 @@ public class BookGraphDAO {
     // READ
 
     public Book getBookById(ObjectId bookId) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             Result result = session.run(
                 "MATCH (b:Book {id: $id}) " +
                 "RETURN b", 
@@ -72,7 +64,7 @@ public class BookGraphDAO {
      * @param book
      */
     public boolean updateBook(Book book) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (b:Book {id: $id})" +
                 "SET b.title = $title, b.language = '$language'",
@@ -93,7 +85,7 @@ public class BookGraphDAO {
      * @param book
      */
     public boolean deleteBook(Book book) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (b:Book {id: $id}) DELETE b",
                 parameters("id", book.getId())
@@ -109,7 +101,7 @@ public class BookGraphDAO {
      * @param bookId
      */
     public boolean deleteBookById(ObjectId bookId) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (b:Book {id: $id}) DELETE b",
                 parameters("id", bookId)

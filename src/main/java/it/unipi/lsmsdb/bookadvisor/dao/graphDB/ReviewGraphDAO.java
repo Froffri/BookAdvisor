@@ -12,18 +12,10 @@ import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 import it.unipi.lsmsdb.bookadvisor.model.user.RegisteredUser;
 
 public class ReviewGraphDAO {
-    private final Driver driver;
+    private final Neo4jConnector connector;
 
-    public ReviewGraphDAO(String uri, String username, String password) {
-        this.driver = GraphDatabase.driver(uri, AuthTokens.basic(username, password));
-    }
-
-    public ReviewGraphDAO(Driver driver) {
-        this.driver = driver;
-    }
-
-    public void close() {
-        this.driver.close();
+    public ReviewGraphDAO(Neo4jConnector connector) {
+        this.connector = connector;
     }
 
     // CREATE 
@@ -34,7 +26,7 @@ public class ReviewGraphDAO {
      * @param rating
      */
     public boolean addReview(String userId, String bookId, int rating) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +
                 "WITH usr" +
@@ -55,7 +47,7 @@ public class ReviewGraphDAO {
      * @param review
      */
     public boolean addReview(Review review) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +
                 "WITH usr" +
@@ -79,7 +71,7 @@ public class ReviewGraphDAO {
      * @param bookId
      */
     public Review getReview(String userId, String bookId) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             Result result = session.run(
                 "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book})" +
                 "RETURN r.stars AS rating",
@@ -104,7 +96,7 @@ public class ReviewGraphDAO {
      * @param rating
      */
     public boolean updateReview(String userId, String bookId, int rating) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +
                 "WITH usr" +
@@ -126,7 +118,7 @@ public class ReviewGraphDAO {
      * @param review
      */
     public boolean updateReview(Review review) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +
                 "WITH usr" +
@@ -151,7 +143,7 @@ public class ReviewGraphDAO {
      * @param bookId
      */
     public boolean deleteReview(ObjectId userId, ObjectId bookId) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +
                 "WITH usr" +
@@ -173,7 +165,7 @@ public class ReviewGraphDAO {
      * @param bookId
      */
     public boolean deleteReview(Review review) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +
                 "WITH usr" +
@@ -195,7 +187,7 @@ public class ReviewGraphDAO {
      * @param book
      */
     public boolean deleteReview(RegisteredUser user, Book book) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +
                 "WITH usr" +

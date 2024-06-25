@@ -9,18 +9,10 @@ import it.unipi.lsmsdb.bookadvisor.model.follow.Follow;
 import it.unipi.lsmsdb.bookadvisor.model.user.RegisteredUser;
 
 public class FollowGraphDAO {
-    private final Driver driver;
+    private final Neo4jConnector connector;
 
-    public FollowGraphDAO(String uri, String user, String password) {
-        this.driver = GraphDatabase.driver(uri, AuthTokens.basic(user, password));
-    }
-    
-    public FollowGraphDAO(Driver driver) {
-        this.driver = driver;
-    }
-
-    public void close() {
-        this.driver.close();
+    public FollowGraphDAO(Neo4jConnector connector) {
+        this.connector = connector;
     }
 
     // CREATE
@@ -30,7 +22,7 @@ public class FollowGraphDAO {
      * @param follow
      */
     public void addFollow(Follow follow) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (fwer:User {id: $follower})" +
                 "WITH fwer" +
@@ -49,7 +41,7 @@ public class FollowGraphDAO {
      * @param followed
      */
     public void addFollow(RegisteredUser follower, RegisteredUser followed) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (fwer:User {id: $follower})" +
                 "WITH fwer" +
@@ -68,7 +60,7 @@ public class FollowGraphDAO {
      * @param followedId
      */
     public void addFollowByIds(ObjectId followerId, ObjectId followedId) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (fwer:User {id: $follower})" +
                 "WITH fwer" +
@@ -84,7 +76,7 @@ public class FollowGraphDAO {
     // READ 
 
     public boolean getFollow(RegisteredUser follower, RegisteredUser followed) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             Result result = session.run(
                 "MATCH (fwr:User {id: $follower})-[f:FOLLOWS]->(fwd:User {id: $followed})" +
                 "RETURN f",
@@ -100,7 +92,7 @@ public class FollowGraphDAO {
     }
     
     public boolean getFollowbyId(ObjectId followerId, ObjectId followedId) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             Result result = session.run(
                 "MATCH (fwr:User {id: $follower})-[f:FOLLOWS]->(fwd:User {id: $followed})" +
                 "RETURN f",
@@ -123,7 +115,7 @@ public class FollowGraphDAO {
      * @param followed
      */
     public void deleteFollow(RegisteredUser follower, RegisteredUser followed) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (fwr:User {id: $follower})" +
                 "WITH fwr" +
@@ -141,7 +133,7 @@ public class FollowGraphDAO {
      * @param follow
      */
     public void deleteFollow(Follow follow) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (fwer:User {id: $follower})-[f:FOLLOWS]->(fwed:User {id: $followed}) " +
                 "DELETE f", 
@@ -157,7 +149,7 @@ public class FollowGraphDAO {
      * @param followedId
      */
     public void deleteFollow(ObjectId followerId, ObjectId followedId) {
-        try (Session session = driver.session()) {
+        try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (fwr:User {id: $follower}), (fwd:User {id: $followed})" +
                 "WHERE (fwr)-[f:FOLLOWS]->(fwd)" +
