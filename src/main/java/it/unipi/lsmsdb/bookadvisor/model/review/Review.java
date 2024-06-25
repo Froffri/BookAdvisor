@@ -107,19 +107,19 @@ public class Review {
         this.stars = stars;
     }
 
-    public int getcountUpVote() {
+    public int getCountUpVote() {
         return countUpVote;
     }
 
-    public void setcountUpVote(int countUpVote) {
+    public void setCountUpVote(int countUpVote) {
         this.countUpVote = countUpVote;
     }
 
-    public int getcountDownVote() {
+    public int getCountDownVote() {
         return countDownVote;
     }
 
-    public void setcountDownVote(int countDownVote) {
+    public void setCountDownVote(int countDownVote) {
         this.countDownVote = countDownVote;
     }
 }

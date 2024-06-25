@@ -1,5 +1,6 @@
 package it.unipi.lsmsdb.bookadvisor.model.book;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -12,49 +13,108 @@ import it.unipi.lsmsdb.bookadvisor.model.review.Review;
   
 
 public class Book {
+
+    public class Author {
+        private ObjectId id;
+        private String name;
+
+        // Costruttore
+        public Author(ObjectId id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+        public Author(Author author) {
+            this.id = author.id;
+            this.name = author.name;
+        }
+
+        // Getter e Setter
+        public ObjectId getId() {
+            return id;
+        }
+
+        public void setId(ObjectId id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return "Author{id=" + id + ", name='" + name + "'}";
+        }
+        public Document toDocument() {
+            return new Document("id", id).append("name", name);
+        }
+    }
+
+
     private ObjectId id;
     private int sumStars;
     private int numRatings;
     private String language;
     private String title;
-    private ObjectId[] author;
+    private Author[] authors;
     private String[] genre;
     private int year;
     private String imageUrl;
     private int numPages;
+    private ObjectId[] reviewIds;
     private Map<String, RatingAggregate> ratingsAggByNat;
     private List<Review> most10UsefulReviews;
 
     // Constructor
     public Book(ObjectId id, int sumStars, int numRatings, String language, 
-                String title, ObjectId[] author, String[] genre, int year, 
-                String imageUrl, int numPages, Map<String, RatingAggregate> ratingsAggByNat, List<Review> most10UsefulReviews) {
+                String title, ObjectId[] authorId, Author[] authors, String[] genre, int year, 
+                String imageUrl, int numPages, ObjectId[] reviewIds, Map<String, RatingAggregate> ratingsAggByNat, List<Review> most10UsefulReviews) {
         this.id = id;
         this.sumStars = sumStars;
         this.numRatings = numRatings;
         this.language = language;
         this.title = title;
-        this.author = author;
+        this.authors = new Author[authors.length];
+        
+        for (int i = 0; i < authors.length; i++) {
+            this.authors[i] = new Author(authors[i]);
+        }
+
         this.genre = genre;
         this.year = year;
         this.imageUrl = imageUrl;
         this.numPages = numPages;
+        this.reviewIds = reviewIds;
         this.ratingsAggByNat = ratingsAggByNat;
         this.most10UsefulReviews = most10UsefulReviews;
     }
 
     // Constructor that accepts a Document object
+    // Constructor using Document
     public Book(Document doc) {
         this.id = doc.getObjectId("_id");
         this.sumStars = doc.getInteger("sumStars");
         this.numRatings = doc.getInteger("numRatings");
         this.language = doc.getString("language");
         this.title = doc.getString("title");
-        this.author = (ObjectId[]) doc.get("author");
-        this.genre = (String[]) doc.get("genre");
+        
+        List<ObjectId> authorIdList = (List<ObjectId>) doc.get("authorId");
+        List<String> authorNameList = (List<String>) doc.get("authorName");
+        
+        this.authors = new Author[authorIdList.size()];
+        for (int i = 0; i < authorIdList.size(); i++) {
+            this.authors[i] = new Author(authorIdList.get(i), authorNameList.get(i));
+        }
+
+        this.genre = doc.getList("genre", String.class).toArray(new String[0]);
         this.year = doc.getInteger("year");
         this.imageUrl = doc.getString("imageUrl");
         this.numPages = doc.getInteger("numPages");
+        this.reviewIds = doc.getList("reviewIds", ObjectId.class).toArray(new ObjectId[0]);
         this.ratingsAggByNat = (Map<String, RatingAggregate>) doc.get("ratingsAggByNat");
         this.most10UsefulReviews = (List<Review>) doc.get("most10UsefulReviews");
     }
@@ -66,25 +126,34 @@ public class Book {
         this.numRatings = 0;
         this.language = node.get("language").asString();
         this.title = node.get("title").asString();
-        this.author = null;
+        this.authors = null;
         this.genre = null;
         this.year = 0;
         this.imageUrl = null;
         this.numPages = 0;
+        this.reviewIds = null;
         this.ratingsAggByNat = null;
         this.most10UsefulReviews = null;
     }
 
-    // Method to convert a Book object to a Document
+     // Method to convert a Book object to a Document
     public Document toDocument() {
-        return new Document("title", title)
-                .append("author", author)
+        List<Document> authorDocs = new ArrayList<>();
+        for (Author author : authors) {
+            authorDocs.add(author.toDocument());
+        }
+
+        return new Document("id", id)
+                .append("title", title)
+                .append("authors", authorDocs)
                 .append("genre", genre)
                 .append("year", year)
-                .append("lodel.review.Review;anguage", language)
+                .append("language", language)
                 .append("numPages", numPages)
                 .append("sumStars", sumStars)
                 .append("numRatings", numRatings)
+                .append("imageUrl", imageUrl)
+                .append("reviewIds", reviewIds)
                 .append("ratingsAggByNat", ratingsAggByNat)
                 .append("most10UsefulReviews", most10UsefulReviews);
     }
@@ -114,12 +183,12 @@ public class Book {
         this.numRatings = numRatings;
     }
 
-    public ObjectId[] getAuthor() {
-        return author;
+    public Author[] getAuthors() {
+        return authors;
     }
-
-    public void setAuthor(ObjectId[] author) {
-        this.author = author;
+    
+    public void setAuthors(Author[] authors) {
+        this.authors = authors;
     }
 
     public String getLanguage() {
@@ -186,6 +255,14 @@ public class Book {
         this.most10UsefulReviews = most10UsefulReviews;
     }
 
+    public ObjectId[] getReviewIds() {
+        return reviewIds;
+    }
+
+    public void setReviewIds(ObjectId[] reviewIds) {
+        this.reviewIds = reviewIds;
+    }
+
     @Override
     public String toString() {
         return "Book{" +
@@ -194,17 +271,18 @@ public class Book {
                 ", numRatings=" + numRatings +
                 ", language='" + language + '\'' +
                 ", title='" + title + '\'' +
-                ", author=" + author +
+                ", authors=" + authors.toString() +
                 ", genre=" + genre +
                 ", year=" + year +
                 ", imageUrl='" + imageUrl + '\'' +
                 ", numPages=" + numPages +
+                ", reviewIds=" + reviewIds +
                 ", ratingsAggByNat=" + ratingsAggByNat +
                 ", most10UsefulReviews=" + most10UsefulReviews +
                 '}';
     }
 
-    public void addReview(String nat, int rating) {
+    public void addRating(String nat, int rating) {
         RatingAggregate ratingAggregate = ratingsAggByNat.get(nat);
         if (ratingAggregate == null) {
             ratingAggregate = new RatingAggregate();
@@ -213,25 +291,52 @@ public class Book {
         ratingAggregate.addRating(rating);
     }
 
-    public void removeReview(String nat, int rating) {
+    public void removeRating(String nat, int rating) {
         RatingAggregate ratingAggregate = ratingsAggByNat.get(nat);
         if (ratingAggregate != null) {
             ratingAggregate.removeRating(rating);
         }
     }
 
-    public void updateReview(String nat, int oldRating, int newRating) {
+    public void updateRating(String nat, int oldRating, int newRating) {
         RatingAggregate ratingAggregate = ratingsAggByNat.get(nat);
         if (ratingAggregate != null) {
             ratingAggregate.updateRating(oldRating, newRating);
         }
     }
 
-    public void addReview(ObjectId id, ObjectId userId, ObjectId bookId, String text, String nat,  int stars, int countUpVote, int countDownVote) {
+    public void insertReview(ObjectId id, ObjectId userId, ObjectId bookId, String text, String nat,  int stars, int countUpVote, int countDownVote) {
         Review review = new Review(id, userId, bookId, text, nat, stars, countUpVote, countDownVote);
         most10UsefulReviews.add(review);
-        addReview(nat, stars);
     }
 
+    public void removeReview(ObjectId reviewId) {
+        for (Review review : most10UsefulReviews) {
+            if (review.getId().equals(reviewId)) {
+                most10UsefulReviews.remove(review);
+                break;
+            }
+        }
+    }
+
+    public void updateReview(ObjectId reviewId, String text, int stars) {
+        for (Review review : most10UsefulReviews) {
+            if (review.getId().equals(reviewId)) {
+                review.setText(text);
+                review.setStars(stars);
+                break;
+            }
+        }
+    }
+
+    public void updateReviewVotes(ObjectId reviewId, int countUpVote, int countDownVote) {
+        for (Review review : most10UsefulReviews) {
+            if (review.getId().equals(reviewId)) {
+                review.setCountUpVote(countUpVote);
+                review.setCountDownVote(countDownVote);
+                break;
+            }
+        }
+    }
 
 }
