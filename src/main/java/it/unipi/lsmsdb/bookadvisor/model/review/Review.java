@@ -16,16 +16,16 @@ public class Review {
     private int countDownVote;
 
     // Constructor
-    public Review(ObjectId id, ObjectId userId, ObjectId bookId, String text, String country, int stars, int countUpVote, int countDownVote, String nickname) {
+    public Review(ObjectId id, ObjectId userId, ObjectId bookId, String nickname, String text, String country, int stars, int countUpVote, int countDownVote) {
         this.id = id;
         this.userId = userId;
         this.bookId = bookId;
+        this.nickname = nickname; 
         this.text = text;
         this.country = country;
         this.stars = stars;
         this.countUpVote = countUpVote;
         this.countDownVote = countDownVote;
-        this.nickname = nickname; 
     }
 
     // Constructor that accepts a Document

@@ -307,8 +307,8 @@ public class Book {
         }
     }
 
-    public void insertReview(ObjectId id, ObjectId userId, ObjectId bookId, String text, String nat,  int stars, int countUpVote, int countDownVote) {
-        Review review = new Review(id, userId, bookId, text, nat, stars, countUpVote, countDownVote);
+    public void insertReview(ObjectId id, ObjectId userId, ObjectId bookId, String nickname, String text, String nat,  int stars, int countUpVote, int countDownVote) {
+        Review review = new Review(id, userId, bookId, nickname, text, nat, stars, countUpVote, countDownVote);
         most10UsefulReviews.add(review);
     }
 
