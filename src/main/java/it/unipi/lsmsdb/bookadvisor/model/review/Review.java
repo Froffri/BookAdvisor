@@ -15,8 +15,8 @@ public class Review {
     private int countUpVote;
     private int countDownVote;
 
-    // Costruttore
-    public Review(ObjectId id, ObjectId userId, ObjectId bookId, String text, String country,  int stars, int countUpVote, int countDownVote) {
+    // Constructor
+    public Review(ObjectId id, ObjectId userId, ObjectId bookId, String text, String country, int stars, int countUpVote, int countDownVote, String nickname) {
         this.id = id;
         this.userId = userId;
         this.bookId = bookId;
@@ -25,13 +25,15 @@ public class Review {
         this.stars = stars;
         this.countUpVote = countUpVote;
         this.countDownVote = countDownVote;
+        this.nickname = nickname; 
     }
 
-    // Costruttore che accetta un Document
+    // Constructor that accepts a Document
     public Review(Document doc) {
         this.id = doc.getObjectId("_id");
         this.userId = doc.getObjectId("userId");
         this.bookId = doc.getObjectId("bookId");
+        this.nickname = doc.getString("nickname"); 
         this.text = doc.getString("text");
         this.country = doc.getString("country");
         this.stars = doc.getInteger("stars", 0);
@@ -39,26 +41,31 @@ public class Review {
         this.countDownVote = doc.getInteger("countDownVote", 0);
     }
 
-    // Costruttore che accetta un Node
+    // Constructor that accepts a Node
     public Review(Node node) {
         this.id = null;
         this.userId = new ObjectId(node.get("userId").asString());
         this.bookId = new ObjectId(node.get("bookId").asString());
+        this.nickname = null;
         this.text = null;
+        this.country = null;
         this.stars = node.get("stars").asInt();
+        this.countUpVote = 0;
+        this.countDownVote = 0;
     }
 
-    // Metodo per convertire in Document
+    // Method to convert to Document
     public Document toDocument() {
         return new Document("userId", userId)
                 .append("bookId", bookId)
+                .append("nickname", nickname)
                 .append("text", text)
                 .append("country", country)
                 .append("stars", stars)
                 .append("countUpVote", countUpVote)
                 .append("countDownVote", countDownVote);
     }
- 
+
     public ObjectId getId() {
         return id;
     }
@@ -121,5 +128,29 @@ public class Review {
 
     public void setCountDownVote(int countDownVote) {
         this.countDownVote = countDownVote;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    // toString method for debugging and logging
+    @Override
+    public String toString() {
+        return "Review{" +
+                "id=" + id +
+                ", userId=" + userId +
+                ", bookId=" + bookId +
+                ", nickname='" + nickname + '\'' +
+                ", text='" + text + '\'' +
+                ", country='" + country + '\'' +
+                ", stars=" + stars +
+                ", countUpVote=" + countUpVote +
+                ", countDownVote=" + countDownVote +
+                '}';
     }
 }

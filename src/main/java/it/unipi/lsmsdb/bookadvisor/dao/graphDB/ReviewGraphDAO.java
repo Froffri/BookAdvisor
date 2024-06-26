@@ -9,7 +9,7 @@ import org.neo4j.driver.types.Node;
 
 import it.unipi.lsmsdb.bookadvisor.model.book.Book;
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
-import it.unipi.lsmsdb.bookadvisor.model.user.RegisteredUser;
+import it.unipi.lsmsdb.bookadvisor.model.user.Reviewer;
 
 public class ReviewGraphDAO {
     private final Neo4jConnector connector;
@@ -186,7 +186,7 @@ public class ReviewGraphDAO {
      * @param user
      * @param book
      */
-    public boolean deleteReview(RegisteredUser user, Book book) {
+    public boolean deleteReview(Reviewer user, Book book) {
         try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +

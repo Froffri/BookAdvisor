@@ -1,7 +1,7 @@
 package it.unipi.lsmsdb.bookadvisor.service;
 
 import it.unipi.lsmsdb.bookadvisor.model.user.Author;
-import it.unipi.lsmsdb.bookadvisor.model.user.RegisteredUser;
+import it.unipi.lsmsdb.bookadvisor.model.user.Reviewer;
 import it.unipi.lsmsdb.bookadvisor.model.user.User;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
 import it.unipi.lsmsdb.bookadvisor.dao.graphDB.UserGraphDAO;
@@ -51,7 +51,7 @@ public class AuthenticationService {
             }
         }
         else if(favouriteGenres != null){
-            RegisteredUser newUser = new RegisteredUser(name, username, hashedPassword, birthdate, gender, nationality, favouriteGenres, spokenLanguages); 
+            Reviewer newUser = new Reviewer(name, username, hashedPassword, birthdate, gender, nationality, favouriteGenres, spokenLanguages); 
             
             // Aggiunta dell'utente al database
             if(userDao.addUser(newUser)){

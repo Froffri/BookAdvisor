@@ -54,7 +54,6 @@ public class Book {
         }
     }
 
-
     private ObjectId id;
     private int sumStars;
     private int numRatings;
@@ -102,12 +101,15 @@ public class Book {
         this.language = doc.getString("language");
         this.title = doc.getString("title");
         
-        List<ObjectId> authorIdList = (List<ObjectId>) doc.get("authorId");
-        List<String> authorNameList = (List<String>) doc.get("authorName");
-        
-        this.authors = new Author[authorIdList.size()];
-        for (int i = 0; i < authorIdList.size(); i++) {
-            this.authors[i] = new Author(authorIdList.get(i), authorNameList.get(i));
+        this.authors = doc.getList("authors", Document.class).stream()
+                .map(authorDoc -> new Author(authorDoc.getObjectId("id"), authorDoc.getString("name")))
+                .toArray(Author[]::new);
+
+        List<Document> authorsList = (List<Document>) doc.get("authors");
+        this.authors = new Author[authorsList.size()];
+        for (int i = 0; i < authorsList.size(); i++) {
+            Document authorDoc = authorsList.get(i);
+            this.authors[i] = new Author(authorDoc.getObjectId("authorId"), authorDoc.getString("authorName"));
         }
 
         this.genre = doc.getList("genre", String.class).toArray(new String[0]);

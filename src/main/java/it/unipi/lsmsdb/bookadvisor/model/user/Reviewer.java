@@ -1,26 +1,28 @@
 package it.unipi.lsmsdb.bookadvisor.model.user;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDate;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.neo4j.driver.Value;
-import org.neo4j.driver.types.*;
+import org.neo4j.driver.types.Node;
 
-public class RegisteredUser extends User {
+public class Reviewer extends User {
     private String nationality;
     private List<String> favouriteGenres;
     private List<String> spokenLanguages;
     private List<ObjectId> upVotedReviews;
     private List<ObjectId> downVotedReviews;
+    private List<ObjectId> reviewIds; 
 
     // Default constructor
-    public RegisteredUser() {
+    public Reviewer() {
         super();
     }
 
     // Parameterized constructor
-    public RegisteredUser(ObjectId id, String name, String nickname, String password, LocalDate birthdate,
+    public Reviewer(ObjectId id, String name, String nickname, String password, LocalDate birthdate,
                           String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages) {
         super(id, name, nickname, password, birthdate, gender);
         this.nationality = nationality;
@@ -28,9 +30,10 @@ public class RegisteredUser extends User {
         this.spokenLanguages = spokenLanguages;
         this.downVotedReviews = null;
         this.upVotedReviews = null;
+        this.reviewIds = null; // Initialize reviewIds
     }
 
-    public RegisteredUser(String name, String nickname, String password, LocalDate birthdate,
+    public Reviewer(String name, String nickname, String password, LocalDate birthdate,
                           String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages) {
         super(name, nickname, password, birthdate, gender);
         this.nationality = nationality;
@@ -38,23 +41,28 @@ public class RegisteredUser extends User {
         this.spokenLanguages = spokenLanguages;
         this.downVotedReviews = null;
         this.upVotedReviews = null;
+        this.reviewIds = null; // Initialize reviewIds
     }
 
     // Constructor from MongoDB Document
-    public RegisteredUser(Document doc) {
+    public Reviewer(Document doc) {
         super(doc);
         this.nationality = doc.getString("nationality");
         this.favouriteGenres = doc.getList("favouriteGenres", String.class);
         this.spokenLanguages = doc.getList("spokenLanguages", String.class);
         this.downVotedReviews = doc.getList("downVotedReviews", ObjectId.class);
         this.upVotedReviews = doc.getList("upVotedReviews", ObjectId.class);
+        this.reviewIds = doc.getList("reviewIds", ObjectId.class); // Extract reviewIds
     }    
     
     // Constructor from Neo4j Node
-    public RegisteredUser(Node node) {
+    public Reviewer(Node node) {
         super(node);
         this.favouriteGenres = node.get("favouriteGenres").asList(Value::asString);
         this.spokenLanguages = null;
+        this.downVotedReviews = null;
+        this.upVotedReviews = null;
+        this.reviewIds = null; 
     }
 
     // Getters and Setters
@@ -107,6 +115,19 @@ public class RegisteredUser extends User {
         this.upVotedReviews = upVotedReviews;
     }
 
+    public void addUpVotedReview(ObjectId reviewId) {
+        if (this.upVotedReviews == null) {
+            this.upVotedReviews = new ArrayList<>();
+        }
+        this.upVotedReviews.add(reviewId);
+    }
+
+    public void removeUpVotedReview(ObjectId reviewId) {
+        if (this.upVotedReviews != null) {
+            this.upVotedReviews.remove(reviewId);
+        }
+    }
+
     public List<ObjectId> getDownVotedReviews() {
         return downVotedReviews;
     }
@@ -115,13 +136,37 @@ public class RegisteredUser extends User {
         this.downVotedReviews = downVotedReviews;
     }
 
+    public void addDownVotedReview(ObjectId reviewId) {
+        if (this.downVotedReviews == null) {
+            this.downVotedReviews = new ArrayList<>();
+        }
+        this.downVotedReviews.add(reviewId);
+    }
+
+    public void removeDownVotedReview(ObjectId reviewId) {
+        if (this.downVotedReviews != null) {
+            this.downVotedReviews.remove(reviewId);
+        }
+    }
+
+    public List<ObjectId> getReviewIds() {
+        return reviewIds;
+    }
+
+    public void setReviewIds(List<ObjectId> reviewIds) {
+        this.reviewIds = reviewIds;
+    }
+
     // toString method for debugging and logging
     @Override
     public String toString() {
-        return "RegisteredUser{" +
+        return "Reviewer{" +
                 "nationality='" + nationality + '\'' +
                 ", favouriteGenres=" + favouriteGenres +
                 ", spokenLanguages=" + spokenLanguages +
+                ", upVotedReviews=" + upVotedReviews +
+                ", downVotedReviews=" + downVotedReviews +
+                ", reviewIds=" + reviewIds +
                 "} " + super.toString();
     }
 
@@ -133,7 +178,40 @@ public class RegisteredUser extends User {
         .append("favouriteGenres", favouriteGenres)
         .append("spokenLanguages", spokenLanguages)
         .append("upVotedReviews", upVotedReviews)
-        .append("downVotedReviews", downVotedReviews);
+        .append("downVotedReviews", downVotedReviews)
+        .append("reviewIds", reviewIds);
         return doc;
+    }
+
+    // CRUD operations for reviews
+
+    // Add a review ID to the reviewIds list
+    public void addReview(ObjectId reviewId) {
+        if (this.reviewIds == null) {
+            this.reviewIds = new ArrayList<>();
+        }
+        this.reviewIds.add(reviewId);
+    }
+
+    // Remove a review ID from the reviewIds list
+    public void removeReview(ObjectId reviewId) {
+        if (this.reviewIds != null) {
+            this.reviewIds.remove(reviewId);
+        }
+    }
+
+    // Update a review ID in the reviewIds list
+    public void updateReview(ObjectId oldReviewId, ObjectId newReviewId) {
+        if (this.reviewIds != null) {
+            int index = this.reviewIds.indexOf(oldReviewId);
+            if (index != -1) {
+                this.reviewIds.set(index, newReviewId);
+            }
+        }
+    }
+
+    // Get all review IDs
+    public List<ObjectId> getAllReviews() {
+        return this.reviewIds;
     }
 }
