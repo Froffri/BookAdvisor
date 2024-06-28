@@ -14,7 +14,7 @@ import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 
 public class Book {
 
-    public class Author {
+    public static class Author {
         private ObjectId id;
         private String name;
 

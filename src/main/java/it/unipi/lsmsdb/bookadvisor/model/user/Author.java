@@ -27,10 +27,10 @@ public class Author extends Reviewer {
     
     public Author(String name, String nickname, String password, LocalDate birthdate,
                   String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages, 
-                  List<String> genres, List<ObjectId> bookIds) {
+                  List<String> genres) {
         super(name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
         this.genres = genres;
-        this.bookIds = bookIds; // Initialize bookIds
+        this.bookIds = null; // Initialize bookIds
     }
 
     // Constructor from MongoDB Document
