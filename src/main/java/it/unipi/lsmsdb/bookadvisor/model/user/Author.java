@@ -9,7 +9,7 @@ import java.time.LocalDate;
 
 public class Author extends Reviewer {
     private List<String> genres;
-    private List<ObjectId> bookIds; // New attribute for book IDs
+    private List<ObjectId> bookIds; 
 
     // Default constructor
     public Author() {
@@ -22,7 +22,7 @@ public class Author extends Reviewer {
                   List<String> genres, List<ObjectId> bookIds) {
         super(id, name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
         this.genres = genres;
-        this.bookIds = bookIds; // Initialize bookIds
+        this.bookIds = bookIds; 
     }
     
     public Author(String name, String nickname, String password, LocalDate birthdate,
@@ -30,21 +30,21 @@ public class Author extends Reviewer {
                   List<String> genres) {
         super(name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
         this.genres = genres;
-        this.bookIds = null; // Initialize bookIds
+        this.bookIds = null; 
     }
 
     // Constructor from MongoDB Document
     public Author(Document doc) {
         super(doc);
         this.genres = doc.getList("genres", String.class);
-        this.bookIds = doc.getList("bookIds", ObjectId.class); // Extract bookIds
+        this.bookIds = doc.getList("bookIds", ObjectId.class); 
     }
 
     // Constructor from Neo4j Node
     public Author(org.neo4j.driver.types.Node node) {
         super(node);
         this.genres = null;
-        this.bookIds = null; // Initialize bookIds
+        this.bookIds = null; 
     }
 
     // Getter and setter for genres
@@ -87,7 +87,7 @@ public class Author extends Reviewer {
     public Document toDocument() {
         Document doc = super.toDocument();
         doc.append("genres", genres)
-           .append("bookIds", bookIds); // Append bookIds
+           .append("bookIds", bookIds); 
         return doc;
     }
     

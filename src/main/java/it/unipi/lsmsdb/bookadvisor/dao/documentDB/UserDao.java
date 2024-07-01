@@ -117,30 +117,53 @@ public class UserDao {
     }
 
     // Vote for a review (upvote or downvote)
-    // If addVote is true, the vote is added; otherwise, it is removed
     // If vote is true, the vote is an upvote; otherwise, it is a downvote
-    public boolean voteForReview(User user, ObjectId reviewId, boolean vote, boolean addVote) {
-        String voteType = (vote) ? "upVotedReviews" : "downVotedReviews";
-        int increment = (addVote) ? 1 : -1;
+    public boolean voteForReview(Reviewer user, ObjectId reviewId, boolean vote) {
+
+        boolean hasUpvoted = user.getUpVotedReviews().contains(reviewId);
+        boolean hasDownvoted = user.getDownVotedReviews().contains(reviewId);
 
         try {
-            UpdateResult result = collection.updateOne(
-                Filters.eq("_id", user.getId()),
-                new Document(
-                    (addVote) ? "$addToSet" : "$pull",
-                    new Document(voteType, reviewId)
-                )
-            );
+            if (vote) {
+                if (hasUpvoted) {
+                    // Remove existing upvote
+                    user.getUpVotedReviews().remove(reviewId);
+                    reviewDao.updateVoteCount(reviewId, "countUpVote", -1);
+                } else {
+                    // Remove existing downvote if present
+                    if (hasDownvoted) {
+                        user.getDownVotedReviews().remove(reviewId);
+                        reviewDao.updateVoteCount(reviewId, "countDownVote", -1);
+                    }
+                    // Add new upvote
+                    user.getUpVotedReviews().add(reviewId);
+                    reviewDao.updateVoteCount(reviewId, "countUpVote", 1);
+                }
+            } else {
+                if (hasDownvoted) {
+                    // Remove existing downvote
+                    user.getDownVotedReviews().remove(reviewId);
+                    reviewDao.updateVoteCount(reviewId, "countDownVote", -1);
+                } else {
+                    // Remove existing upvote if present
+                    if (hasUpvoted) {
+                        user.getUpVotedReviews().remove(reviewId);
+                        reviewDao.updateVoteCount(reviewId, "countUpVote", -1);
+                    }
+                    // Add new downvote
+                    user.getDownVotedReviews().add(reviewId);
+                    reviewDao.updateVoteCount(reviewId, "countDownVote", 1);
+                }
+            }
 
-            // Update the vote count in the reviewDao
-            reviewDao.updateVoteCount(reviewId, (vote) ? "countUpVote" : "countDownVote", increment);
-
-            return result.getModifiedCount() > 0;
+            // Update user information in the database
+            return updateUser(user);
         } catch (Exception e) {
             System.err.println("Error while voting for a review: " + e.getMessage());
             return false;
         }
     }
+
 
     // Add a review to a user
     public void addReview(ObjectId userId, ObjectId reviewId) {
