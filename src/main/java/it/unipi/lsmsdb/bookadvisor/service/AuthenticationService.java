@@ -27,6 +27,7 @@ public class AuthenticationService {
         // Verifica se l'utente esiste già
         if (userDao.findUserByUsername(username) != null) {
             // L'utente esiste già
+            System.out.println("User already exists");
             return false;
         }
 
