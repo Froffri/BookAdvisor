@@ -207,14 +207,23 @@ public class BookDao {
                 int sumStars = book.getInteger("sumStars", 0) + rating;
                 int numRatings = book.getInteger("numRatings", 0);
                 numRatings = rating > 0 ? numRatings + 1 : numRatings - 1;
-
+    
                 // Aggiornamento del sumRating e della cardinality in base alla nazionalità
                 Document ratingsAggByNat = book.get("ratingsAggByNat", Document.class);
+                if (ratingsAggByNat == null) {
+                    ratingsAggByNat = new Document();
+                }
                 Document nationalityStats = ratingsAggByNat.get(nationality, Document.class);
+    
+                // Se non esiste la statistica per la nazionalità, la inizializzo
+                if (nationalityStats == null) {
+                    nationalityStats = new Document("sumRating", 0).append("cardinality", 0);
+                }
+    
                 int sumRatingByNat = nationalityStats.getInteger("sumRating", 0) + rating;
                 int cardinality = nationalityStats.getInteger("cardinality", 0);
                 cardinality = rating > 0 ? cardinality + 1 : cardinality - 1;
-                
+    
                 collection.updateOne(
                     Filters.eq("_id", bookId),
                     Updates.combine(
