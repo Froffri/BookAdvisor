@@ -53,7 +53,7 @@ public class BookService {
 
         if (user instanceof Author) {
             Author author = (Author) user;
-            if (Arrays.asList(book.getAuthor()).contains(author.getId())) {
+            if (Arrays.asList(book.getAuthors()).contains(author.getId())) {
                 if(bookDao.updateBook(book)){
                     // Successfully updated the book in mongodb
                     if(bookGraphDAO.updateBook(book)){
@@ -108,7 +108,7 @@ public class BookService {
             Author author = (Author) user;
             Optional<Book> optionalBook = bookDao.findBookById(book.getId());
     
-            if (optionalBook.isPresent() && Arrays.asList(optionalBook.get().getAuthor()).contains(author.getId())) {
+            if (optionalBook.isPresent() && Arrays.asList(optionalBook.get().getAuthors()).contains(author.getId())) {
                 if(bookDao.deleteBook(book.getId())){
                     // Successfully deleted the book in mongodb
                     if(bookGraphDAO.deleteBook(book)){

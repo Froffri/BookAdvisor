@@ -27,7 +27,6 @@ public class UserDao {
     // Insert user into MongoDB
     public boolean addUser(User user) {
         try {
-            // Inserimento dell'utente nel database
             collection.insertOne(user.toDocument());
             System.out.println("Inserimento dell'utente riuscito.");
             return true;
@@ -35,7 +34,7 @@ public class UserDao {
             System.err.println("Errore durante l'inserimento dell'utente: " + e.getMessage());
             return false;
         }
-    } 
+    }
 
     // Find a user by their ID
     public User findUserById(ObjectId id) {
@@ -44,6 +43,28 @@ public class UserDao {
             return createUserFromDocument(doc);
         } catch (Exception e) {
             System.err.println("Errore durante la ricerca dell'utente per ID: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // Find a reviewer by their ID
+    public Reviewer findReviewerById(ObjectId id) {
+        try {
+            Document doc = collection.find(Filters.eq("_id", id)).first();
+            return createReviewerFromDocument(doc);
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca del recensore per ID: " + e.getMessage());
+            return null;
+        }
+    }
+
+    // Find an author by their ID
+    public Author findAuthorById(ObjectId id) {
+        try {
+            Document doc = collection.find(Filters.eq("_id", id)).first();
+            return createAuthorFromDocument(doc);
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca dell'autore per ID: " + e.getMessage());
             return null;
         }
     }
@@ -96,28 +117,72 @@ public class UserDao {
     }
 
     // Vote for a review (upvote or downvote)
-    // If addVote is true, the vote is added; otherwise, it is removed
     // If vote is true, the vote is an upvote; otherwise, it is a downvote
-    public boolean voteForReview(User user, ObjectId reviewId, boolean vote, boolean addVote) {
-        String voteType = (vote) ? "upvotedReviews" : "downvotedReviews";
-        int increment = (addVote) ? 1 : -1;
+    public boolean voteForReview(Reviewer user, ObjectId reviewId, boolean vote) {
+
+        boolean hasUpvoted = user.getUpVotedReviews().contains(reviewId);
+        boolean hasDownvoted = user.getDownVotedReviews().contains(reviewId);
 
         try {
-            UpdateResult result = collection.updateOne(
-                Filters.eq("_id", user.getId()),
-                new Document(
-                    (addVote) ? "$addToSet" : "$pull",
-                    new Document(voteType, reviewId)
-                )
-            );
+            if (vote) {
+                if (hasUpvoted) {
+                    // Remove existing upvote
+                    user.getUpVotedReviews().remove(reviewId);
+                    reviewDao.updateVoteCount(reviewId, "countUpVote", -1);
+                } else {
+                    // Remove existing downvote if present
+                    if (hasDownvoted) {
+                        user.getDownVotedReviews().remove(reviewId);
+                        reviewDao.updateVoteCount(reviewId, "countDownVote", -1);
+                    }
+                    // Add new upvote
+                    user.getUpVotedReviews().add(reviewId);
+                    reviewDao.updateVoteCount(reviewId, "countUpVote", 1);
+                }
+            } else {
+                if (hasDownvoted) {
+                    // Remove existing downvote
+                    user.getDownVotedReviews().remove(reviewId);
+                    reviewDao.updateVoteCount(reviewId, "countDownVote", -1);
+                } else {
+                    // Remove existing upvote if present
+                    if (hasUpvoted) {
+                        user.getUpVotedReviews().remove(reviewId);
+                        reviewDao.updateVoteCount(reviewId, "countUpVote", -1);
+                    }
+                    // Add new downvote
+                    user.getDownVotedReviews().add(reviewId);
+                    reviewDao.updateVoteCount(reviewId, "countDownVote", 1);
+                }
+            }
 
-            // Update the vote count in the reviewDao
-            reviewDao.updateVoteCount(reviewId, (vote) ? "countupvote" : "countdownvote", increment);
-
-            return result.getModifiedCount() > 0;
+            // Update user information in the database
+            return updateUser(user);
         } catch (Exception e) {
             System.err.println("Error while voting for a review: " + e.getMessage());
             return false;
+        }
+    }
+
+
+    // Add a review to a user
+    public void addReview(ObjectId userId, ObjectId reviewId) {
+        Reviewer user = findReviewerById(userId);
+        if (user != null) {
+            if (user.getReviewIds() == null) {
+                user.setReviewIds(new ArrayList<>());
+            }
+            user.addReview(reviewId);
+            updateUser(user);
+        }
+    }
+
+    // Remove a review from a user
+    public void removeReview(ObjectId userId, ObjectId reviewId) {
+        Reviewer user = findReviewerById(userId);
+        if (user != null) {
+            user.removeReview(reviewId);
+            updateUser(user);
         }
     }
 
@@ -127,17 +192,35 @@ public class UserDao {
             return null;
         }
 
-        // Verifica se è un Admin
+        // Check if it is an Admin
         if (doc.containsKey("isAdmin") && doc.getBoolean("isAdmin")) {
             return new Admin(doc);
         }
 
-        // Verifica se è un Author
+        // Check if it is an Author
         if (doc.containsKey("genres")) {
             return new Author(doc);
         }
 
-        // Se non è né Admin né Author, allora è un RegisteredUser
-        return new RegisteredUser(doc);
+        // Otherwise, it is a Reviewer
+        return new Reviewer(doc);
+    }
+
+    // Helper method to create a Reviewer object from a MongoDB document
+    private Reviewer createReviewerFromDocument(Document doc) {
+        if (doc == null) {
+            return null;
+        }
+
+        return new Reviewer(doc);
+    }
+
+    // Helper method to create an Author object from a MongoDB document
+    private Author createAuthorFromDocument(Document doc) {
+        if (doc == null) {
+            return null;
+        }
+
+        return new Author(doc);
     }
 }

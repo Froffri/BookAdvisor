@@ -6,7 +6,7 @@ import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
 
 import it.unipi.lsmsdb.bookadvisor.model.follow.Follow;
-import it.unipi.lsmsdb.bookadvisor.model.user.RegisteredUser;
+import it.unipi.lsmsdb.bookadvisor.model.user.Reviewer;
 
 public class FollowGraphDAO {
     private final Neo4jConnector connector;
@@ -40,7 +40,7 @@ public class FollowGraphDAO {
      * @param follower
      * @param followed
      */
-    public void addFollow(RegisteredUser follower, RegisteredUser followed) {
+    public void addFollow(Reviewer follower, Reviewer followed) {
         try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (fwer:User {id: $follower})" +
@@ -75,7 +75,7 @@ public class FollowGraphDAO {
 
     // READ 
 
-    public boolean getFollow(RegisteredUser follower, RegisteredUser followed) {
+    public boolean getFollow(Reviewer follower, Reviewer followed) {
         try (Session session = connector.getSession()) {
             Result result = session.run(
                 "MATCH (fwr:User {id: $follower})-[f:FOLLOWS]->(fwd:User {id: $followed})" +
@@ -114,7 +114,7 @@ public class FollowGraphDAO {
      * @param follower
      * @param followed
      */
-    public void deleteFollow(RegisteredUser follower, RegisteredUser followed) {
+    public void deleteFollow(Reviewer follower, Reviewer followed) {
         try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (fwr:User {id: $follower})" +

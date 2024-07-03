@@ -3,11 +3,13 @@ package it.unipi.lsmsdb.bookadvisor.model.user;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.time.LocalDate;
 
-public class Author extends RegisteredUser {
+public class Author extends Reviewer {
     private List<String> genres;
+    private List<ObjectId> bookIds; 
 
     // Default constructor
     public Author() {
@@ -17,27 +19,32 @@ public class Author extends RegisteredUser {
     // Parameterized constructor
     public Author(ObjectId id, String name, String nickname, String password, LocalDate birthdate,
                   String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages, 
-                  List<String> genres) {
+                  List<String> genres, List<ObjectId> bookIds) {
         super(id, name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
         this.genres = genres;
+        this.bookIds = bookIds; 
     }
+    
     public Author(String name, String nickname, String password, LocalDate birthdate,
                   String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages, 
                   List<String> genres) {
         super(name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
         this.genres = genres;
+        this.bookIds = null; 
     }
 
     // Constructor from MongoDB Document
     public Author(Document doc) {
         super(doc);
         this.genres = doc.getList("genres", String.class);
+        this.bookIds = doc.getList("bookIds", ObjectId.class); 
     }
 
     // Constructor from Neo4j Node
     public Author(org.neo4j.driver.types.Node node) {
         super(node);
         this.genres = null;
+        this.bookIds = null; 
     }
 
     // Getter and setter for genres
@@ -57,11 +64,21 @@ public class Author extends RegisteredUser {
         this.genres = genres;
     }
 
+    // Getter and setter for bookIds
+    public List<ObjectId> getBookIds() {
+        return bookIds;
+    }
+
+    public void setBookIds(List<ObjectId> bookIds) {
+        this.bookIds = bookIds;
+    }
+
     // toString method for debugging and logging
     @Override
     public String toString() {
         return "Author{" +
                 "genres=" + genres +
+                ", bookIds=" + bookIds +
                 "} " + super.toString();
     }
 
@@ -69,7 +86,40 @@ public class Author extends RegisteredUser {
     @Override
     public Document toDocument() {
         Document doc = super.toDocument();
-        doc.append("genres", genres);
+        doc.append("genres", genres)
+           .append("bookIds", bookIds); 
         return doc;
+    }
+    
+    // CRUD operations for bookIds
+
+    // Add a book ID to the bookIds list
+    public void addBook(ObjectId bookId) {
+        if (this.bookIds == null) {
+            this.bookIds = new ArrayList<>();
+        }
+        this.bookIds.add(bookId);
+    }
+
+    // Remove a book ID from the bookIds list
+    public void removeBook(ObjectId bookId) {
+        if (this.bookIds != null) {
+            this.bookIds.remove(bookId);
+        }
+    }
+
+    // Update a book ID in the bookIds list
+    public void updateBook(ObjectId oldBookId, ObjectId newBookId) {
+        if (this.bookIds != null) {
+            int index = this.bookIds.indexOf(oldBookId);
+            if (index != -1) {
+                this.bookIds.set(index, newBookId);
+            }
+        }
+    }
+
+    // Get all book IDs
+    public List<ObjectId> getAllBooks() {
+        return this.bookIds;
     }
 }

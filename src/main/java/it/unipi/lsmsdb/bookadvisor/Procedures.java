@@ -37,7 +37,8 @@ public class Procedures {
         this.connector = connector;
     }
 
-    public void runAggregation(ObjectId authorId) {
+    // Given an author, find the average rating of their books, the number of ratings, and the average rating per country and number of ratings per country
+    public void calculateAuthorStats(ObjectId authorId) {
         // Get the database and collection
         MongoDatabase database = connector.getDatabase();
         MongoCollection<Document> collection = database.getCollection("books");
@@ -92,7 +93,7 @@ public class Procedures {
 
     }
 
-
+    // Find the most famous books for a given genre in each country
     public void findMostFamousBooks(String genre) {
         // Connect to MongoDB
         // Get the database and collection
@@ -140,7 +141,7 @@ public class Procedures {
     }
 
 
-
+    // Find the three most useful reviews for a given user
     public void findMostUsefulReviews(String username) {
 
         // Get the database and collection

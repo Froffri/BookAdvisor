@@ -9,7 +9,7 @@ import java.util.List;
 import org.junit.Test;
 
 import it.unipi.lsmsdb.bookadvisor.model.user.Author;
-import it.unipi.lsmsdb.bookadvisor.model.user.RegisteredUser;
+import it.unipi.lsmsdb.bookadvisor.model.user.Reviewer;
 import it.unipi.lsmsdb.bookadvisor.model.user.User;
 
 /**

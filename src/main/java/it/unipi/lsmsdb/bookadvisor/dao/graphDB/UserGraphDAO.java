@@ -43,14 +43,14 @@ public class UserGraphDAO {
 
     // TEMPORARY FIX
     public boolean addUser(User user){
-        return addUser((RegisteredUser) user);
+        return addUser((Reviewer) user);
     }
 
     /**
      * Add a user to the graph database
      * @param user 
      */
-    public boolean addUser(RegisteredUser user) {
+    public boolean addUser(Reviewer user) {
         try (Session session = connector.getSession()) {
             // Create the node only if it hasn't been created
             session.run(
@@ -103,7 +103,7 @@ public class UserGraphDAO {
                 // else if(userNode.get("genres").asList(org.neo4j.driver.Value::asString).size() > 0)
                 //     userList.add(new Author(userNode));
                 // else if(userNode.get("fav_genres").asList(org.neo4j.driver.Value::asString).size() > 0)
-                    userList.add(new RegisteredUser(userNode));
+                    userList.add(new Reviewer(userNode));
                 // else
                 //     userList.add(new User(userNode));
             }
@@ -128,7 +128,7 @@ public class UserGraphDAO {
                 // else if(userNode.get("genres").asList(org.neo4j.driver.Value::asString).size() > 0)
                 //     return new Author(userNode);
                 // else if(userNode.get("fav_genres").asList(org.neo4j.driver.Value::asString).size() > 0)
-                    return new RegisteredUser(userNode);
+                    return new Reviewer(userNode);
                 // else
                 //     return new User(userNode);
             }
@@ -143,12 +143,12 @@ public class UserGraphDAO {
         // if(user instanceof Author)
         //     return updateUser((Author) user);
         // else if(user instanceof RegisteredUser)
-            return updateUser((RegisteredUser) user);
+            return updateUser((Reviewer) user);
 
         // throw new IllegalArgumentException("User type not supported");
     }
 
-    public boolean updateUser(RegisteredUser user) {
+    public boolean updateUser(Reviewer user) {
         try(Session session = connector.getSession()) {
             session.run(
                 "MATCH (u:User {id: $id}) " +

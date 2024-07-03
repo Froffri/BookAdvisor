@@ -18,11 +18,13 @@ public class ReviewDao {
     private static final String COLLECTION_NAME = "reviews";
     private MongoCollection<Document> collection;
     private BookDao bookDao;
+    private UserDao userDao;
 
     public ReviewDao(MongoDBConnector connector) {
         MongoDatabase database = connector.getDatabase();
         collection = database.getCollection(COLLECTION_NAME);
         this.bookDao = new BookDao(connector);
+        this.userDao = new UserDao(connector);
     }
 
     // Insert a new review into the database
@@ -30,6 +32,7 @@ public class ReviewDao {
         try {
             collection.insertOne(review.toDocument());
             bookDao.updateBookRating(review.getBookId(), review.getStars(), review.getCountry());
+            userDao.addReview(review.getUserId(), review.getId());
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiunta della recensione: " + e.getMessage());
             return false;
@@ -42,10 +45,10 @@ public class ReviewDao {
         try {
             // Trova la recensione vecchia prima dell'aggiornamento
             Review oldReview = findReviewById(review.getId());
-    
+
             // Aggiorna la recensione nel database
             UpdateResult result = collection.updateOne(Filters.eq("_id", review.getId()), new Document("$set", review.toDocument()));
-    
+
             // Se la recensione è stata effettivamente aggiornata
             if (result.getModifiedCount() > 0) {
                 // Sottrai il valore vecchio prima di aggiungere il nuovo valore
@@ -73,6 +76,7 @@ public class ReviewDao {
             if (result.getDeletedCount() > 0) {
                 // Sottrai il punteggio della recensione eliminata dal punteggio totale del libro
                 bookDao.updateBookRating(deletedReview.getBookId(), -deletedReview.getStars(), deletedReview.getCountry());
+                userDao.removeReview(deletedReview.getUserId(), deletedReview.getId());
                 return true;
             }
             return false;
@@ -217,5 +221,4 @@ public class ReviewDao {
             System.err.println("Errore durante l'aggiornamento del conteggio dei voti della recensione: " + e.getMessage());
         }
     }
-    
 }
