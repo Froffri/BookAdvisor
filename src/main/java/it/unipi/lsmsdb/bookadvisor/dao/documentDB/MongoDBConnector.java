@@ -14,7 +14,7 @@ public class MongoDBConnector {
     private MongoDatabase database;
 
     // Costruttore privato per prevenire l'istanziazione diretta
-    private MongoDBConnector() {
+    public MongoDBConnector() {
         try {
             ConnectionString connString = new ConnectionString("mongodb://localhost:27017");
             MongoClientSettings settings = MongoClientSettings.builder()
