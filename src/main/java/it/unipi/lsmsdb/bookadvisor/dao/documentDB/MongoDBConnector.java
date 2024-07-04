@@ -8,7 +8,7 @@ import com.mongodb.client.MongoDatabase;
 
 public class MongoDBConnector {
 
-    private static final String DATABASE_NAME = "BookAdvisorDB";
+    private static final String DATABASE_NAME = "BookAdvisor";
     private static MongoDBConnector instance;
     private MongoClient mongoClient;
     private MongoDatabase database;

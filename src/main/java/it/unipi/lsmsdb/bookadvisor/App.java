@@ -2,6 +2,8 @@ package it.unipi.lsmsdb.bookadvisor;
 
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.MongoDBConnector;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
+import it.unipi.lsmsdb.bookadvisor.dao.graphDB.Neo4jConnector;
+import it.unipi.lsmsdb.bookadvisor.dao.graphDB.UserGraphDAO;
 import it.unipi.lsmsdb.bookadvisor.service.AuthenticationService;
 import it.unipi.lsmsdb.bookadvisor.model.user.User;
 
@@ -22,10 +24,12 @@ public class App extends Application {
     public void start(Stage primaryStage) {
         // Initialize MongoDB connector and UserDao
         MongoDBConnector connector = MongoDBConnector.getInstance();
+        Neo4jConnector neo4jConnector = new Neo4jConnector();
         UserDao userDao = new UserDao(connector);
+        UserGraphDAO userGraphDAO = new UserGraphDAO(neo4jConnector);
 
         // Initialize AuthenticationService
-        authenticationService = new AuthenticationService(userDao);
+        authenticationService = new AuthenticationService(userDao, userGraphDAO);
 
         primaryStage.setTitle("Book Advisor");
 

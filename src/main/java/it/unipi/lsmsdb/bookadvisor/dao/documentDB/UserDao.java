@@ -72,7 +72,7 @@ public class UserDao {
     // Find a user by their username
     public User findUserByUsername(String username) {
         try {
-            Document doc = collection.find(Filters.eq("username", username)).first();
+            Document doc = collection.find(Filters.eq("nickname", username)).first();
             return createUserFromDocument(doc);
         } catch (Exception e) {
             System.err.println("Errore durante la ricerca dell'utente per username: " + e.getMessage());
