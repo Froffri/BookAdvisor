@@ -6,7 +6,6 @@ import com.mongodb.client.AggregateIterable;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
-import org.neo4j.driver.Record;
 
 import static org.neo4j.driver.Values.parameters;
 
@@ -197,33 +196,88 @@ public class Procedures {
         }
     }
 
+//     public List<Map<String, Object>> getBookRecommendations(Object userId) {
+//         try (Session session = graphConnector.getSession()) {
+//             String cypherQuery =
+//                     "MATCH (user:User {id: $userId}) " +
+//                     "MATCH (book1:Book)<-[r1:RATES]-(user)-[f:FOLLOWS]->(other:User)-[r2:RATES]->(recommended:Book) " +
+//                     "WHERE r1.rating > 3 AND book1 <> recommended AND r2.rating > 3 " +
+//                     "WITH book1, recommended, r2.rating AS recommendedRating, f " +
+//                     "ORDER BY f ASC, recommendedRating DESC " +
+//                     "WITH book1, COLLECT({recommended: recommended, score: recommendedRating})[..3] AS recommendations " +
+//                     "RETURN book1, recommendations";
+
+//             Result result = session.run(cypherQuery, parameters("userId", userId));
+//             List<Map<String, Object>> results = new ArrayList<>();
+
+//             while (result.hasNext()) {
+//                 Record record = result.next();
+//                 Map<String, Object> bookRecommendations = new HashMap<>();
+//                 bookRecommendations.put("book1", record.get("book1").asMap());
+//                 List<Object> recommendations = record.get("recommendations").asList(Value::asMap);
+//                 bookRecommendations.put("recommendations", recommendations);
+//                 results.add(bookRecommendations);
+//             }
+
+//             return results;
+//         }
+//     }
+
+    /**
+     * This function is used to get book recommendations for a user.
+     * It works by first finding books that the user has rated more than 3.
+     * Then it finds other users who the current user follows and have also rated their books more than 3.
+     * It ensures that the recommended books are not the same as the ones the user has already rated.
+     * Additionally, it now also ensures that the recommended books are in the same language as the books the user has rated.
+     * The recommendations are then ordered by the follow date and the rating of the recommended books.
+     * The top 3 recommendations are collected for each book the user has rated.
+     * Finally, it returns a list of maps, where each map contains a book the user has rated and the corresponding book recommendations.
+     *
+     * @param userId The ID of the user for whom the book recommendations are to be found.
+     * @return A list of maps containing the books the user has rated and the corresponding book recommendations.
+     */
     public List<Map<String, Object>> getBookRecommendations(Object userId) {
         try (Session session = graphConnector.getSession()) {
-            String cypherQuery =
-                    "MATCH (user:User {id: $userId}) " +
-                    "MATCH (book1:Book)<-[r1:RATES]-(user)-[f:FOLLOWS]->(other:User)-[r2:RATES]->(recommended:Book) " +
-                    "WHERE r1.rating > 3 AND book1 <> recommended AND r2.rating > 3 " +
-                    "WITH book1, recommended, r2.rating AS recommendedRating, f " +
-                    "ORDER BY f ASC, recommendedRating DESC " +
-                    "WITH book1, COLLECT({recommended: recommended, score: recommendedRating})[..3] AS recommendations " +
-                    "RETURN book1, recommendations";
+                String cypherQuery =
+                        "MATCH (user:User {id: $userId}) " +
+                        "MATCH (book1:Book)<-[r1:RATES]-(user)-[f:FOLLOWS]->(other:User)-[r2:RATES]->(recommended:Book) " +
+                        "WHERE r1.rating > 3 AND book1 <> recommended AND r2.rating > 3 AND book1.language = recommended.language " +
+                        "WITH book1, recommended, r2.rating AS recommendedRating, f " +
+                        "ORDER BY f ASC, recommendedRating DESC " +
+                        "WITH book1, COLLECT({recommended: recommended, score: recommendedRating})[..3] AS recommendations " +
+                        "RETURN book1, recommendations";
 
-            Result result = session.run(cypherQuery, parameters("userId", userId));
-            List<Map<String, Object>> results = new ArrayList<>();
+                Result result = session.run(cypherQuery, parameters("userId", userId));
+                List<Map<String, Object>> results = new ArrayList<>();
 
-            while (result.hasNext()) {
+                while (result.hasNext()) {
                 Record record = result.next();
                 Map<String, Object> bookRecommendations = new HashMap<>();
                 bookRecommendations.put("book1", record.get("book1").asMap());
                 List<Object> recommendations = record.get("recommendations").asList(Value::asMap);
                 bookRecommendations.put("recommendations", recommendations);
                 results.add(bookRecommendations);
-            }
+                }
 
-            return results;
+                return results;
         }
     }
 
+    /** 
+     * Find books that both the given user (u1) and other users (u2) have rated. 
+     * Only consider pairs where the difference in their ratings is less than 2.
+     * Collect the titles of these commonly rated books.
+     * Find any followers of the other users (u2) who have rated these common books. 
+     * Collect the ratings given by these followers to the common books.
+     * Filter out any followers who have rated fewer than 2 of the common books.
+     * Check if the given user (u1) and the other users (u2) have any favourite genres in common. 
+     * If they do, go to the next step. If not, the other user is not considered to have similar tastes.
+     * 
+     * @param userId The ID of the user for whom the similar tastes are to be found.
+     * @return A list of maps containing the ID and nickname of the other users who have similar tastes, 
+     *          along with the titles of the common books and the count of the followers who have rated these books.
+     *          The results are ordered by the follower count in descending order, and only the top 10 results are returned.
+     */
     public List<Map<String, Object>> getUsersWithSimilarTastes(Object userId) {
         try (Session session = graphConnector.getSession()) {
             String cypherQuery =
