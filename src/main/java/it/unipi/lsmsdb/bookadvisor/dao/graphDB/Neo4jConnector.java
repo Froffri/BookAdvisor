@@ -13,6 +13,10 @@ public class Neo4jConnector {
         this.driver = GraphDatabase.driver(URI, AuthTokens.basic(USERNAME, PASSWORD));
     }
 
+    public static Neo4jConnector getInstance() {
+        return new Neo4jConnector();
+    }
+
     public Driver getDriver() {
         return driver;
     }

@@ -1,165 +1,247 @@
 package it.unipi.lsmsdb.bookadvisor;
 
-import it.unipi.lsmsdb.bookadvisor.dao.documentDB.MongoDBConnector;
-import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
-import it.unipi.lsmsdb.bookadvisor.dao.graphDB.Neo4jConnector;
-import it.unipi.lsmsdb.bookadvisor.dao.graphDB.UserGraphDAO;
-import it.unipi.lsmsdb.bookadvisor.service.AuthenticationService;
+import it.unipi.lsmsdb.bookadvisor.dao.documentDB.*;
+import it.unipi.lsmsdb.bookadvisor.dao.graphDB.*;
+import it.unipi.lsmsdb.bookadvisor.model.book.Book;
+import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 import it.unipi.lsmsdb.bookadvisor.model.user.User;
-
+import it.unipi.lsmsdb.bookadvisor.service.AuthenticationService;
+import it.unipi.lsmsdb.bookadvisor.service.BookService;
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.GridPane;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import javafx.scene.Node;
 
 import java.time.LocalDate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class App extends Application {
     private AuthenticationService authenticationService;
+    private BookService bookService;
+    private User currentUser;
 
     @Override
     public void start(Stage primaryStage) {
-        // Initialize MongoDB connector and UserDao
+        // Initialize MongoDB connector, UserDao, and BookDao
         MongoDBConnector connector = MongoDBConnector.getInstance();
-        Neo4jConnector neo4jConnector = new Neo4jConnector();
+        Neo4jConnector neo4jConnector = Neo4jConnector.getInstance();
         UserDao userDao = new UserDao(connector);
         UserGraphDAO userGraphDAO = new UserGraphDAO(neo4jConnector);
+        BookDao bookDao = new BookDao(connector);
 
-        // Initialize AuthenticationService
+        // Initialize services
         authenticationService = new AuthenticationService(userDao, userGraphDAO);
+        bookService = new BookService(bookDao);
 
         primaryStage.setTitle("Book Advisor");
 
-        // Create the login and registration forms
+        // Create the login, registration, and home tabs
         TabPane tabPane = new TabPane();
 
-        // Login tab
-        Tab loginTab = new Tab("Login", createLoginForm());
+        Tab loginTab = createLoginTab();
+        Tab registerTab = createRegisterTab();
+        Tab homeTab = createHomeTab();
 
-        // Registration tab
-        Tab registerTab = new Tab("Register", createRegisterForm());
+        tabPane.getTabs().addAll(loginTab, registerTab, homeTab);
 
-        tabPane.getTabs().addAll(loginTab, registerTab);
+        homeTab.setDisable(true); // Disable the home tab until the user logs in
 
-        Scene scene = new Scene(tabPane, 400, 300);
+        Scene scene = new Scene(tabPane, 800, 600);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
-    private GridPane createLoginForm() {
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
+    private Tab createLoginTab() {
+        Tab tab = new Tab("Login");
+        VBox vbox = new VBox(10);
+        vbox.setPadding(new Insets(10));
 
-        Label usernameLabel = new Label("Username:");
         TextField usernameField = new TextField();
-        Label passwordLabel = new Label("Password:");
+        usernameField.setPromptText("Username");
+
         PasswordField passwordField = new PasswordField();
+        passwordField.setPromptText("Password");
+
         Button loginButton = new Button("Login");
+        loginButton.setOnAction(e -> handleLogin(usernameField.getText(), passwordField.getText(), (Node) e.getSource()));
 
-        grid.add(usernameLabel, 0, 0);
-        grid.add(usernameField, 1, 0);
-        grid.add(passwordLabel, 0, 1);
-        grid.add(passwordField, 1, 1);
-        grid.add(loginButton, 1, 2);
+        vbox.getChildren().addAll(new Label("Username"), usernameField, new Label("Password"), passwordField, loginButton);
+        tab.setContent(vbox);
 
-        loginButton.setOnAction(e -> {
-            String username = usernameField.getText();
-            String password = passwordField.getText();
-            handleLogin(username, password);
-        });
-
-        return grid;
+        return tab;
     }
 
-    private GridPane createRegisterForm() {
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
+    private Tab createRegisterTab() {
+        Tab tab = new Tab("Register");
+        VBox vbox = new VBox(10);
+        vbox.setPadding(new Insets(10));
 
-        Label nameLabel = new Label("Name:");
-        TextField nameField = new TextField();
-        Label usernameLabel = new Label("Username:");
         TextField usernameField = new TextField();
-        Label passwordLabel = new Label("Password:");
+        usernameField.setPromptText("Username");
+
         PasswordField passwordField = new PasswordField();
-        Label birthdateLabel = new Label("Birthdate (YYYY-MM-DD):");
-        TextField birthdateField = new TextField();
-        Label genderLabel = new Label("Gender:");
+        passwordField.setPromptText("Password");
+
+        TextField nameField = new TextField();
+        nameField.setPromptText("Name");
+
         TextField genderField = new TextField();
-        Label nationalityLabel = new Label("Nationality:");
+        genderField.setPromptText("Gender");
+
+        DatePicker birthdatePicker = new DatePicker();
+        birthdatePicker.setPromptText("Birthdate");
+
         TextField nationalityField = new TextField();
-        Label favGenresLabel = new Label("Favorite Genres (comma separated):");
+        nationalityField.setPromptText("Nationality");
+
         TextField favGenresField = new TextField();
-        Label spokenLanguagesLabel = new Label("Spoken Languages (comma separated):");
+        favGenresField.setPromptText("Favorite Genres (comma separated)");
+
         TextField spokenLanguagesField = new TextField();
-        Label genresLabel = new Label("Genres (comma separated, for authors):");
+        spokenLanguagesField.setPromptText("Spoken Languages (comma separated)");
+
         TextField genresField = new TextField();
+        genresField.setPromptText("Genres (comma separated)");
 
         Button registerButton = new Button("Register");
+        registerButton.setOnAction(e -> handleRegister(
+                usernameField.getText(),
+                passwordField.getText(),
+                nameField.getText(),
+                genderField.getText(),
+                birthdatePicker.getValue(),
+                nationalityField.getText(),
+                Arrays.asList(favGenresField.getText().split(",")),
+                Arrays.asList(spokenLanguagesField.getText().split(",")),
+                Arrays.asList(genresField.getText().split(","))
+        ));
 
-        grid.add(nameLabel, 0, 0);
-        grid.add(nameField, 1, 0);
-        grid.add(usernameLabel, 0, 1);
-        grid.add(usernameField, 1, 1);
-        grid.add(passwordLabel, 0, 2);
-        grid.add(passwordField, 1, 2);
-        grid.add(birthdateLabel, 0, 3);
-        grid.add(birthdateField, 1, 3);
-        grid.add(genderLabel, 0, 4);
-        grid.add(genderField, 1, 4);
-        grid.add(nationalityLabel, 0, 5);
-        grid.add(nationalityField, 1, 5);
-        grid.add(favGenresLabel, 0, 6);
-        grid.add(favGenresField, 1, 6);
+        vbox.getChildren().addAll(
+                new Label("Username"), usernameField,
+                new Label("Password"), passwordField,
+                new Label("Name"), nameField,
+                new Label("Gender"), genderField,
+                new Label("Birthdate"), birthdatePicker,
+                new Label("Nationality"), nationalityField,
+                new Label("Favorite Genres"), favGenresField,
+                new Label("Spoken Languages"), spokenLanguagesField,
+                new Label("Genres"), genresField,
+                registerButton
+        );
+        tab.setContent(vbox);
 
-        grid.add(spokenLanguagesLabel, 0, 7);
-        grid.add(spokenLanguagesField, 1, 7);
-        grid.add(genresLabel, 0, 8);
-        grid.add(genresField, 1, 8);
-        grid.add(registerButton, 1, 9);
-
-        registerButton.setOnAction(e -> {
-            String name = nameField.getText();
-            String username = usernameField.getText();
-            String password = passwordField.getText();
-            LocalDate birthdate = LocalDate.parse(birthdateField.getText());
-            String gender = genderField.getText();
-            String nationality = nationalityField.getText();
-            List<String> favGenres = Arrays.asList(favGenresField.getText().split(","));
-            List<String> spokenLanguages = Arrays.asList(spokenLanguagesField.getText().split(","));
-            List<String> genres = genresField.getText().isEmpty() ? null : Arrays.asList(genresField.getText().split(","));
-
-            handleRegister(username, password, name, gender, birthdate, nationality, favGenres, spokenLanguages, genres);
-        });
-
-        return grid;
+        return tab;
     }
 
-    private void handleLogin(String username, String password) {
+    private Tab createHomeTab() {
+        Tab tab = new Tab("Home");
+        VBox vbox = new VBox(10);
+        vbox.setPadding(new Insets(10));
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search for books by title");
+
+        Button searchButton = new Button("Search");
+        searchButton.setOnAction(e -> displayBooks(bookService.findBooksByTitle(searchField.getText()), vbox));
+
+        vbox.getChildren().addAll(new Label("Search"), searchField, searchButton);
+
+        // Display popular books
+        List<Book> popularBooks = bookService.getPopularBooks(5);
+        vbox.getChildren().add(new Label("Popular Books"));
+        displayBooks(popularBooks, vbox);
+
+        tab.setContent(vbox);
+        return tab;
+    }
+
+    private void displayBooks(List<Book> books, VBox vbox) {
+        vbox.getChildren().clear();
+        for (Book book : books) {
+            VBox bookBox = new VBox(5);
+            Label titleLabel = new Label("Title: " + book.getTitle());
+            ImageView imageView = new ImageView(new Image(book.getImageUrl()));
+            imageView.setFitHeight(100);
+            imageView.setFitWidth(80);
+            Label ratingLabel = new Label(String.format("Rating: %.2f", (double) book.getSumStars() / book.getNumRatings()));
+
+            bookBox.getChildren().addAll(titleLabel, imageView, ratingLabel);
+            bookBox.setOnMouseClicked(e -> displayBookDetails(book));
+
+            vbox.getChildren().add(bookBox);
+        }
+    }
+
+    private void displayBookDetails(Book book) {
+        Stage bookStage = new Stage();
+        VBox bookDetailsBox = new VBox(10);
+        bookDetailsBox.setPadding(new Insets(10));
+
+        ImageView imageView = new ImageView(new Image(book.getImageUrl()));
+        imageView.setFitHeight(200);
+        imageView.setFitWidth(160);
+
+        Label titleLabel = new Label("Title: " + book.getTitle());
+        Label authorLabel = new Label("Authors: " + String.join(", ", Arrays.asList(book.getAuthors()).stream().map(a -> a.getName()).collect(Collectors.toList())));
+        Label genreLabel = new Label("Genres: " + String.join(", ", book.getGenre()));
+        Label yearLabel = new Label("Year: " + book.getYear());
+        Label languageLabel = new Label("Language: " + book.getLanguage());
+        Label ratingLabel = new Label(String.format("Rating: %.2f", (double) book.getSumStars() / book.getNumRatings()));
+
+        bookDetailsBox.getChildren().addAll(imageView, titleLabel, authorLabel, genreLabel, yearLabel, languageLabel, ratingLabel);
+
+        // Display most useful reviews
+        Label reviewsLabel = new Label("Most Useful Reviews");
+        VBox reviewsBox = new VBox(10);
+        List<Review> reviews = book.getMost10UsefulReviews();
+        for (Review review : reviews) {
+            VBox reviewBox = new VBox(5);
+            Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
+            Label reviewTextLabel = new Label("Review: " + review.getText());
+            Label reviewStarsLabel = new Label("Stars: " + review.getStars());
+            reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel);
+            reviewsBox.getChildren().add(reviewBox);
+        }
+        bookDetailsBox.getChildren().addAll(reviewsLabel, reviewsBox);
+
+        Scene scene = new Scene(bookDetailsBox, 400, 600);
+        bookStage.setScene(scene);
+        bookStage.show();
+    }
+
+    private void handleLogin(String username, String password, Node sourceNode) {
         // Use AuthenticationService to validate the user credentials
         User user = authenticationService.logIn(username, password);
         if (user != null) {
             System.out.println("Login successful for user: " + user.getNickname());
-            // Here you can load the next scene or show a success message
+            currentUser = user;
+            // Enable and switch to home tab
+            TabPane tabPane = (TabPane) sourceNode.getScene().getRoot();
+            tabPane.getTabs().get(2).setDisable(false);
+            tabPane.getSelectionModel().select(2);
         } else {
             System.out.println("Login failed for user: " + username);
             // Show an error message to the user
+            // You can show an alert here
         }
     }
 
-    private void handleRegister(String username, String password, String name, String gender, LocalDate birthdate, String nationality, List<String> favGenres, List<String> spokenLanguages, List<String> genres) {
+    private void handleRegister(String username, String password, String name, String gender, LocalDate birthdate, String nationality, List<String> favouriteGenres, List<String> spokenLanguages, List<String> genres) {
         // Use AuthenticationService to register a new user
-        boolean success = authenticationService.signUp(username, password, name, gender, birthdate, nationality, favGenres, spokenLanguages, genres);
-        if (success) {
+        if (authenticationService.signUp(username, password, name, gender, birthdate, nationality, favouriteGenres, spokenLanguages, genres)) {
             System.out.println("Registration successful for user: " + username);
-            // Here you can load the login tab or show a success message
         } else {
             System.out.println("Registration failed for user: " + username);
             // Show an error message to the user
+            // You can show an alert here
         }
     }
 

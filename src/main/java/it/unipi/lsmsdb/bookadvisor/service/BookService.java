@@ -9,6 +9,7 @@ import org.bson.types.ObjectId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class BookService {
     private BookDao bookDao;
@@ -166,4 +167,16 @@ public class BookService {
     public List<Book> getBooksByGenres(List<String> genres, boolean isAnd){
         return bookDao.getBooksByGenres(genres, isAnd);
     }
+
+    // Method to get top N popular books based on numRatings
+    public List<Book> getPopularBooks(int limit) {        
+        List<Book> allBooks = bookDao.getAllBooks();
+        
+        return allBooks.stream()                
+                .sorted((b1, b2) -> Integer.compare(b2.getNumRatings(), b1.getNumRatings()))
+                .limit(limit)                
+                .collect(Collectors.toList());
+    }
 }
+
+

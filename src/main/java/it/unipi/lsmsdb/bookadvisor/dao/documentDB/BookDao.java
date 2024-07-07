@@ -259,4 +259,14 @@ public class BookDao {
         }
         return authorIds;
     }
+
+    public List<Book> getAllBooks() {
+        List<Book> books = new ArrayList<>();
+        for (Document doc : collection.find()) {
+            books.add(new Book(doc));
+        }
+        return books;
+    }
 }
+
+
