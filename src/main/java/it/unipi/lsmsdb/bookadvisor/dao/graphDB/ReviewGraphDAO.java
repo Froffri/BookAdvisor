@@ -88,6 +88,22 @@ public class ReviewGraphDAO {
         }
     }
 
+    public boolean checkReview(String userId, String bookId) {
+        try (Session session = connector.getSession()) {
+            Result result = session.run(
+                "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book})" +
+                "RETURN r.stars AS rating",
+                parameters("user", userId, 
+                            "book", bookId)
+            );
+
+            if (result.hasNext()) {
+                return true;
+            }
+            return false;
+        }
+    }
+
     // UPDATE
     /**
      * Update a review in the graph database

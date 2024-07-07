@@ -107,6 +107,38 @@ public class FollowGraphDAO {
         return false;
     }
 
+    public boolean checkFollow(Follow follow) {
+        try (Session session = connector.getSession()) {
+            Result result = session.run(
+                "MATCH (fwr:User {id: $follower})-[f:FOLLOWS]->(fwd:User {id: $followed})" +
+                "RETURN f",
+                parameters("follower", follow.getFollowerId(), 
+                            "followed", follow.getFollowedId())
+            );
+
+            if (result.hasNext()) 
+                return true;
+        }
+
+        return false;
+    }
+
+    public boolean checkFollow(ObjectId followerId, ObjectId followedId) {
+        try (Session session = connector.getSession()) {
+            Result result = session.run(
+                "MATCH (fwr:User {id: $follower})-[f:FOLLOWS]->(fwd:User {id: $followed})" +
+                "RETURN f",
+                parameters("follower", followerId, 
+                            "followed", followedId)
+            );
+
+            if (result.hasNext()) 
+                return true;
+        }
+
+        return false;
+    }
+
     // DELETE
 
     /**
