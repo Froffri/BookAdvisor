@@ -3,8 +3,8 @@ package it.unipi.lsmsdb.bookadvisor.dao.graphDB;
 import org.neo4j.driver.*;
 
 public class Neo4jConnector {
-    private static final String URI = "bolt://10.1.1.23:7687";
-    //private static final String URI = "bolt://localhost:7687";
+    // private static final String URI = "bolt://10.1.1.23:7687";
+    private static final String URI = "bolt://localhost:7687";
     private static final String USERNAME = "neo4j";
     private static final String PASSWORD = "password";
 
