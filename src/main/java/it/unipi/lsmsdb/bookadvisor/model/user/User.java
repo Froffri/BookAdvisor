@@ -2,9 +2,9 @@ package it.unipi.lsmsdb.bookadvisor.model.user;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.neo4j.driver.types.Node;
 
 import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
 
 public class User {
     private ObjectId id;
@@ -44,13 +44,19 @@ public class User {
         this.nickname = doc.getString("nickname");
         this.password = doc.getString("password");
         this.gender = doc.getString("gender");
-
+        
         // Conversione della stringa di data in LocalDate
-        String birthdateStr = doc.getString("birthdate");
-        if (birthdateStr != null && !birthdateStr.isEmpty()) {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-            this.birthdate = LocalDate.parse(birthdateStr, formatter);
-        }
+        this.birthdate = LocalDate.parse(doc.getString("birth"));
+    }
+
+    // Constructor from Neo4j Node
+    public User(Node node) {
+        this.id = new ObjectId(node.get("id").asString());
+        this.name = null;
+        this.nickname = node.get("nickname").asString();
+        this.password = null;
+        this.birthdate = null;
+        this.gender = null;   
     }
 
     // Getters and setters
@@ -107,22 +113,21 @@ public class User {
     @Override
     public String toString() {
         return "User{" +
-                "id='" + id + '\'' +
+                "_id='" + id + '\'' +
                 ", name='" + name + '\'' +
                 ", nickname='" + nickname + '\'' +
                 ", password='" + password + '\'' +
-                ", birthdate='" + birthdate + '\'' +
+                ", birth='" + birthdate + '\'' +
                 ", gender='" + gender + '\'' +
                 '}';
     }
 
     // Convert to MongoDB Document
     public Document toDocument() {
-        return new Document("id", id)
-                .append("name", name)
+        return new Document("name", name)
                 .append("nickname", nickname)
                 .append("password", password)
-                .append("birthdate", birthdate)
+                .append("birth", birthdate.toString())
                 .append("gender", gender);
     }
 }

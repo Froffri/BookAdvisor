@@ -1,7 +1,10 @@
 package it.unipi.lsmsdb.bookadvisor.service;
 
+import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
+import it.unipi.lsmsdb.bookadvisor.dao.graphDB.UserGraphDAO;
+import it.unipi.lsmsdb.bookadvisor.dao.documentDB.ReviewDao;
 import it.unipi.lsmsdb.bookadvisor.utils.*;
 
 import java.util.List;
@@ -10,9 +13,13 @@ import org.bson.types.ObjectId;
 
 public class UserService {
     private UserDao userDao;
+    private UserGraphDAO userGraphDao;
+    private ReviewDao reviewDao;
 
-    public UserService(UserDao userDao) {
+    public UserService(UserDao userDao, ReviewDao reviewDao, UserGraphDAO userGraphDao) {
         this.userDao = userDao;
+        this.userGraphDao = userGraphDao;
+        this.reviewDao = reviewDao;
     }
 
     // Cambiare la password dell'utente
@@ -33,11 +40,24 @@ public class UserService {
         return userDao.findUserById(new ObjectId(userId));
     }
 
+    // CHANGED USER TO REGISTEREDUSER
     // Aggiornamento dei dettagli utente
     public boolean updateAccountInformation(String userId, User updatedUser) {
         User existingUser = userDao.findUserById(new ObjectId(userId));
         if (existingUser instanceof Admin || existingUser.getId().equals(updatedUser.getId())) {
-            return userDao.updateUser(updatedUser);
+
+            if(userDao.updateUser(updatedUser)){
+                // Successfully updated the user in mongodb
+                if(userGraphDao.updateUser(updatedUser)){
+                    // Successfully updated the user in neo4j
+                    return true;
+                } else {
+                    // Failed to update the user in neo4j
+                    userDao.updateUser(existingUser);
+                    return false;
+                }
+            }
+            return false;
         }
         throw new IllegalArgumentException("Non hai i permessi per modificare questo utente.");
     }
@@ -46,7 +66,21 @@ public class UserService {
     public boolean deleteAccount(String requestingUserId, String targetUserId) {
         User requestingUser = userDao.findUserById(new ObjectId(requestingUserId));
         if (requestingUser instanceof Admin || requestingUserId.equals(targetUserId)) {
-            return userDao.deleteUser(new ObjectId(targetUserId));
+
+            User targetUser = userDao.findUserById(new ObjectId(targetUserId));
+
+            if(userDao.deleteUser(new ObjectId(targetUserId))){
+                // Successfully deleted the user in mongodb
+                if(userGraphDao.deleteUserById(new ObjectId(targetUserId))){
+                    // Successfully deleted the user in neo4j
+                    return true;
+                } else {
+                    // Failed to delete the user in neo4j
+                    userDao.addUser(targetUser);
+                    return false;
+                }
+            }
+            return false;
         }
         throw new IllegalArgumentException("Non hai i permessi per eliminare questo utente.");
     }
@@ -60,4 +94,48 @@ public class UserService {
     public boolean logout(String userId) {
         return true;
     }
+
+    // If addVote is true, the vote is added; otherwise, it is removed
+    // If vote is true, the vote is an upvote; otherwise, it is a downvote
+    public boolean voteForReview(String userId, ObjectId reviewId, boolean vote) {
+        // Check if the user exists and is authorized to vote
+        if (isUserAuthorized(userId)) {
+            Reviewer user = userDao.findReviewerById(new ObjectId(userId));
+            if (user != null) {
+                // Fetch the review associated with the reviewId
+                Review review = reviewDao.findReviewById(reviewId);
+                if (review != null) {
+                    // Validate the vote
+                    if (isValidVote(user, review)) {
+                        // Call the userDao method to vote for the review
+                        return userDao.voteForReview(user, reviewId, vote);
+                    } else {
+                        System.err.println("Errore: Il voto non è valido.");
+                    }
+                } else {
+                    System.err.println("Errore: Recensione non trovata.");
+                }
+            } else {
+                System.err.println("Errore: Utente non trovato.");
+            }
+        } else {
+            System.err.println("Errore: Utente non autorizzato.");
+        }
+        return false;
+    }
+    
+    // Additional business logic for validating a vote
+    private boolean isValidVote(User user, Review review) {
+        return review != null
+                && !review.getUserId().equals(user.getId()) // Ensure the vote is not from the same user
+                && review.getText() != null && !review.getText().isEmpty(); // Ensure the associated review has non-empty text
+    }
+    
+    // Additional business logic for checking if a user is authorized
+    private boolean isUserAuthorized(String userId) {
+        // Verifica se l'ID utente è valido e corrisponde a un utente nel sistema
+        User user = userDao.findUserById(new ObjectId(userId));
+        return user != null;
+    }
+       
 }

@@ -1,6 +1,7 @@
 package it.unipi.lsmsdb.bookadvisor.service;
 
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.BookDao;
+import it.unipi.lsmsdb.bookadvisor.dao.graphDB.BookGraphDAO;
 import it.unipi.lsmsdb.bookadvisor.model.book.Book;
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
 import org.bson.types.ObjectId;
@@ -8,9 +9,11 @@ import org.bson.types.ObjectId;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class BookService {
     private BookDao bookDao;
+    private BookGraphDAO bookGraphDAO;
 
     public BookService(BookDao bookDao) {
         this.bookDao = bookDao;
@@ -24,43 +27,108 @@ public class BookService {
         return bookDao.findBooksByTitle(title);
     }
 
-    public void addBook(Book book, User user) {
+    public boolean addBook(Book book, User user) {
         if (user instanceof Author) {
-            bookDao.addBook(book);
+            if(bookDao.addBook(book)){
+                // Successfully added the book in mongodb
+                if(bookGraphDAO.addBook(book)){
+                    // Successfully added the book in neo4j
+                    return true;
+                } else {
+                    // Failed to add the book in neo4j
+                    bookDao.deleteBook(book.getId());
+                    return false;
+                }
+            }
+            // Failed to add the book in mongodb
+            return false;
+
         } else {
-            throw new IllegalArgumentException("Solo gli autori possono inserire libri.");
+            System.out.println("Solo gli autori possono inserire libri.");
+            return false;
         }
     }
 
-    public void updateBook(Book book, User user) {
+    public boolean updateBook(Book book, User user) {
+        Book oldBook = bookDao.findBookById(book.getId()).get();
+
         if (user instanceof Author) {
             Author author = (Author) user;
-            if (Arrays.asList(book.getAuthor()).contains(author.getId())) {
-                bookDao.updateBook(book);
+            if (Arrays.asList(book.getAuthors()).contains(author.getId())) {
+                if(bookDao.updateBook(book)){
+                    // Successfully updated the book in mongodb
+                    if(bookGraphDAO.updateBook(book)){
+                        // Successfully updated the book in neo4j
+                        return true;
+                    } else {
+                        // Failed to update the book in neo4j
+                        bookDao.updateBook(oldBook);
+                        return false;
+                    }
+                }
+                return false;
+
             } else {
-                throw new IllegalArgumentException("Gli autori possono aggiornare solo libri di cui sono autori.");
+                System.out.println("Gli autori possono aggiornare solo libri di cui sono autori.");
+                return false;
             }
         } else if (user instanceof Admin) {
-            bookDao.updateBook(book);
+            if(bookDao.updateBook(book)){
+                // Successfully updated the book in mongodb
+                if(bookGraphDAO.updateBook(book)){
+                    // Successfully updated the book in neo4j
+                    return true;
+                } else {
+                    // Failed to update the book in neo4j
+                    bookDao.updateBook(oldBook);
+                    return false;
+                }
+            }
+            return false;
         } else {
-            throw new IllegalArgumentException("Solo gli amministratori o gli autori possono aggiornare i libri.");
+            System.out.println("Solo gli amministratori o gli autori possono aggiornare i libri.");
+            return false;
         }
     }
 
-    public void deleteBook(String id, User user) {
+    public boolean deleteBook(Book book, User user) {
         if (user instanceof Admin) {
-            bookDao.deleteBook(new ObjectId(id));
+            if(bookDao.deleteBook(book.getId())){
+                // Successfully deleted the book in mongodb
+                if(bookGraphDAO.deleteBook(book)){
+                    // Successfully deleted the book in neo4j
+                    return true;
+                } else {
+                    // Failed to delete the book in neo4j
+                    bookDao.addBook(book);
+                    return false;
+                }
+            }
+            return false;
         } else if (user instanceof Author) {
             Author author = (Author) user;
-            Optional<Book> optionalBook = bookDao.findBookById(new ObjectId(id));
+            Optional<Book> optionalBook = bookDao.findBookById(book.getId());
     
-            if (optionalBook.isPresent() && Arrays.asList(optionalBook.get().getAuthor()).contains(author.getId())) {
-                bookDao.deleteBook(new ObjectId(id));
+            if (optionalBook.isPresent() && Arrays.asList(optionalBook.get().getAuthors()).contains(author.getId())) {
+                if(bookDao.deleteBook(book.getId())){
+                    // Successfully deleted the book in mongodb
+                    if(bookGraphDAO.deleteBook(book)){
+                        // Successfully deleted the book in neo4j
+                        return true;
+                    } else {
+                        // Failed to delete the book in neo4j
+                        bookDao.addBook(book);
+                        return false;
+                    }
+                }
+                return false;
             } else {
-                throw new IllegalArgumentException("Solo gli amministratori o gli autori associati possono cancellare i libri.");
+                System.out.println("Solo gli amministratori o gli autori associati possono cancellare i libri.");
+                return false;
             }
         } else {
-            throw new IllegalArgumentException("Solo gli amministratori o gli autori possono cancellare i libri.");
+            System.out.println("Solo gli amministratori o gli autori possono cancellare i libri.");
+            return false;
         }
     }
     
@@ -99,4 +167,16 @@ public class BookService {
     public List<Book> getBooksByGenres(List<String> genres, boolean isAnd){
         return bookDao.getBooksByGenres(genres, isAnd);
     }
+
+    // Method to get top N popular books based on numRatings
+    public List<Book> getPopularBooks(int limit) {        
+        List<Book> allBooks = bookDao.getAllBooks();
+        
+        return allBooks.stream()                
+                .sorted((b1, b2) -> Integer.compare(b2.getNumRatings(), b1.getNumRatings()))
+                .limit(limit)                
+                .collect(Collectors.toList());
+    }
 }
+
+

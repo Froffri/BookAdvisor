@@ -6,10 +6,12 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 
 import it.unipi.lsmsdb.bookadvisor.model.book.Book;
-
+import it.unipi.lsmsdb.bookadvisor.model.book.Book.Author;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -32,50 +34,68 @@ public class BookDao {
     // Find books by title
     public List<Book> findBooksByTitle(String title) {
         List<Book> books = new ArrayList<>();
-        for (Document doc : collection.find(Filters.eq("title", title))) {
+        Pattern regex = Pattern.compile(title, Pattern.CASE_INSENSITIVE);
+        for (Document doc : collection.find(Filters.regex("title", regex))) {
             books.add(new Book(doc));
         }
         return books;
     }
 
     // Insert a new book into the database
-    public void addBook(Book book) {
+    public boolean addBook(Book book) {
         try {
             Document doc = book.toDocument();
             collection.insertOne(doc);
         } catch (Exception e) {
             System.err.println("Errore durante l'inserimento del libro: " + e.getMessage());
+            return false;
         }
+        return true;
     }
 
     // Update a book's information
-    public void updateBook(Book book) {
+    public boolean updateBook(Book book) {
         try {
             collection.updateOne(Filters.eq("_id", book.getId()),
                 Updates.combine(
-                    Updates.set("author", book.getAuthor()),
+                    Updates.set("sumStars", book.getSumStars()),
+                    Updates.set("numRatings", book.getNumRatings()),
+                    Updates.set("language", book.getLanguage()),
+                    Updates.set("title", book.getTitle()),
+                    Updates.set("author", convertAuthorsToIds(book.getAuthors())), // Converts authors to their IDs
                     Updates.set("genre", book.getGenre()),
                     Updates.set("year", book.getYear()),
-                    Updates.set("language", book.getLanguage()),
-                    Updates.set("numPages", book.getNumPages()),
-                    Updates.set("sumStars", book.getSumStars()),
-                    Updates.set("numRatings", book.getNumRatings())
+                    Updates.set("image_url", book.getImageUrl()),
+                    Updates.set("num_pages", book.getNumPages()),
+                    Updates.set("review_ids", book.getReviewIds()),
+                    Updates.set("ratings_agg_by_nat", book.getRatingsAggByNat()),
+                    Updates.set("most_10_useful_reviews", book.getMost10UsefulReviews())
                 ));
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiornamento del libro: " + e.getMessage());
+            return false;
         }
+        return true;
     }
 
     // Delete a book from the database
-    public void deleteBook(ObjectId id) {
+    public boolean deleteBook(ObjectId id) {
         try {
             collection.deleteOne(Filters.eq("_id", id));
         } catch (Exception e) {
             System.err.println("Errore durante la cancellazione del libro: " + e.getMessage());
+            return false;
         }
+        return true;
     }
 
-    // Get all books by th title
+    // Get book by its ID
+    public Book getBookById(ObjectId id) {
+        Document doc = collection.find(Filters.eq("_id", id)).first();
+        return new Book(doc);
+    }
+
+    // Get all books by the title
     public List<Book> getBooksByTitle(String title) {
         List<Book> books = new ArrayList<>();
         for (Document doc : collection.find(Filters.eq("title", title))) {
@@ -85,9 +105,9 @@ public class BookDao {
     }
 
     // Get all books by a given author
-    public List<Book> getBooksByAuthor(ObjectId author) {
+    public List<Book> getBooksByAuthor(ObjectId authorId) {
         List<Book> books = new ArrayList<>();
-        for (Document doc : collection.find(Filters.in("author", author))) {
+        for (Document doc : collection.find(Filters.in("author", authorId))) {
             books.add(new Book(doc));
         }
         return books;
@@ -105,7 +125,7 @@ public class BookDao {
     // Get all books of a given year
     public List<Book> getBooksByYear(int year) {
         List<Book> books = new ArrayList<>();
-        for (Document doc : collection.find(Filters.in("year", year))) {
+        for (Document doc : collection.find(Filters.eq("year", year))) {
             books.add(new Book(doc));
         }
         return books;
@@ -114,7 +134,7 @@ public class BookDao {
     // Get all books of a given language
     public List<Book> getBooksByLanguage(String language) {
         List<Book> books = new ArrayList<>();
-        for (Document doc : collection.find(Filters.in("language", language))) {
+        for (Document doc : collection.find(Filters.eq("language", language))) {
             books.add(new Book(doc));
         }
         return books;
@@ -124,8 +144,8 @@ public class BookDao {
     public List<Book> getBooksByRating(double targetRating, boolean greaterOrEqual) {
         List<Book> books = new ArrayList<>();
         for (Document doc : collection.find()) {
-            int sumStars = doc.getInteger("sumstars", 0); // 0 is a default value if sumstars is not present
-            int numRatings = doc.getInteger("numratings", 0); // 0 is a default value if numratings is not present
+            int sumStars = doc.getInteger("sumStars", 0); // 0 is a default value if sumStars is not present
+            int numRatings = doc.getInteger("numRatings", 0); // 0 is a default value if numRatings is not present
     
             double currentRating = (numRatings > 0) ? (double) sumStars / numRatings : 0.0;
     
@@ -140,11 +160,11 @@ public class BookDao {
     public List<Book> getBooksByNumPages(int numPages, boolean greaterOrEqual) {
         List<Book> books = new ArrayList<>();
         if (greaterOrEqual) {
-            for (Document doc : collection.find(Filters.gte("numPages", numPages))) {
+            for (Document doc : collection.find(Filters.gte("num_pages", numPages))) {
                 books.add(new Book(doc));
             }
         } else {
-            for (Document doc : collection.find(Filters.lt("numPages", numPages))) {
+            for (Document doc : collection.find(Filters.lt("num_pages", numPages))) {
                 books.add(new Book(doc));
             }
         }
@@ -182,19 +202,73 @@ public class BookDao {
     }
 
     // Update the rating of a book
-    protected void updateBookRating(ObjectId bookId, int rating) {
+    protected void updateBookRating(ObjectId bookId, int rating, String nationality) {
         try {
             Document book = collection.find(Filters.eq("_id", bookId)).first();
             if (book != null) {
                 int sumStars = book.getInteger("sumStars", 0) + rating;
                 int numRatings = book.getInteger("numRatings", 0);
                 numRatings = rating > 0 ? numRatings + 1 : numRatings - 1;
-                collection.updateOne(Filters.eq("_id", bookId), 
-                                         Updates.combine(Updates.set("sumStars", sumStars),
-                                                         Updates.set("numRatings", numRatings)));
+    
+                // Aggiornamento del sumRating e della cardinality in base alla nazionalità
+                Document ratingsAggByNat = book.get("ratings_agg_by_nat", Document.class);
+                if (ratingsAggByNat == null) {
+                    ratingsAggByNat = new Document();
+                }
+                Document nationalityStats = ratingsAggByNat.get(nationality, Document.class);
+    
+                // Se non esiste la statistica per la nazionalità, la inizializzo
+                if (nationalityStats == null) {
+                    nationalityStats = new Document("sumRating", 0).append("cardinality", 0);
+                }
+    
+                int sumRatingByNat = nationalityStats.getInteger("sumRating", 0) + rating;
+                int cardinality = nationalityStats.getInteger("cardinality", 0);
+                cardinality = rating > 0 ? cardinality + 1 : cardinality - 1;
+    
+                collection.updateOne(
+                    Filters.eq("_id", bookId),
+                    Updates.combine(
+                        Updates.set("sumStars", sumStars),
+                        Updates.set("numRatings", numRatings),
+                        Updates.set("ratings_agg_by_nat." + nationality + ".sumRating", sumRatingByNat),
+                        Updates.set("ratings_agg_by_nat." + nationality + ".cardinality", cardinality)
+                    )
+                );
             }
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiornamento dei rating del libro: " + e.getMessage());
         }
     }
+
+    // Methods to update the most useful reviews of a book according to the book document structure
+    public void addMostUsefulReview(ObjectId bookId, Document review) {
+        try {
+            collection.updateOne(
+                Filters.eq("_id", bookId), 
+                Updates.push("most_10_useful_reviews", review)
+            );
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiornamento delle recensioni più utili del libro: " + e.getMessage());
+        }
+    }
+
+    // Helper method to convert Author array to ObjectId array
+    private List<ObjectId> convertAuthorsToIds(Author[] authors) {
+        List<ObjectId> authorIds = new ArrayList<>();
+        for (Author author : authors) {
+            authorIds.add(author.getId());
+        }
+        return authorIds;
+    }
+
+    public List<Book> getAllBooks() {
+        List<Book> books = new ArrayList<>();
+        for (Document doc : collection.find()) {
+            books.add(new Book(doc));
+        }
+        return books;
+    }
 }
+
+

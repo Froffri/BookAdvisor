@@ -2,40 +2,70 @@ package it.unipi.lsmsdb.bookadvisor.model.review;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import org.neo4j.driver.types.Node;
 
 public class Review {
     private ObjectId id;
     private ObjectId userId;
     private ObjectId bookId;
+    private String nickname;
     private String text;
+    private String country;
     private int stars;
+    private int countUpVote;
+    private int countDownVote;
 
-    // Costruttore
-    public Review(ObjectId id, ObjectId userId, ObjectId bookId, String text, int stars) {
+    // Constructor
+    public Review(ObjectId id, ObjectId userId, ObjectId bookId, String nickname, String text, String country, int stars, int countUpVote, int countDownVote) {
         this.id = id;
         this.userId = userId;
         this.bookId = bookId;
+        this.nickname = nickname; 
         this.text = text;
+        this.country = country;
         this.stars = stars;
+        this.countUpVote = countUpVote;
+        this.countDownVote = countDownVote;
     }
 
-    // Costruttore che accetta un Document
+    // Constructor that accepts a Document
     public Review(Document doc) {
         this.id = doc.getObjectId("_id");
-        this.userId = doc.getObjectId("userId");
-        this.bookId = doc.getObjectId("bookId");
-        this.text = doc.getString("text");
-        this.stars = doc.getInteger("stars", 0);
+        this.userId = doc.getObjectId("user_id");
+        this.bookId = doc.getObjectId("book_id");
+        this.nickname = doc.getString("nickname"); 
+        this.text = doc.getString("review_text");
+        this.country = doc.getString("country");
+        this.stars = doc.getInteger("rating", 0);
+        this.countUpVote = doc.getInteger("count_up_votes", 0);
+        this.countDownVote = doc.getInteger("count_down_votes", 0);
     }
 
-    // Metodo per convertire in Document
-    public Document toDocument() {
-        return new Document("userId", userId)
-                .append("bookId", bookId)
-                .append("text", text)
-                .append("stars", stars);
+    // Constructor that accepts a Node
+    public Review(Node node) {
+        this.id = null;
+        this.userId = new ObjectId(node.get("user_id").asString());
+        this.bookId = new ObjectId(node.get("book_id").asString());
+        this.nickname = null;
+        this.text = null;
+        this.country = null;
+        this.stars = node.get("rating").asInt();
+        this.countUpVote = 0;
+        this.countDownVote = 0;
     }
- 
+
+    // Method to convert to Document
+    public Document toDocument() {
+        return new Document("user_id", userId)
+                .append("book_id", bookId)
+                .append("nickname", nickname)
+                .append("review_text", text)
+                .append("country", country)
+                .append("rating", stars)
+                .append("count_up_votes", countUpVote)
+                .append("count_down_votes", countDownVote);
+    }
+
     public ObjectId getId() {
         return id;
     }
@@ -68,11 +98,59 @@ public class Review {
         this.text = text;
     }
 
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
     public int getStars() {
         return stars;
     }
 
     public void setStars(int stars) {
         this.stars = stars;
+    }
+
+    public int getCountUpVote() {
+        return countUpVote;
+    }
+
+    public void setCountUpVote(int countUpVote) {
+        this.countUpVote = countUpVote;
+    }
+
+    public int getCountDownVote() {
+        return countDownVote;
+    }
+
+    public void setCountDownVote(int countDownVote) {
+        this.countDownVote = countDownVote;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    // toString method for debugging and logging
+    @Override
+    public String toString() {
+        return "Review{" +
+                "id=" + id +
+                ", userId=" + userId +
+                ", bookId=" + bookId +
+                ", nickname='" + nickname + '\'' +
+                ", text='" + text + '\'' +
+                ", country='" + country + '\'' +
+                ", stars=" + stars +
+                ", countUpVote=" + countUpVote +
+                ", countDownVote=" + countDownVote +
+                '}';
     }
 }

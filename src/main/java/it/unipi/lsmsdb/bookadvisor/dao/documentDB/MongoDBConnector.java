@@ -7,6 +7,7 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 
 public class MongoDBConnector {
+    private static final String DATABASE_NAME = "BookAdvisor";
     private static MongoDBConnector instance;
     private MongoDatabase database;
     private MongoClient mongoClient;
@@ -29,7 +30,7 @@ public class MongoDBConnector {
             mongoClient = MongoClients.create(settingsBuilder.build());
 
             // Access the database that you want to work with
-            database = mongoClient.getDatabase("BookAdvisor");
+            database = mongoClient.getDatabase(DATABASE_NAME);
 
         } catch (Exception e) {
             // Wrap and rethrow the exception as a runtime exception

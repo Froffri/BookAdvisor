@@ -28,6 +28,12 @@ public class Admin extends User {
         this.isAdmin = doc.getBoolean("isAdmin");
     }    
 
+    // Constructor from Neo4j Node
+    public Admin(org.neo4j.driver.types.Node node) {
+        super(node);
+        this.isAdmin = node.get("isAdmin").asBoolean();
+    }
+
     // Getters and setters for isAdmin
     public boolean isAdmin() {
         return isAdmin;
