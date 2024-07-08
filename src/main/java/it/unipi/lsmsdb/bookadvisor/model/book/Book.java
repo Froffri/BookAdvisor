@@ -109,16 +109,28 @@ public class Book {
         this.authors = new Author[authorsList.size()];
         for (int i = 0; i < authorsList.size(); i++) {
             Document authorDoc = authorsList.get(i);
-            this.authors[i] = new Author(authorDoc.getObjectId("authorId"), authorDoc.getString("authorName"));
+            this.authors[i] = new Author(authorDoc.getObjectId("id"), authorDoc.getString("name"));
         }
 
         this.genre = doc.getList("genre", String.class).toArray(new String[0]);
         this.year = doc.getInteger("year");
-        this.imageUrl = doc.getString("imageUrl");
-        this.numPages = doc.getInteger("numPages");
-        this.reviewIds = doc.getList("reviewIds", ObjectId.class).toArray(new ObjectId[0]);
-        this.ratingsAggByNat = (Map<String, RatingAggregate>) doc.get("ratingsAggByNat");
-        this.most10UsefulReviews = (List<Review>) doc.get("most10UsefulReviews");
+        this.imageUrl = doc.getString("image_url");
+        this.numPages = doc.getInteger("num_pages");
+        this.reviewIds = doc.getList("review_ids", ObjectId.class).toArray(new ObjectId[0]);
+        this.ratingsAggByNat = (Map<String, RatingAggregate>) doc.get("ratings_agg_by_nat");
+
+        List<Document> reviewsList = (List<Document>) doc.get("most_10_useful_reviews");
+        // System.out.println(doc.get("most_10_useful_reviews"));
+        if(reviewsList == null){
+            this.most10UsefulReviews = null;
+            return;
+        }
+        this.most10UsefulReviews = new ArrayList<>();
+        for (Document reviewDoc : reviewsList) {
+            Review review = new Review(reviewDoc);
+            this.most10UsefulReviews.add(review);
+        }
+
     }
 
     // Constructor that accepts a Neo4j Node object
@@ -145,19 +157,19 @@ public class Book {
             authorDocs.add(author.toDocument());
         }
 
-        return new Document("id", id)
+        return new Document("_id", id)
                 .append("title", title)
                 .append("authors", authorDocs)
                 .append("genre", genre)
                 .append("year", year)
                 .append("language", language)
-                .append("numPages", numPages)
+                .append("num_pages", numPages)
                 .append("sumStars", sumStars)
                 .append("numRatings", numRatings)
-                .append("imageUrl", imageUrl)
-                .append("reviewIds", reviewIds)
-                .append("ratingsAggByNat", ratingsAggByNat)
-                .append("most10UsefulReviews", most10UsefulReviews);
+                .append("image_url", imageUrl)
+                .append("review_ids", reviewIds)
+                .append("ratings_agg_by_nat", ratingsAggByNat)
+                .append("most_10_useful_reviews", most10UsefulReviews);
     }
     // Getters and setters
     

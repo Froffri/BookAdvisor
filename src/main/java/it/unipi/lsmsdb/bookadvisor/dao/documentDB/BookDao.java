@@ -11,6 +11,7 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -33,7 +34,8 @@ public class BookDao {
     // Find books by title
     public List<Book> findBooksByTitle(String title) {
         List<Book> books = new ArrayList<>();
-        for (Document doc : collection.find(Filters.eq("title", title))) {
+        Pattern regex = Pattern.compile(title, Pattern.CASE_INSENSITIVE);
+        for (Document doc : collection.find(Filters.regex("title", regex))) {
             books.add(new Book(doc));
         }
         return books;
@@ -63,11 +65,11 @@ public class BookDao {
                     Updates.set("author", convertAuthorsToIds(book.getAuthors())), // Converts authors to their IDs
                     Updates.set("genre", book.getGenre()),
                     Updates.set("year", book.getYear()),
-                    Updates.set("imageUrl", book.getImageUrl()),
-                    Updates.set("numPages", book.getNumPages()),
-                    Updates.set("reviewIds", book.getReviewIds()),
-                    Updates.set("ratingsAggByNat", book.getRatingsAggByNat()),
-                    Updates.set("most10UsefulReviews", book.getMost10UsefulReviews())
+                    Updates.set("image_url", book.getImageUrl()),
+                    Updates.set("num_pages", book.getNumPages()),
+                    Updates.set("review_ids", book.getReviewIds()),
+                    Updates.set("ratings_agg_by_nat", book.getRatingsAggByNat()),
+                    Updates.set("most_10_useful_reviews", book.getMost10UsefulReviews())
                 ));
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiornamento del libro: " + e.getMessage());
@@ -158,11 +160,11 @@ public class BookDao {
     public List<Book> getBooksByNumPages(int numPages, boolean greaterOrEqual) {
         List<Book> books = new ArrayList<>();
         if (greaterOrEqual) {
-            for (Document doc : collection.find(Filters.gte("numPages", numPages))) {
+            for (Document doc : collection.find(Filters.gte("num_pages", numPages))) {
                 books.add(new Book(doc));
             }
         } else {
-            for (Document doc : collection.find(Filters.lt("numPages", numPages))) {
+            for (Document doc : collection.find(Filters.lt("num_pages", numPages))) {
                 books.add(new Book(doc));
             }
         }
@@ -209,7 +211,7 @@ public class BookDao {
                 numRatings = rating > 0 ? numRatings + 1 : numRatings - 1;
     
                 // Aggiornamento del sumRating e della cardinality in base alla nazionalità
-                Document ratingsAggByNat = book.get("ratingsAggByNat", Document.class);
+                Document ratingsAggByNat = book.get("ratings_agg_by_nat", Document.class);
                 if (ratingsAggByNat == null) {
                     ratingsAggByNat = new Document();
                 }
@@ -229,8 +231,8 @@ public class BookDao {
                     Updates.combine(
                         Updates.set("sumStars", sumStars),
                         Updates.set("numRatings", numRatings),
-                        Updates.set("ratingsAggByNat." + nationality + ".sumRating", sumRatingByNat),
-                        Updates.set("ratingsAggByNat." + nationality + ".cardinality", cardinality)
+                        Updates.set("ratings_agg_by_nat." + nationality + ".sumRating", sumRatingByNat),
+                        Updates.set("ratings_agg_by_nat." + nationality + ".cardinality", cardinality)
                     )
                 );
             }
@@ -244,7 +246,7 @@ public class BookDao {
         try {
             collection.updateOne(
                 Filters.eq("_id", bookId), 
-                Updates.push("most10UsefulReviews", review)
+                Updates.push("most_10_useful_reviews", review)
             );
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiornamento delle recensioni più utili del libro: " + e.getMessage());

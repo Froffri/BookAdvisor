@@ -13,6 +13,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.scene.Node;
@@ -27,13 +28,15 @@ public class App extends Application {
     private AuthenticationService authenticationService;
     private BookService bookService;
     private User currentUser;
+    private UserDao userDao;
+    private boolean searchBooks = true;
 
     @Override
     public void start(Stage primaryStage) {
         // Initialize MongoDB connector, UserDao, and BookDao
         MongoDBConnector connector = MongoDBConnector.getInstance();
         Neo4jConnector neo4jConnector = Neo4jConnector.getInstance();
-        UserDao userDao = new UserDao(connector);
+        userDao = new UserDao(connector);
         UserGraphDAO userGraphDAO = new UserGraphDAO(neo4jConnector);
         BookDao bookDao = new BookDao(connector);
 
@@ -51,8 +54,6 @@ public class App extends Application {
         Tab homeTab = createHomeTab();
 
         tabPane.getTabs().addAll(loginTab, registerTab, homeTab);
-
-        homeTab.setDisable(true); // Disable the home tab until the user logs in
 
         Scene scene = new Scene(tabPane, 800, 600);
         primaryStage.setScene(scene);
@@ -136,7 +137,8 @@ public class App extends Application {
                 new Label("Genres"), genresField,
                 registerButton
         );
-        tab.setContent(vbox);
+        ScrollPane scrollPane = new ScrollPane(vbox);
+        tab.setContent(scrollPane);
 
         return tab;
     }
@@ -146,25 +148,59 @@ public class App extends Application {
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
 
+        HBox searchBox = new HBox(10);
         TextField searchField = new TextField();
-        searchField.setPromptText("Search for books by title");
+        searchField.setPromptText("Search for books by title or users by nickname");
+        Button searchModeButton = new Button("Search Mode: Books");
+        searchModeButton.setOnAction(e -> {
+            searchBooks = !searchBooks;
+            searchModeButton.setText(searchBooks ? "Search Mode: Books" : "Search Mode: Users");
+        });
 
         Button searchButton = new Button("Search");
-        searchButton.setOnAction(e -> displayBooks(bookService.findBooksByTitle(searchField.getText()), vbox));
+        searchButton.setOnAction(e -> handleSearch(searchField.getText(), vbox));
 
-        vbox.getChildren().addAll(new Label("Search"), searchField, searchButton);
+        searchBox.getChildren().addAll(searchField, searchModeButton, searchButton);
+
+        vbox.getChildren().addAll(new Label("Search"), searchBox);
 
         // Display popular books
         List<Book> popularBooks = bookService.getPopularBooks(5);
         vbox.getChildren().add(new Label("Popular Books"));
         displayBooks(popularBooks, vbox);
 
-        tab.setContent(vbox);
+        ScrollPane scrollPane = new ScrollPane(vbox);
+        tab.setContent(scrollPane);
         return tab;
     }
 
-    private void displayBooks(List<Book> books, VBox vbox) {
+    private void handleSearch(String query, VBox vbox) {
         vbox.getChildren().clear();
+        HBox searchBox = new HBox(10);
+        TextField searchField = new TextField();
+        searchField.setPromptText("Search for books by title or users by nickname");
+        Button searchModeButton = new Button(searchBooks ? "Search Mode: Books" : "Search Mode: Users");
+        searchModeButton.setOnAction(e -> {
+            searchBooks = !searchBooks;
+            searchModeButton.setText(searchBooks ? "Search Mode: Books" : "Search Mode: Users");
+        });
+
+        Button searchButton = new Button("Search");
+        searchButton.setOnAction(e -> handleSearch(searchField.getText(), vbox));
+
+        searchBox.getChildren().addAll(searchField, searchModeButton, searchButton);
+        vbox.getChildren().addAll(new Label("Search"), searchBox);
+
+        if (searchBooks) {
+            List<Book> books = bookService.findBooksByTitle(query);
+            displayBooks(books, vbox);
+        } else {
+            List<User> users = userDao.findUsersByUsername(query);
+            displayUsers(users, vbox);
+        }
+    }
+
+    private void displayBooks(List<Book> books, VBox vbox) {
         for (Book book : books) {
             VBox bookBox = new VBox(5);
             Label titleLabel = new Label("Title: " + book.getTitle());
@@ -177,6 +213,16 @@ public class App extends Application {
             bookBox.setOnMouseClicked(e -> displayBookDetails(book));
 
             vbox.getChildren().add(bookBox);
+        }
+    }
+
+    private void displayUsers(List<User> users, VBox vbox) {
+        for (User user : users) {
+            VBox userBox = new VBox(5);
+            Label nicknameLabel = new Label("Nickname: " + user.getNickname());
+            userBox.getChildren().addAll(nicknameLabel);
+            // You can add more details about the user here
+            vbox.getChildren().add(userBox);
         }
     }
 
@@ -202,17 +248,25 @@ public class App extends Application {
         Label reviewsLabel = new Label("Most Useful Reviews");
         VBox reviewsBox = new VBox(10);
         List<Review> reviews = book.getMost10UsefulReviews();
-        for (Review review : reviews) {
-            VBox reviewBox = new VBox(5);
-            Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
-            Label reviewTextLabel = new Label("Review: " + review.getText());
-            Label reviewStarsLabel = new Label("Stars: " + review.getStars());
-            reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel);
-            reviewsBox.getChildren().add(reviewBox);
+
+        if (reviews == null || reviews.isEmpty()) {
+            Label noReviewsLabel = new Label("No reviews found");
+            reviewsBox.getChildren().add(noReviewsLabel);
+        } else {
+            for (Review review : reviews) {
+                VBox reviewBox = new VBox(5);
+                Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
+                Label reviewTextLabel = new Label("Review: " + review.getText());
+                Label reviewStarsLabel = new Label("Stars: " + review.getStars());
+                reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel);
+                reviewsBox.getChildren().add(reviewBox);
+            }
         }
+
         bookDetailsBox.getChildren().addAll(reviewsLabel, reviewsBox);
 
-        Scene scene = new Scene(bookDetailsBox, 400, 600);
+        ScrollPane scrollPane = new ScrollPane(bookDetailsBox);
+        Scene scene = new Scene(scrollPane, 400, 600);
         bookStage.setScene(scene);
         bookStage.show();
     }
@@ -225,7 +279,6 @@ public class App extends Application {
             currentUser = user;
             // Enable and switch to home tab
             TabPane tabPane = (TabPane) sourceNode.getScene().getRoot();
-            tabPane.getTabs().get(2).setDisable(false);
             tabPane.getSelectionModel().select(2);
         } else {
             System.out.println("Login failed for user: " + username);

@@ -1,5 +1,6 @@
 package it.unipi.lsmsdb.bookadvisor.dao.documentDB;
 
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
@@ -13,6 +14,7 @@ import org.bson.types.ObjectId;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Pattern;
 
 public class UserDao {
     private static final String COLLECTION_NAME = "users";
@@ -69,10 +71,26 @@ public class UserDao {
         }
     }
 
+    // Find users by their username
+    public List<User> findUsersByUsername(String username) {
+        List<User> users = new ArrayList<>();
+        try {
+            Pattern pattern = Pattern.compile(username, Pattern.CASE_INSENSITIVE);
+            FindIterable<Document> documents = collection.find(Filters.regex("nickname", pattern));
+            for (Document doc : documents) {
+                users.add(createUserFromDocument(doc));
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca degli utenti per username: " + e.getMessage());
+        }
+        return users;
+    }
+
     // Find a user by their username
     public User findUserByUsername(String username) {
         try {
-            Document doc = collection.find(Filters.eq("nickname", username)).first();
+            Pattern pattern = Pattern.compile(username, Pattern.CASE_INSENSITIVE);
+            Document doc = collection.find(Filters.regex("nickname", pattern)).first();
             return createUserFromDocument(doc);
         } catch (Exception e) {
             System.err.println("Errore durante la ricerca dell'utente per username: " + e.getMessage());
@@ -128,31 +146,31 @@ public class UserDao {
                 if (hasUpvoted) {
                     // Remove existing upvote
                     user.getUpVotedReviews().remove(reviewId);
-                    reviewDao.updateVoteCount(reviewId, "countUpVote", -1);
+                    reviewDao.updateVoteCount(reviewId, "count_up_votes", -1);
                 } else {
                     // Remove existing downvote if present
                     if (hasDownvoted) {
                         user.getDownVotedReviews().remove(reviewId);
-                        reviewDao.updateVoteCount(reviewId, "countDownVote", -1);
+                        reviewDao.updateVoteCount(reviewId, "count_down_votes", -1);
                     }
                     // Add new upvote
                     user.getUpVotedReviews().add(reviewId);
-                    reviewDao.updateVoteCount(reviewId, "countUpVote", 1);
+                    reviewDao.updateVoteCount(reviewId, "count_up_votes", 1);
                 }
             } else {
                 if (hasDownvoted) {
                     // Remove existing downvote
                     user.getDownVotedReviews().remove(reviewId);
-                    reviewDao.updateVoteCount(reviewId, "countDownVote", -1);
+                    reviewDao.updateVoteCount(reviewId, "count_down_votes", -1);
                 } else {
                     // Remove existing upvote if present
                     if (hasUpvoted) {
                         user.getUpVotedReviews().remove(reviewId);
-                        reviewDao.updateVoteCount(reviewId, "countUpVote", -1);
+                        reviewDao.updateVoteCount(reviewId, "count_up_votes", -1);
                     }
                     // Add new downvote
                     user.getDownVotedReviews().add(reviewId);
-                    reviewDao.updateVoteCount(reviewId, "countDownVote", 1);
+                    reviewDao.updateVoteCount(reviewId, "count_down_votes", 1);
                 }
             }
 

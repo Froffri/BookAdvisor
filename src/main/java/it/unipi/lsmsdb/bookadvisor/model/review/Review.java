@@ -31,39 +31,39 @@ public class Review {
     // Constructor that accepts a Document
     public Review(Document doc) {
         this.id = doc.getObjectId("_id");
-        this.userId = doc.getObjectId("userId");
-        this.bookId = doc.getObjectId("bookId");
+        this.userId = doc.getObjectId("user_id");
+        this.bookId = doc.getObjectId("book_id");
         this.nickname = doc.getString("nickname"); 
-        this.text = doc.getString("text");
+        this.text = doc.getString("review_text");
         this.country = doc.getString("country");
-        this.stars = doc.getInteger("stars", 0);
-        this.countUpVote = doc.getInteger("countUpVote", 0);
-        this.countDownVote = doc.getInteger("countDownVote", 0);
+        this.stars = doc.getInteger("rating", 0);
+        this.countUpVote = doc.getInteger("count_up_votes", 0);
+        this.countDownVote = doc.getInteger("count_down_votes", 0);
     }
 
     // Constructor that accepts a Node
     public Review(Node node) {
         this.id = null;
-        this.userId = new ObjectId(node.get("userId").asString());
-        this.bookId = new ObjectId(node.get("bookId").asString());
+        this.userId = new ObjectId(node.get("user_id").asString());
+        this.bookId = new ObjectId(node.get("book_id").asString());
         this.nickname = null;
         this.text = null;
         this.country = null;
-        this.stars = node.get("stars").asInt();
+        this.stars = node.get("rating").asInt();
         this.countUpVote = 0;
         this.countDownVote = 0;
     }
 
     // Method to convert to Document
     public Document toDocument() {
-        return new Document("userId", userId)
-                .append("bookId", bookId)
+        return new Document("user_id", userId)
+                .append("book_id", bookId)
                 .append("nickname", nickname)
-                .append("text", text)
+                .append("review_text", text)
                 .append("country", country)
-                .append("stars", stars)
-                .append("countUpVote", countUpVote)
-                .append("countDownVote", countDownVote);
+                .append("rating", stars)
+                .append("count_up_votes", countUpVote)
+                .append("count_down_votes", countDownVote);
     }
 
     public ObjectId getId() {

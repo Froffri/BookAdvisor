@@ -44,9 +44,9 @@ public class User {
         this.nickname = doc.getString("nickname");
         this.password = doc.getString("password");
         this.gender = doc.getString("gender");
-
+        
         // Conversione della stringa di data in LocalDate
-        this.birthdate = doc.getDate("birthdate").toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        this.birthdate = LocalDate.parse(doc.getString("birth"));
     }
 
     // Constructor from Neo4j Node
@@ -117,7 +117,7 @@ public class User {
                 ", name='" + name + '\'' +
                 ", nickname='" + nickname + '\'' +
                 ", password='" + password + '\'' +
-                ", birthdate='" + birthdate + '\'' +
+                ", birth='" + birthdate + '\'' +
                 ", gender='" + gender + '\'' +
                 '}';
     }
@@ -127,7 +127,7 @@ public class User {
         return new Document("name", name)
                 .append("nickname", nickname)
                 .append("password", password)
-                .append("birthdate", birthdate)
+                .append("birth", birthdate.toString())
                 .append("gender", gender);
     }
 }

@@ -48,17 +48,17 @@ public class Reviewer extends User {
     public Reviewer(Document doc) {
         super(doc);
         this.nationality = doc.getString("nationality");
-        this.favouriteGenres = doc.getList("favouriteGenres", String.class);
-        this.spokenLanguages = doc.getList("spokenLanguages", String.class);
-        this.downVotedReviews = doc.getList("downVotedReviews", ObjectId.class);
-        this.upVotedReviews = doc.getList("upVotedReviews", ObjectId.class);
-        this.reviewIds = doc.getList("reviewIds", ObjectId.class); // Extract reviewIds
+        this.favouriteGenres = doc.getList("favourite_genres", String.class);
+        this.spokenLanguages = doc.getList("spoken_languages", String.class);
+        this.upVotedReviews = doc.getList("up_voted_reviews", ObjectId.class);
+        this.downVotedReviews = doc.getList("down_voted_reviews", ObjectId.class);
+        this.reviewIds = doc.getList("reviews", ObjectId.class); // Extract reviewIds
     }    
     
     // Constructor from Neo4j Node
     public Reviewer(Node node) {
         super(node);
-        this.favouriteGenres = node.get("favouriteGenres").asList(Value::asString);
+        this.favouriteGenres = node.get("favourite_genres").asList(Value::asString);
         this.spokenLanguages = null;
         this.downVotedReviews = null;
         this.upVotedReviews = null;
@@ -175,11 +175,11 @@ public class Reviewer extends User {
     public Document toDocument() {
         Document doc = super.toDocument();
         doc.append("nationality", nationality)
-        .append("favouriteGenres", favouriteGenres)
-        .append("spokenLanguages", spokenLanguages)
-        .append("upVotedReviews", upVotedReviews)
-        .append("downVotedReviews", downVotedReviews)
-        .append("reviewIds", reviewIds);
+        .append("favourite_genres", favouriteGenres)
+        .append("spoken_languages", spokenLanguages)
+        .append("up_voted_reviews", upVotedReviews)
+        .append("down_voted_reviews", downVotedReviews)
+        .append("reviews", reviewIds);
         return doc;
     }
 
