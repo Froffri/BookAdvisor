@@ -7,53 +7,62 @@ import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 
 public class MongoDBConnector {
-
     private static final String DATABASE_NAME = "BookAdvisor";
     private static MongoDBConnector instance;
-    private MongoClient mongoClient;
     private MongoDatabase database;
+    private MongoClient mongoClient;
 
-    // Costruttore privato per prevenire l'istanziazione diretta
-    public MongoDBConnector() {
+    // Private constructor to ensure singleton pattern
+    private MongoDBConnector() {
         try {
-            ConnectionString connString = new ConnectionString("mongodb://localhost:27017");
-            MongoClientSettings settings = MongoClientSettings.builder()
-                    .applyConnectionString(connString)
-                    .retryWrites(true)
-                    .build();
-            mongoClient = MongoClients.create(settings);
+            // Replica Set URI with all nodes and the replica set name
+            String uri = "mongodb://10.1.1.20:27020,10.1.1.21:27020,10.1.1.23:27020/?readPreference=secondary";
+            //String uri = "mongodb://localhost:27017";
+
+            // Configure MongoClientSettings, if necessary
+            MongoClientSettings.Builder settingsBuilder = MongoClientSettings.builder()
+                    .applyConnectionString(new ConnectionString(uri))
+                    .retryWrites(true) // Enable retryable writes
+                    .readPreference(com.mongodb.ReadPreference.primaryPreferred()) // Read preference
+                    .writeConcern(com.mongodb.WriteConcern.MAJORITY); // Write concern
+
+            // Create a MongoClient with the given settings
+            mongoClient = MongoClients.create(settingsBuilder.build());
+
+            // Access the database that you want to work with
             database = mongoClient.getDatabase(DATABASE_NAME);
+
         } catch (Exception e) {
-            System.err.println("Errore durante la connessione al database: " + e.getMessage());
+            // Wrap and rethrow the exception as a runtime exception
+            throw new RuntimeException("Error initializing MongoDB connection: " + e.getMessage(), e);
         }
     }
 
-    // Metodo pubblico statico per ottenere l'istanza
-    public static MongoDBConnector getInstance() {
+    // Method to get the singleton instance of MongoDBConnector
+    public static synchronized MongoDBConnector getInstance() {
         if (instance == null) {
-            synchronized (MongoDBConnector.class) {
-                if (instance == null) {
-                    instance = new MongoDBConnector();
-                }
-            }
+            instance = new MongoDBConnector();
         }
         return instance;
     }
 
-    // Metodo per ottenere il database
+    // Method to get the MongoDB database instance
     public MongoDatabase getDatabase() {
+        if (database == null) {
+            throw new RuntimeException("MongoDB database not initialized");
+        }
         return database;
     }
 
-    // Metodo per chiudere la connessione al database
-    // Nota: Considera attentamente quando chiamare questo metodo in un ambiente Singleton
-    public void closeConnection() {
+    // Method to close the MongoClient connection when the application is shutting down
+    public void close() {
         try {
             if (mongoClient != null) {
                 mongoClient.close();
             }
         } catch (Exception e) {
-            System.err.println("Errore durante la chiusura della connessione al database: " + e.getMessage());
+            // Handle the exception or log it, depending on your application's requirements
+            throw new RuntimeException("Error closing MongoDB connection: " + e.getMessage(), e);
         }
     }
 }
