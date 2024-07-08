@@ -23,9 +23,9 @@ public class UserService {
     }
 
     // Cambiare la password dell'utente
-    public boolean changePassword(String userId, String oldPassword, String newPassword) {
-        User user = userDao.findUserById(new ObjectId(userId));
-        if (user != null && HashingUtility.hashPassword(oldPassword).equals(user.getPassword())) {
+    public boolean changePassword(ObjectId userId, String newPassword) {
+        User user = userDao.findUserById(userId);
+        if (user != null) {
             if (PasswordValidator.newPasswordMeetsCriteria(newPassword)) {
                 user.setPassword(HashingUtility.hashPassword(newPassword));
                 return userDao.updateUser(user);
@@ -108,7 +108,7 @@ public class UserService {
                     // Validate the vote
                     if (isValidVote(user, review)) {
                         // Call the userDao method to vote for the review
-                        return userDao.voteForReview(user, reviewId, vote);
+                        return userDao.voteForReview(user, reviewId, vote, this.reviewDao);
                     } else {
                         System.err.println("Errore: Il voto non è valido.");
                     }
@@ -136,6 +136,10 @@ public class UserService {
         // Verifica se l'ID utente è valido e corrisponde a un utente nel sistema
         User user = userDao.findUserById(new ObjectId(userId));
         return user != null;
+    }
+
+    public List<User> searchUsersByUsername(String username) {
+        return userDao.findUsersByUsername(username);
     }
        
 }

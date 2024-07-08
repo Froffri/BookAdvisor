@@ -42,22 +42,26 @@ public class UserGraphDAO {
     // }
 
     // TEMPORARY FIX
-    public boolean addUser(User user){
-        return addUser((Reviewer) user);
+    public boolean addUser(ObjectId id, User user){
+        return addUser(id, (Reviewer) user);
     }
 
     /**
      * Add a user to the graph database
      * @param user 
      */
-    public boolean addUser(Reviewer user) {
+    public boolean addUser(ObjectId id, Reviewer user) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String idString = id.toHexString();
+    
             // Create the node only if it hasn't been created
             session.run(
                 "MERGE (u:User {id: $id}) " + 
-                "ON CREATE SET u.fav_genres = $fav_genres", 
-                parameters("id", user.getId(), 
-                            "fav_genres", user.getFavouriteGenresString())
+                "ON CREATE SET u.fav_genres = $fav_genres, u.nickname = $nickname", 
+                parameters("id", idString, 
+                            "fav_genres", user.getFavouriteGenresString(),
+                            "nickname", user.getNickname())
             );
         } catch (Exception e) {
             System.err.println("Error while inserting user: " + e.getMessage());

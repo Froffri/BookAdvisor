@@ -12,6 +12,8 @@ public class FollowService {
         this.followGraphDAO = followGraphDAO;
     }
 
+    
+
     // Create
 
     /**
@@ -36,7 +38,7 @@ public class FollowService {
      * @param followerId the ID of the follower.
      * @param followedId the ID of the followed.
      */
-    public void addFollowByIds(ObjectId followerId, ObjectId followedId) {
+    public void followUser(ObjectId followerId, ObjectId followedId) {        
         followGraphDAO.addFollowByIds(followerId, followedId);
     }
 

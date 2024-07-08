@@ -43,16 +43,15 @@ public class AuthenticationService {
             // Aggiunta dell'utente al database
             if (userDao.addUser(newUser)) {
                 // Insertion in document successful
-                // if (userGraphDAO.addUser(newUser)) {
-                //     // Insertion in graph successful
-                //     return true;
-                // } else {
-                //     // Insertion in graph failed
-                //     System.out.println("Failed to insert user in graph");
-                //     userDao.deleteUser(newUser.getId());
-                //     return false;
-                // }
-                return true;
+                if (userGraphDAO.addUser(userDao.findUserByUsername(username).getId(), newUser)) {
+                    // Insertion in graph successful
+                    return true;
+                } else {
+                    // Insertion in graph failed
+                    System.out.println("Failed to insert user in graph");
+                    userDao.deleteUser(newUser.getId());
+                    return false;
+                }
             } else {
                 // Insertion in document failed
                 System.out.println("Failed to insert author in document database");
@@ -64,16 +63,15 @@ public class AuthenticationService {
             // Aggiunta dell'utente al database
             if (userDao.addUser(newUser)) {
                 // Insertion in document successful
-                // if (userGraphDAO.addUser(newUser)) {
-                //     // Insertion in graph successful
-                //     return true;
-                // } else {
-                //     // Insertion in graph failed
-                //     System.out.println("Failed to insert reviewer in graph");
-                //     userDao.deleteUser(newUser.getId());
-                //     return false;
-                // }
-                return true;
+                if (userGraphDAO.addUser(userDao.findUserByUsername(username).getId(), newUser)) {
+                    // Insertion in graph successful
+                    return true;
+                } else {
+                    // Insertion in graph failed
+                    System.out.println("Failed to insert reviewer in graph");
+                    userDao.deleteUser(newUser.getId());
+                    return false;
+                }
             } else {
                 // Insertion in document failed
                 System.out.println("Failed to insert reviewer in document database");
@@ -85,16 +83,16 @@ public class AuthenticationService {
             // Aggiunta dell'utente al database
             if (userDao.addUser(newUser)) {
                 // Insertion in document successful
-                // if (userGraphDAO.addUser(newUser)) {
-                //     // Insertion in graph successful
-                //     return true;
-                // } else {
-                //     // Insertion in graph failed
-                //     System.out.println("Failed to insert user in graph");
-                //     userDao.deleteUser(newUser.getId());
-                //     return false;
-                // }
-                return true;
+                if (userGraphDAO.addUser(userDao.findUserByUsername(username).getId(), newUser)) {
+                    // Insertion in graph successful
+                    return true;
+                } else {
+                    // Insertion in graph failed
+                    System.out.println("Failed to insert user in graph");
+                    //TODO TODO TODO TODO CHECK IF IT WORKS
+                    userDao.deleteUser(newUser.getId());
+                    return false;
+                }
             } else {
                 // Insertion in document failed
                 System.out.println("Failed to insert user in document database");

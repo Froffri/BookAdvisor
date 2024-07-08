@@ -28,9 +28,9 @@ public class Reviewer extends User {
         this.nationality = nationality;
         this.favouriteGenres = favouriteGenres;
         this.spokenLanguages = spokenLanguages;
-        this.downVotedReviews = null;
-        this.upVotedReviews = null;
-        this.reviewIds = null; // Initialize reviewIds
+        this.downVotedReviews = new ArrayList<>();
+        this.upVotedReviews = new ArrayList<>();
+        this.reviewIds = new ArrayList<>();
     }
 
     public Reviewer(String name, String nickname, String password, LocalDate birthdate,
@@ -39,9 +39,9 @@ public class Reviewer extends User {
         this.nationality = nationality;
         this.favouriteGenres = favouriteGenres;
         this.spokenLanguages = spokenLanguages;
-        this.downVotedReviews = null;
-        this.upVotedReviews = null;
-        this.reviewIds = null; // Initialize reviewIds
+        this.downVotedReviews = new ArrayList<>();
+        this.upVotedReviews = new ArrayList<>();
+        this.reviewIds = new ArrayList<>(); 
     }
 
     // Constructor from MongoDB Document
@@ -52,7 +52,7 @@ public class Reviewer extends User {
         this.spokenLanguages = doc.getList("spoken_languages", String.class);
         this.upVotedReviews = doc.getList("up_voted_reviews", ObjectId.class);
         this.downVotedReviews = doc.getList("down_voted_reviews", ObjectId.class);
-        this.reviewIds = doc.getList("reviews", ObjectId.class); // Extract reviewIds
+        this.reviewIds = doc.getList("reviews", ObjectId.class); 
     }    
     
     // Constructor from Neo4j Node

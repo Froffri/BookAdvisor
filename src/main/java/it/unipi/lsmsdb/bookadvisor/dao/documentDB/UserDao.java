@@ -19,7 +19,6 @@ import java.util.regex.Pattern;
 public class UserDao {
     private static final String COLLECTION_NAME = "users";
     private MongoCollection<Document> collection;
-    private ReviewDao reviewDao;
 
     public UserDao(MongoDBConnector connector) {
         MongoDatabase database = connector.getDatabase();
@@ -136,10 +135,19 @@ public class UserDao {
 
     // Vote for a review (upvote or downvote)
     // If vote is true, the vote is an upvote; otherwise, it is a downvote
-    public boolean voteForReview(Reviewer user, ObjectId reviewId, boolean vote) {
+    public boolean voteForReview(Reviewer user, ObjectId reviewId, boolean vote, ReviewDao reviewDao) {
 
-        boolean hasUpvoted = user.getUpVotedReviews().contains(reviewId);
-        boolean hasDownvoted = user.getDownVotedReviews().contains(reviewId);
+        List<ObjectId> upVotedReviews = user.getUpVotedReviews();
+        List<ObjectId> downVotedReviews = user.getDownVotedReviews();
+
+        boolean hasUpvoted = false;
+        if(upVotedReviews != null && upVotedReviews.contains(reviewId)){
+            hasUpvoted = true;
+        }
+        boolean hasDownvoted = false;
+        if(downVotedReviews != null && downVotedReviews.contains(reviewId)){
+            hasDownvoted = true;
+        }
 
         try {
             if (vote) {
@@ -154,6 +162,10 @@ public class UserDao {
                         reviewDao.updateVoteCount(reviewId, "count_down_votes", -1);
                     }
                     // Add new upvote
+                    // check if the list is null
+                    if (user.getUpVotedReviews() == null) {
+                        user.setUpVotedReviews(new ArrayList<>());
+                    }
                     user.getUpVotedReviews().add(reviewId);
                     reviewDao.updateVoteCount(reviewId, "count_up_votes", 1);
                 }
@@ -169,6 +181,10 @@ public class UserDao {
                         reviewDao.updateVoteCount(reviewId, "count_up_votes", -1);
                     }
                     // Add new downvote
+                    // check if the list is null
+                    if (user.getDownVotedReviews() == null) {
+                        user.setDownVotedReviews(new ArrayList<>());
+                    }
                     user.getDownVotedReviews().add(reviewId);
                     reviewDao.updateVoteCount(reviewId, "count_down_votes", 1);
                 }
