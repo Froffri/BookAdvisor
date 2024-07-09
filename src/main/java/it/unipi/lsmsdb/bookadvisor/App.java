@@ -203,21 +203,70 @@ public class App extends Application {
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
 
-        if (currentUser != null) {
-            Label nameLabel = new Label("Name: " + currentUser.getName());
-            Label nicknameLabel = new Label("Nickname: " + currentUser.getNickname());
-            Label genderLabel = new Label("Gender: " + currentUser.getGender());
-            Label birthdateLabel = new Label("Birthdate: " + currentUser.getBirthdate());
-            Label nationalityLabel = new Label("Nationality: " + currentUser.getNationality());
+        TextField nameField = new TextField(currentUser.getName());
+        nameField.setPromptText("Name");
 
-            Button modifyButton = new Button("Modify Info");
-            modifyButton.setOnAction(e -> modifyUserInfo());
+        DatePicker birthdatePicker = new DatePicker(currentUser.getBirthdate());
 
-            vbox.getChildren().addAll(nameLabel, nicknameLabel, genderLabel, birthdateLabel, nationalityLabel, modifyButton);
-        }
+        Label nicknameLabel = new Label("Nickname: " + currentUser.getNickname());
+        Label genderLabel = new Label("Gender: " + currentUser.getGender());
+        Label nationalityLabel = new Label("Nationality: " + ((Reviewer) currentUser).getNationality());
+        Label favoriteGenresLabel = new Label("Favorite Genres: " + String.join(", ", ((Reviewer) currentUser).getFavouriteGenres()));
+        Label spokenLanguagesLabel = new Label("Spoken Languages: " + String.join(", ", ((Reviewer) currentUser).getSpokenLanguages()));
 
-        ScrollPane scrollPane = new ScrollPane(vbox);
-        tab.setContent(scrollPane);
+        PasswordField oldPasswordField = new PasswordField();
+        oldPasswordField.setPromptText("Old Password");
+
+        PasswordField newPasswordField = new PasswordField();
+        newPasswordField.setPromptText("New Password");
+
+        Button saveButton = new Button("Save");
+        saveButton.setOnAction(e -> {
+            String newName = nameField.getText();
+            LocalDate newBirthdate = birthdatePicker.getValue();
+            String newPassword = newPasswordField.getText();
+
+            if (newPassword.isEmpty() || userService.changePassword(currentUser.getId(), newPassword)) {
+                currentUser.setName(newName);
+                currentUser.setBirthdate(newBirthdate);
+                boolean success = userService.updateAccountInformation(currentUser.getId(), currentUser);
+
+                if (success) {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Success");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Profile updated successfully.");
+                    alert.showAndWait();
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Failed to update profile.");
+                    alert.showAndWait();
+                }
+            } else {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Error");
+                alert.setHeaderText(null);
+                alert.setContentText("Failed to change password.");
+                alert.showAndWait();
+            }
+        });
+
+        vbox.getChildren().addAll(
+                new Label("Name"), nameField,
+                new Label("Birthdate"), birthdatePicker,
+                nicknameLabel,
+                genderLabel,
+                nationalityLabel,
+                favoriteGenresLabel,
+                spokenLanguagesLabel,
+                new Label("Old Password"), oldPasswordField,
+                new Label("New Password"), newPasswordField,
+                saveButton
+        );
+
+        tab.setContent(vbox);
         return tab;
     }
 
@@ -257,7 +306,7 @@ public class App extends Application {
             Label ratingLabel = new Label(String.format("Rating: %.2f", (double) book.getSumStars() / book.getNumRatings()));
 
             bookBox.getChildren().addAll(titleLabel, imageView, ratingLabel);
-            bookBox.setOnMouseClicked(e -> displayBookDetails(book));
+            bookBox.setOnMouseClicked(e -> displayBookDetails(book, (Stage) vbox.getScene().getWindow()));
 
             vbox.getChildren().add(bookBox);
         }
@@ -373,49 +422,59 @@ public class App extends Application {
         System.out.println("Followed user: " + reviewer.getNickname());
     }
 
-    private void displayBookDetails(Book book) {
-        Stage bookStage = new Stage();
-        VBox bookDetailsBox = new VBox(10);
-        bookDetailsBox.setPadding(new Insets(10));
+    private void displayBookDetails(Book book, Stage ownerStage) { 
+        Stage bookStage = new Stage(); 
+        bookStage.initOwner(ownerStage);
+        
+        VBox bookDetailsBox = new VBox(10); 
+        bookDetailsBox.setPadding(new Insets(10)); 
+     
+        ImageView imageView = new ImageView(new Image(book.getImageUrl())); 
+        imageView.setFitHeight(200); 
+        imageView.setFitWidth(160); 
+     
+        Label titleLabel = new Label("Title: " + book.getTitle()); 
+        Label authorLabel = new Label("Authors: " + String.join(", ", Arrays.asList(book.getAuthors()).stream().map(a -> a.getName()).collect(Collectors.toList()))); 
+        Label genreLabel = new Label("Genres: " + String.join(", ", book.getGenre())); 
+        Label yearLabel = new Label("Year: " + book.getYear()); 
+        Label languageLabel = new Label("Language: " + book.getLanguage()); 
+        Label ratingLabel = new Label(String.format("Rating: %.2f", (double) book.getSumStars() / book.getNumRatings())); 
+     
+        bookDetailsBox.getChildren().addAll(imageView, titleLabel, authorLabel, genreLabel, yearLabel, languageLabel, ratingLabel); 
+     
+        // Display most useful reviews 
+        Label reviewsLabel = new Label("Most Useful Reviews"); 
+        VBox reviewsBox = new VBox(10); 
+        List<Review> reviews = book.getMost10UsefulReviews(); 
+     
+        if (reviews == null || reviews.isEmpty()) { 
+            Label noReviewsLabel = new Label("No reviews found"); 
+            reviewsBox.getChildren().add(noReviewsLabel); 
+        } else { 
+            for (Review review : reviews) { 
+                VBox reviewBox = new VBox(5); 
+                Label reviewerLabel = new Label("Reviewer: " + review.getNickname()); 
+                Label reviewTextLabel = new Label("Review: " + review.getText()); 
+                Label reviewStarsLabel = new Label("Stars: " + review.getStars()); 
+                reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel); 
+                reviewsBox.getChildren().add(reviewBox); 
+            } 
+        } 
+     
+        Button showAllReviewsButton = new Button("Show all reviews"); 
+        showAllReviewsButton.setOnAction(e -> showAllReviews(book)); 
 
-        ImageView imageView = new ImageView(new Image(book.getImageUrl()));
-        imageView.setFitHeight(200);
-        imageView.setFitWidth(160);
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(reviewsBox);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-        Label titleLabel = new Label("Title: " + book.getTitle());
-        Label authorLabel = new Label("Authors: " + String.join(", ", Arrays.asList(book.getAuthors()).stream().map(a -> a.getName()).collect(Collectors.toList())));
-        Label genreLabel = new Label("Genres: " + String.join(", ", book.getGenre()));
-        Label yearLabel = new Label("Year: " + book.getYear());
-        Label languageLabel = new Label("Language: " + book.getLanguage());
-        Label ratingLabel = new Label(String.format("Rating: %.2f", (double) book.getSumStars() / book.getNumRatings()));
+        bookDetailsBox.getChildren().addAll(reviewsLabel, scrollPane, showAllReviewsButton); 
 
-        bookDetailsBox.getChildren().addAll(imageView, titleLabel, authorLabel, genreLabel, yearLabel, languageLabel, ratingLabel);
+        Scene scene = new Scene(bookDetailsBox, 400, 600); 
+        bookStage.setScene(scene); 
+        bookStage.show(); 
 
-        // Display most useful reviews
-        Label reviewsLabel = new Label("Most Useful Reviews");
-        VBox reviewsBox = new VBox(10);
-        List<Review> reviews = book.getMost10UsefulReviews();
-
-        if (reviews == null || reviews.isEmpty()) {
-            Label noReviewsLabel = new Label("No reviews found");
-            reviewsBox.getChildren().add(noReviewsLabel);
-        } else {
-            for (Review review : reviews) {
-                VBox reviewBox = new VBox(5);
-                Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
-                Label reviewTextLabel = new Label("Review: " + review.getText());
-                Label reviewStarsLabel = new Label("Stars: " + review.getStars());
-                reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel);
-                reviewsBox.getChildren().add(reviewBox);
-            }
-        }
-
-        bookDetailsBox.getChildren().addAll(reviewsLabel, reviewsBox);
-
-        ScrollPane scrollPane = new ScrollPane(bookDetailsBox);
-        Scene scene = new Scene(scrollPane, 400, 600);
-        bookStage.setScene(scene);
-        bookStage.show();
     }
 
     private void handleLogin(String username, String password, Node sourceNode) {
@@ -477,6 +536,40 @@ public class App extends Application {
         Scene scene = new Scene(modifyBox, 300, 200);
         modifyStage.setScene(scene);
         modifyStage.show();
+    }
+
+    private void showAllReviews(Book book) {
+        Stage reviewsStage = new Stage();
+        VBox allReviewsBox = new VBox(10);
+        allReviewsBox.setPadding(new Insets(10));
+
+        for (ObjectId reviewId : book.getReviewIds()) {
+            Review review = reviewDao.findReviewById(reviewId);
+            if (review != null) {
+                VBox reviewBox = new VBox(5);
+                Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
+                Label reviewTextLabel = new Label("Review: " + review.getText());
+                Label reviewStarsLabel = new Label("Stars: " + review.getStars());
+
+                if (currentUser != null && review.getText() != null && !review.getText().isEmpty()) {
+                    Label reviewUpVotesLabel = new Label("Upvotes: " + review.getCountUpVote());
+                    Label reviewDownVotesLabel = new Label("Downvotes: " + review.getCountDownVote());
+                    Button upvoteButton = new Button("Upvote");
+                    upvoteButton.setOnAction(e -> handleVote(review, true));
+                    Button downvoteButton = new Button("Downvote");
+                    downvoteButton.setOnAction(e -> handleVote(review, false));
+                    reviewBox.getChildren().addAll(reviewUpVotesLabel, reviewDownVotesLabel, upvoteButton, downvoteButton);
+                }
+
+                reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel);
+                allReviewsBox.getChildren().add(reviewBox);
+            }
+        }
+
+        ScrollPane scrollPane = new ScrollPane(allReviewsBox);
+        Scene scene = new Scene(scrollPane, 400, 600);
+        reviewsStage.setScene(scene);
+        reviewsStage.show();
     }
 
     public static void main(String[] args) {

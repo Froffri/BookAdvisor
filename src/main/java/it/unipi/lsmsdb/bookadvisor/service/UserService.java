@@ -42,20 +42,23 @@ public class UserService {
 
     // CHANGED USER TO REGISTEREDUSER
     // Aggiornamento dei dettagli utente
-    public boolean updateAccountInformation(String userId, User updatedUser) {
-        User existingUser = userDao.findUserById(new ObjectId(userId));
+    public boolean updateAccountInformation(ObjectId userId, User updatedUser) {
+        User existingUser = userDao.findUserById(userId);
+        System.out.println("Existing user: " + existingUser.getId());
+        System.out.println("Updated user: " + updatedUser.getId());
         if (existingUser instanceof Admin || existingUser.getId().equals(updatedUser.getId())) {
 
             if(userDao.updateUser(updatedUser)){
                 // Successfully updated the user in mongodb
-                if(userGraphDao.updateUser(updatedUser)){
-                    // Successfully updated the user in neo4j
-                    return true;
-                } else {
-                    // Failed to update the user in neo4j
-                    userDao.updateUser(existingUser);
-                    return false;
-                }
+                // if(userGraphDao.updateUser(updatedUser)){
+                //     // Successfully updated the user in neo4j
+                //     return true;
+                // } else {
+                //     // Failed to update the user in neo4j
+                //     userDao.updateUser(existingUser);
+                //     return false;
+                // }
+                return true;
             }
             return false;
         }
