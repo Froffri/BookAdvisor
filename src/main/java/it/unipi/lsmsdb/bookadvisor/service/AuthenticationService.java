@@ -82,6 +82,8 @@ public class AuthenticationService {
 
             // Aggiunta dell'utente al database
             if (userDao.addUser(newUser)) {
+                // Get the real user id
+                newUser = userDao.findUserByUsername(username);
                 // Insertion in document successful
                 if (userGraphDAO.addUser(userDao.findUserByUsername(username).getId(), newUser)) {
                     // Insertion in graph successful

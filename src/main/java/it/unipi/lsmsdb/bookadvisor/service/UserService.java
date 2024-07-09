@@ -44,8 +44,6 @@ public class UserService {
     // Aggiornamento dei dettagli utente
     public boolean updateAccountInformation(ObjectId userId, User updatedUser) {
         User existingUser = userDao.findUserById(userId);
-        System.out.println("Existing user: " + existingUser.getId());
-        System.out.println("Updated user: " + updatedUser.getId());
         if (existingUser instanceof Admin || existingUser.getId().equals(updatedUser.getId())) {
 
             if(userDao.updateUser(updatedUser)){
@@ -66,22 +64,23 @@ public class UserService {
     }
 
     // Metodo per eliminare un account utente
-    public boolean deleteAccount(String requestingUserId, String targetUserId) {
-        User requestingUser = userDao.findUserById(new ObjectId(requestingUserId));
+    public boolean deleteAccount(ObjectId requestingUserId, ObjectId targetUserId) {
+        User requestingUser = userDao.findUserById(requestingUserId);
         if (requestingUser instanceof Admin || requestingUserId.equals(targetUserId)) {
 
-            User targetUser = userDao.findUserById(new ObjectId(targetUserId));
+            User targetUser = userDao.findUserById(targetUserId);
 
-            if(userDao.deleteUser(new ObjectId(targetUserId))){
-                // Successfully deleted the user in mongodb
-                if(userGraphDao.deleteUserById(new ObjectId(targetUserId))){
-                    // Successfully deleted the user in neo4j
-                    return true;
-                } else {
-                    // Failed to delete the user in neo4j
-                    userDao.addUser(targetUser);
-                    return false;
-                }
+            if(reviewDao.deleteReviewsByUserId(targetUserId) && userDao.deleteUser(targetUserId)){
+                // // Successfully deleted the user in mongodb
+                // if(userGraphDao.deleteUserById(new ObjectId(targetUserId))){
+                //     // Successfully deleted the user in neo4j
+                //     return true;
+                // } else {
+                //     // Failed to delete the user in neo4j
+                //     userDao.addUser(targetUser);
+                //     return false;
+                // }
+                return true;
             }
             return false;
         }

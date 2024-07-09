@@ -53,6 +53,29 @@ public class BookDao {
         return true;
     }
 
+    public boolean addReviewToBook(ObjectId bookId, ObjectId reviewId) {
+        try {
+            collection.updateOne(Filters.eq("_id", bookId), Updates.addToSet("review_ids", reviewId));
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiunta della recensione al libro: " + e.getMessage());
+            return false;
+        }
+        // Update the list of reviews
+        
+        
+        return true;
+    }
+
+    public boolean removeReviewFromBook(ObjectId bookId, ObjectId reviewId) {
+        try {
+            collection.updateOne(Filters.eq("_id", bookId), Updates.pull("review_ids", reviewId));
+        } catch (Exception e) {
+            System.err.println("Errore durante la rimozione della recensione dal libro: " + e.getMessage());
+            return false;
+        }
+        return true;
+    }
+
     // Update a book's information
     public boolean updateBook(Book book) {
         try {

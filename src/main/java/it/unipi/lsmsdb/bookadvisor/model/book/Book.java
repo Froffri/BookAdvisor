@@ -1,6 +1,7 @@
 package it.unipi.lsmsdb.bookadvisor.model.book;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -140,6 +141,22 @@ public class Book {
         this.numRatings = 0;
         this.language = node.get("language").asString();
         this.title = node.get("title").asString();
+        this.authors = null;
+        this.genre = null;
+        this.year = 0;
+        this.imageUrl = null;
+        this.numPages = 0;
+        this.reviewIds = null;
+        this.ratingsAggByNat = null;
+        this.most10UsefulReviews = null;
+    }
+
+    public Book(){
+        this.id = null;
+        this.sumStars = 0;
+        this.numRatings = 0;
+        this.language = null;
+        this.title = null;
         this.authors = null;
         this.genre = null;
         this.year = 0;
@@ -290,7 +307,7 @@ public class Book {
                 ", year=" + year +
                 ", imageUrl='" + imageUrl + '\'' +
                 ", numPages=" + numPages +
-                ", reviewIds=" + reviewIds +
+                ", reviewIds=" + Arrays.toString(reviewIds) +
                 ", ratingsAggByNat=" + ratingsAggByNat +
                 ", most10UsefulReviews=" + most10UsefulReviews +
                 '}';
@@ -317,6 +334,18 @@ public class Book {
         if (ratingAggregate != null) {
             ratingAggregate.updateRating(oldRating, newRating);
         }
+    }
+
+    public void addReview(ObjectId reviewId) {
+        for (ObjectId id : reviewIds) {
+            if (id.equals(reviewId)) {
+                return;
+            }
+        }
+        ObjectId[] newReviewIds = new ObjectId[reviewIds.length + 1];
+        System.arraycopy(reviewIds, 0, newReviewIds, 0, reviewIds.length);
+        newReviewIds[reviewIds.length] = reviewId;
+        reviewIds = newReviewIds;
     }
 
     public void insertReview(ObjectId id, ObjectId userId, ObjectId bookId, String nickname, String text, String nat,  int stars, int countUpVote, int countDownVote) {

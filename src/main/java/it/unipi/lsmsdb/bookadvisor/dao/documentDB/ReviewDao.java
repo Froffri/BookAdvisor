@@ -8,6 +8,7 @@ import com.mongodb.client.result.UpdateResult;
 
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 
+import org.bson.BsonValue;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -30,9 +31,12 @@ public class ReviewDao {
     // Insert a new review into the database
     public boolean addReview(Review review) {
         try {
-            collection.insertOne(review.toDocument());
+            // get the oid of the inserted review
+            BsonValue insertedId = collection.insertOne(review.toDocument()).getInsertedId();
+            ObjectId id = insertedId.asObjectId().getValue();
             bookDao.updateBookRating(review.getBookId(), review.getStars(), review.getCountry());
-            userDao.addReview(review.getUserId(), review.getId());
+            bookDao.addReviewToBook(review.getBookId(), id);
+            userDao.addReview(review.getUserId(), id);
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiunta della recensione: " + e.getMessage());
             return false;
@@ -76,12 +80,26 @@ public class ReviewDao {
             if (result.getDeletedCount() > 0) {
                 // Sottrai il punteggio della recensione eliminata dal punteggio totale del libro
                 bookDao.updateBookRating(deletedReview.getBookId(), -deletedReview.getStars(), deletedReview.getCountry());
+                // Rimuovi la recensione dal libro
+                bookDao.removeReviewFromBook(deletedReview.getBookId(), deletedReview.getId());
                 userDao.removeReview(deletedReview.getUserId(), deletedReview.getId());
                 return true;
             }
             return false;
         } catch (Exception e) {
             System.err.println("Errore durante la cancellazione della recensione: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean deleteReviewsByUserId(ObjectId userId) {
+        try {
+            for (Review review : findReviewsByUserId(userId)) {
+                deleteReview(review.getId());
+            }
+            return true;
+        } catch (Exception e) {
+            System.err.println("Errore durante la cancellazione delle recensioni per ID utente: " + e.getMessage());
             return false;
         }
     }

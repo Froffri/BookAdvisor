@@ -4,12 +4,15 @@ import it.unipi.lsmsdb.bookadvisor.dao.documentDB.*;
 import it.unipi.lsmsdb.bookadvisor.dao.graphDB.*;
 import it.unipi.lsmsdb.bookadvisor.model.book.Book;
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
+import it.unipi.lsmsdb.bookadvisor.model.user.Admin;
 import it.unipi.lsmsdb.bookadvisor.model.user.Reviewer;
 import it.unipi.lsmsdb.bookadvisor.model.user.User;
 import it.unipi.lsmsdb.bookadvisor.service.AuthenticationService;
 import it.unipi.lsmsdb.bookadvisor.service.BookService;
 import it.unipi.lsmsdb.bookadvisor.service.FollowService;
+import it.unipi.lsmsdb.bookadvisor.service.ReviewService;
 import it.unipi.lsmsdb.bookadvisor.service.UserService;
+import it.unipi.lsmsdb.bookadvisor.utils.HashingUtility;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -38,9 +41,13 @@ public class App extends Application {
     private boolean searchBooks = true;
     private UserService userService;
     private FollowService followService;
+    private ReviewService reviewService;
+    private Stage primaryStage;
 
     @Override
     public void start(Stage primaryStage) {
+        this.primaryStage = primaryStage;
+
         // Initialize MongoDB connector, UserDao, and BookDao
         MongoDBConnector connector = MongoDBConnector.getInstance();
         Neo4jConnector neo4jConnector = Neo4jConnector.getInstance();
@@ -55,6 +62,7 @@ public class App extends Application {
         bookService = new BookService(bookDao);
         followService = new FollowService(followGraphDAO);
         userService = new UserService(userDao, reviewDao, userGraphDAO);
+        reviewService = new ReviewService(reviewDao, new ReviewGraphDAO(neo4jConnector), bookDao);
 
         primaryStage.setTitle("Book Advisor");
 
@@ -202,35 +210,35 @@ public class App extends Application {
         Tab tab = new Tab("Profile");
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
-
+    
         TextField nameField = new TextField(currentUser.getName());
         nameField.setPromptText("Name");
-
+    
         DatePicker birthdatePicker = new DatePicker(currentUser.getBirthdate());
-
+    
         Label nicknameLabel = new Label("Nickname: " + currentUser.getNickname());
         Label genderLabel = new Label("Gender: " + currentUser.getGender());
-        Label nationalityLabel = new Label("Nationality: " + ((Reviewer) currentUser).getNationality());
-        Label favoriteGenresLabel = new Label("Favorite Genres: " + String.join(", ", ((Reviewer) currentUser).getFavouriteGenres()));
-        Label spokenLanguagesLabel = new Label("Spoken Languages: " + String.join(", ", ((Reviewer) currentUser).getSpokenLanguages()));
-
+        Label nationalityLabel = new Label("Nationality: " + currentUser.getNationality());
+        Label favoriteGenresLabel = new Label("Favorite Genres: " + String.join(", ", currentUser.getFavouriteGenres()));
+        Label spokenLanguagesLabel = new Label("Spoken Languages: " + String.join(", ", currentUser.getSpokenLanguages()));
+    
         PasswordField oldPasswordField = new PasswordField();
         oldPasswordField.setPromptText("Old Password");
-
+    
         PasswordField newPasswordField = new PasswordField();
         newPasswordField.setPromptText("New Password");
-
+    
         Button saveButton = new Button("Save");
         saveButton.setOnAction(e -> {
             String newName = nameField.getText();
             LocalDate newBirthdate = birthdatePicker.getValue();
             String newPassword = newPasswordField.getText();
-
+    
             if (newPassword.isEmpty() || userService.changePassword(currentUser.getId(), newPassword)) {
                 currentUser.setName(newName);
                 currentUser.setBirthdate(newBirthdate);
                 boolean success = userService.updateAccountInformation(currentUser.getId(), currentUser);
-
+    
                 if (success) {
                     Alert alert = new Alert(Alert.AlertType.INFORMATION);
                     alert.setTitle("Success");
@@ -252,7 +260,16 @@ public class App extends Application {
                 alert.showAndWait();
             }
         });
-
+    
+        Button showReviewsButton = new Button("Show Reviews");
+        showReviewsButton.setOnAction(e -> showUserReviews(currentUser));
+    
+        Button deleteAccountButton = new Button("Delete Account");
+        deleteAccountButton.setOnAction(e -> handleDeleteAccount());
+    
+        Button logoutButton = new Button("Logout");
+        logoutButton.setOnAction(e -> handleLogout());
+    
         vbox.getChildren().addAll(
                 new Label("Name"), nameField,
                 new Label("Birthdate"), birthdatePicker,
@@ -263,11 +280,131 @@ public class App extends Application {
                 spokenLanguagesLabel,
                 new Label("Old Password"), oldPasswordField,
                 new Label("New Password"), newPasswordField,
-                saveButton
+                saveButton,
+                showReviewsButton,
+                deleteAccountButton,
+                logoutButton
         );
-
+    
         tab.setContent(vbox);
         return tab;
+    }
+
+    private void handleDeleteAccount() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Delete Account");
+        alert.setHeaderText(null);
+        alert.setContentText("Are you sure you want to delete your account? This action cannot be undone.");
+    
+        Optional<ButtonType> result = alert.showAndWait();
+        if (result.isPresent() && result.get() == ButtonType.OK) {
+            if (userService.deleteAccount(currentUser.getId(), currentUser.getId())) {
+                Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+                successAlert.setTitle("Account Deleted");
+                successAlert.setHeaderText(null);
+                successAlert.setContentText("Your account has been deleted successfully.");
+                successAlert.showAndWait();
+    
+                handleLogout();
+            } else {
+                Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+                errorAlert.setTitle("Error");
+                errorAlert.setHeaderText(null);
+                errorAlert.setContentText("Failed to delete account.");
+                errorAlert.showAndWait();
+            }
+        }
+    }
+    
+    private void handleLogout() {
+        currentUser = null;
+        TabPane tabPane = new TabPane();
+    
+        Tab loginTab = createLoginTab();
+        Tab registerTab = createRegisterTab();
+        Tab homeTab = createHomeTab();
+    
+        tabPane.getTabs().addAll(loginTab, registerTab, homeTab);
+    
+        Scene scene = new Scene(tabPane, 800, 600);
+        primaryStage.setScene(scene); 
+    }
+
+    private void showUserReviews(Reviewer currentUser) {
+        Stage reviewsStage = new Stage();
+        VBox allReviewsBox = new VBox(10);
+        allReviewsBox.setPadding(new Insets(10));
+    
+        for (ObjectId reviewId : currentUser.getReviewIds()) {
+            Review review = reviewDao.findReviewById(reviewId);
+            if (review != null) {
+                VBox reviewBox = new VBox(5);
+                Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
+                Label reviewTextLabel = new Label("Review: " + review.getText());
+                Label reviewStarsLabel = new Label("Stars: " + review.getStars());
+                Button deleteReviewButton = new Button("Delete Review");
+                deleteReviewButton.setOnAction(e -> {
+                    if (reviewService.deleteReview(review.getId(), currentUser, review.getBookId())) {
+                        currentUser.removeReview(review.getId());
+                        userService.updateAccountInformation(currentUser.getId(), currentUser);
+                        allReviewsBox.getChildren().remove(reviewBox);
+                    }
+                });
+    
+                Button editReviewButton = new Button("Edit");
+                editReviewButton.setOnAction(e -> {
+                    Stage editStage = new Stage();
+                    VBox editBox = new VBox(10);
+                    editBox.setPadding(new Insets(10));
+    
+                    TextArea reviewTextArea = new TextArea(review.getText());
+                    ComboBox<Integer> ratingComboBox = new ComboBox<>();
+                    ratingComboBox.getItems().addAll(1, 2, 3, 4, 5);
+                    ratingComboBox.setValue(review.getStars());
+    
+                    Button submitEditButton = new Button("Submit");
+                    submitEditButton.setOnAction(event -> {
+                        String newText = reviewTextArea.getText();
+                        int newRating = ratingComboBox.getValue();
+                        review.setText(newText);
+                        review.setStars(newRating);
+    
+                        if (reviewService.updateReview(review, currentUser)) {
+                            reviewTextLabel.setText("Review: " + newText);
+                            reviewStarsLabel.setText("Stars: " + newRating);
+                            editStage.close();
+                        } else {
+                            Alert alert = new Alert(Alert.AlertType.ERROR);
+                            alert.setTitle("Error");
+                            alert.setHeaderText(null);
+                            alert.setContentText("Failed to update review.");
+                            alert.showAndWait();
+                        }
+                    });
+    
+                    editBox.getChildren().addAll(new Label("Edit Review"), new Label("Text:"), reviewTextArea, new Label("Rating:"), ratingComboBox, submitEditButton);
+                    Scene editScene = new Scene(editBox, 300, 200);
+                    editStage.setScene(editScene);
+                    editStage.show();
+                });
+    
+                Button goToBookButton = new Button("Go to book");
+                goToBookButton.setOnAction(e -> {
+                    Book book = bookService.getBookById(review.getBookId());
+                    if (book != null) {
+                        displayBookDetails(book, reviewsStage);
+                    }
+                });
+    
+                reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel, deleteReviewButton, editReviewButton, goToBookButton);
+                allReviewsBox.getChildren().add(reviewBox);
+            }
+        }
+    
+        ScrollPane scrollPane = new ScrollPane(allReviewsBox);
+        Scene scene = new Scene(scrollPane, 400, 600);
+        reviewsStage.setScene(scene);
+        reviewsStage.show();
     }
 
     private void handleSearch(String query, VBox vbox) {
@@ -329,7 +466,7 @@ public class App extends Application {
         Stage userStage = new Stage();
         VBox userDetailsBox = new VBox(10);
         userDetailsBox.setPadding(new Insets(10));
-
+    
         Label nameLabel = new Label("Name: " + reviewer.getName());
         Label nicknameLabel = new Label("Nickname: " + reviewer.getNickname());
         Label genderLabel = new Label("Gender: " + reviewer.getGender());
@@ -337,13 +474,10 @@ public class App extends Application {
         Label nationalityLabel = new Label("Nationality: " + reviewer.getNationality());
         Label favoriteGenresLabel = new Label("Favorite Genres: " + String.join(", ", reviewer.getFavouriteGenres()));
         Label spokenLanguagesLabel = new Label("Spoken Languages: " + String.join(", ", reviewer.getSpokenLanguages()));
-
+    
         Button reviewsButton = new Button("Reviews");
-        reviewsButton.setOnAction(e -> displayUserReviews(reviewer.getReviewIds()));
-
-        Button followButton = new Button("Follow");
-        followButton.setOnAction(e -> followUser(reviewer));
-
+        reviewsButton.setOnAction(e -> displayUserReviews(reviewer.getReviewIds(), reviewer));
+    
         userDetailsBox.getChildren().addAll(
                 nameLabel,
                 nicknameLabel,
@@ -352,16 +486,42 @@ public class App extends Application {
                 nationalityLabel,
                 favoriteGenresLabel,
                 spokenLanguagesLabel,
-                reviewsButton,
-                followButton
+                reviewsButton
         );
-
+    
+        if (currentUser != null) {
+            Button followButton = new Button("Follow");
+            followButton.setOnAction(e -> followUser(reviewer));
+            userDetailsBox.getChildren().add(followButton);
+    
+            if (currentUser instanceof Admin) {
+                Button deleteAccountButton = new Button("Delete Account");
+                deleteAccountButton.setOnAction(e -> {
+                    if (userService.deleteAccount(currentUser.getId(), reviewer.getId())) {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Success");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Account deleted successfully.");
+                        alert.showAndWait();
+                        userStage.close();
+                    } else {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Error");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Failed to delete account.");
+                        alert.showAndWait();
+                    }
+                });
+                userDetailsBox.getChildren().add(deleteAccountButton);
+            }
+        }
+    
         Scene scene = new Scene(userDetailsBox, 300, 400);
         userStage.setScene(scene);
         userStage.show();
     }
 
-    private void displayUserReviews(List<ObjectId> reviewIds) {
+    private void displayUserReviews(List<ObjectId> reviewIds, Reviewer reviewer) {
         Stage reviewStage = new Stage();
         VBox reviewsBox = new VBox(10);
         reviewsBox.setPadding(new Insets(10));
@@ -374,27 +534,35 @@ public class App extends Application {
                 Label reviewTextLabel = new Label("Review: " + review.getText());
                 Label reviewStarsLabel = new Label("Stars: " + review.getStars());
 
-                reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel);
+                Button goToBookButton = new Button("Go to Book");
+                goToBookButton.setOnAction(e -> {
+                    Book book = bookService.getBookById(review.getBookId());
+                    if (book != null) {
+                        displayBookDetails(book, reviewStage);
+                    }
+                });
 
-                if (currentUser != null && review.getText() != null && !review.getText().isEmpty()) {
+                reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel, goToBookButton);
 
-                    Label reviewUpVotesLabel = new Label("Upvotes: " + review.getCountUpVote());
-                    Label reviewDownVotesLabel = new Label("Downvotes: " + review.getCountDownVote());
-
-                    Button upvoteButton = new Button("Upvote");
-                    upvoteButton.setOnAction(e -> handleVote(review, true));
-
-                    Button downvoteButton = new Button("Downvote");
-                    downvoteButton.setOnAction(e -> handleVote(review, false));
-
-                    reviewBox.getChildren().addAll(reviewUpVotesLabel, reviewDownVotesLabel, upvoteButton, downvoteButton);
+                // Show delete button only if the current user is an admin
+                if (currentUser instanceof Admin) {
+                    Button deleteReviewButton = new Button("Delete Review");
+                    deleteReviewButton.setOnAction(e -> {
+                        if (reviewService.deleteReview(review.getId(), reviewer, review.getBookId())) {
+                            reviewer.removeReview(review.getId());
+                            userService.updateAccountInformation(reviewer.getId(), reviewer);
+                            reviewsBox.getChildren().remove(reviewBox);
+                        }
+                    });
+                    reviewBox.getChildren().add(deleteReviewButton);
                 }
 
                 reviewsBox.getChildren().add(reviewBox);
             }
         }
 
-        Scene scene = new Scene(new ScrollPane(reviewsBox), 400, 600);
+        ScrollPane scrollPane = new ScrollPane(reviewsBox);
+        Scene scene = new Scene(scrollPane, 400, 600);
         reviewStage.setScene(scene);
         reviewStage.show();
     }
@@ -428,25 +596,25 @@ public class App extends Application {
         
         VBox bookDetailsBox = new VBox(10); 
         bookDetailsBox.setPadding(new Insets(10)); 
-     
+
         ImageView imageView = new ImageView(new Image(book.getImageUrl())); 
         imageView.setFitHeight(200); 
         imageView.setFitWidth(160); 
-     
+
         Label titleLabel = new Label("Title: " + book.getTitle()); 
         Label authorLabel = new Label("Authors: " + String.join(", ", Arrays.asList(book.getAuthors()).stream().map(a -> a.getName()).collect(Collectors.toList()))); 
         Label genreLabel = new Label("Genres: " + String.join(", ", book.getGenre())); 
         Label yearLabel = new Label("Year: " + book.getYear()); 
         Label languageLabel = new Label("Language: " + book.getLanguage()); 
         Label ratingLabel = new Label(String.format("Rating: %.2f", (double) book.getSumStars() / book.getNumRatings())); 
-     
+
         bookDetailsBox.getChildren().addAll(imageView, titleLabel, authorLabel, genreLabel, yearLabel, languageLabel, ratingLabel); 
-     
+
         // Display most useful reviews 
         Label reviewsLabel = new Label("Most Useful Reviews"); 
         VBox reviewsBox = new VBox(10); 
         List<Review> reviews = book.getMost10UsefulReviews(); 
-     
+
         if (reviews == null || reviews.isEmpty()) { 
             Label noReviewsLabel = new Label("No reviews found"); 
             reviewsBox.getChildren().add(noReviewsLabel); 
@@ -460,21 +628,71 @@ public class App extends Application {
                 reviewsBox.getChildren().add(reviewBox); 
             } 
         } 
-     
+
         Button showAllReviewsButton = new Button("Show all reviews"); 
         showAllReviewsButton.setOnAction(e -> showAllReviews(book)); 
 
-        ScrollPane scrollPane = new ScrollPane();
-        scrollPane.setContent(reviewsBox);
+        ScrollPane scrollPaneReviews = new ScrollPane(reviewsBox);
+        scrollPaneReviews.setFitToWidth(true);
+        scrollPaneReviews.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+
+        bookDetailsBox.getChildren().addAll(reviewsLabel, scrollPaneReviews, showAllReviewsButton); 
+
+        // Add review section if user is logged in
+        if (currentUser != null) {
+            Label leaveReviewLabel = new Label("Leave a Review");
+            ComboBox<Integer> ratingComboBox = new ComboBox<>();
+            ratingComboBox.getItems().addAll(1, 2, 3, 4, 5);
+            ratingComboBox.setValue(5);
+
+            TextArea reviewTextArea = new TextArea();
+            reviewTextArea.setPromptText("Write your review here (optional)");
+
+            Button submitReviewButton = new Button("Submit Review");
+            submitReviewButton.setOnAction(e -> {
+                int rating = ratingComboBox.getValue();
+                String text = reviewTextArea.getText();
+
+                // Create and submit the review
+                Review newReview = new Review(new ObjectId(), currentUser.getId(), book.getId(), currentUser.getNickname(), text, ((Reviewer) currentUser).getNationality(), rating, 0, 0);
+                if (reviewDao.addReview(newReview)) {
+
+                    // Reload the book from the database
+                    Book updatedBook = bookService.getBookById(book.getId());
+
+                    // Update the local book object
+                    book.setReviewIds(updatedBook.getReviewIds());
+                    book.setMost10UsefulReviews(updatedBook.getMost10UsefulReviews());
+
+                    // Reload the user from the database
+                    currentUser = (Reviewer) userService.viewInfoAccount(currentUser.getId().toString());
+
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Success");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Review submitted successfully.");
+                    alert.showAndWait();
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText(null);
+                    alert.setContentText("Failed to submit review.");
+                    alert.showAndWait();
+                }
+            });
+
+            VBox leaveReviewBox = new VBox(5);
+            leaveReviewBox.getChildren().addAll(leaveReviewLabel, new Label("Rating:"), ratingComboBox, new Label("Review:"), reviewTextArea, submitReviewButton);
+            bookDetailsBox.getChildren().add(leaveReviewBox);
+        }
+
+        ScrollPane scrollPane = new ScrollPane(bookDetailsBox);
         scrollPane.setFitToWidth(true);
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
 
-        bookDetailsBox.getChildren().addAll(reviewsLabel, scrollPane, showAllReviewsButton); 
-
-        Scene scene = new Scene(bookDetailsBox, 400, 600); 
+        Scene scene = new Scene(scrollPane, 400, 600); 
         bookStage.setScene(scene); 
         bookStage.show(); 
-
     }
 
     private void handleLogin(String username, String password, Node sourceNode) {
@@ -551,6 +769,8 @@ public class App extends Application {
                 Label reviewTextLabel = new Label("Review: " + review.getText());
                 Label reviewStarsLabel = new Label("Stars: " + review.getStars());
 
+                reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel);
+                
                 if (currentUser != null && review.getText() != null && !review.getText().isEmpty()) {
                     Label reviewUpVotesLabel = new Label("Upvotes: " + review.getCountUpVote());
                     Label reviewDownVotesLabel = new Label("Downvotes: " + review.getCountDownVote());
@@ -560,8 +780,7 @@ public class App extends Application {
                     downvoteButton.setOnAction(e -> handleVote(review, false));
                     reviewBox.getChildren().addAll(reviewUpVotesLabel, reviewDownVotesLabel, upvoteButton, downvoteButton);
                 }
-
-                reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel);
+                
                 allReviewsBox.getChildren().add(reviewBox);
             }
         }

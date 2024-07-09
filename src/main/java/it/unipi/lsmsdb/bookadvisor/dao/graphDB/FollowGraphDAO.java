@@ -41,6 +41,10 @@ public class FollowGraphDAO {
      * @param followed
      */
     public void addFollow(Reviewer follower, Reviewer followed) {
+        // Convert ObjectId to string
+        String fwString = follower.getId().toHexString();
+        String fdString = followed.getId().toHexString();
+
         try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (fwer:User {id: $follower})" +
@@ -48,8 +52,8 @@ public class FollowGraphDAO {
                 "MATCH (fwed:User {id: $followed}) " +
                 "WHERE NOT (fwer)-[:FOLLOWS]->(fwed)" +
                 "CREATE (fwer)-[:FOLLOWS]->(fwed)", 
-                parameters("follower", follower.getId(), 
-                            "followed", followed.getId())
+                parameters("follower", fwString, 
+                            "followed", fdString)
             );
         } 
     }

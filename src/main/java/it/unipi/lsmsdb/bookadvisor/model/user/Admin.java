@@ -4,8 +4,9 @@ import org.bson.Document;
 import org.bson.types.ObjectId;
 
 import java.time.LocalDate;
+import java.util.List;
 
-public class Admin extends User {
+public class Admin extends Reviewer {
     private boolean isAdmin;
 
     // Default constructor
@@ -17,8 +18,8 @@ public class Admin extends User {
 
     // Parameterized constructor
     public Admin(ObjectId id, String name, String nickname, String password, LocalDate birthdate,
-                 String gender, boolean isAdmin) {
-        super(id, name, nickname, password, birthdate, gender);
+                 String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages, boolean isAdmin) {
+        super(id, name, nickname, password, birthdate, gender, nationality, favouriteGenres, spokenLanguages);
         this.isAdmin = isAdmin;
     }
 

@@ -1,5 +1,6 @@
 package it.unipi.lsmsdb.bookadvisor.service;
 
+import it.unipi.lsmsdb.bookadvisor.dao.documentDB.BookDao;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.ReviewDao;
 import it.unipi.lsmsdb.bookadvisor.dao.graphDB.ReviewGraphDAO;
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
@@ -11,9 +12,12 @@ import java.util.List;
 public class ReviewService {
     private ReviewDao reviewDao;
     private ReviewGraphDAO reviewGraphDao;
+    private BookDao bookDao;
 
-    public ReviewService(ReviewDao reviewDao, BookService bookService) {
+    public ReviewService(ReviewDao reviewDao, ReviewGraphDAO reviewGraphDAO, BookDao bookDao) {
         this.reviewDao = reviewDao;
+        this.bookDao = bookDao;
+        this.reviewGraphDao = reviewGraphDAO;
     }
 
     // Aggiungi una nuova recensione al database
@@ -50,14 +54,15 @@ public class ReviewService {
         if (existingReview.getUserId().equals(currentUser.getId())) {
             if(reviewDao.updateReview(updatedReview)){
                 // Successfully updated the review in mongodb
-                if(reviewGraphDao.updateReview(updatedReview)){
-                    // Successfully updated the review in neo4j
-                    return true;
-                } else {
-                    // Failed to update the review in neo4j
-                    reviewDao.updateReview(existingReview);
-                    return false;
-                }
+                // if(reviewGraphDao.updateReview(updatedReview)){
+                //     // Successfully updated the review in neo4j
+                //     return true;
+                // } else {
+                //     // Failed to update the review in neo4j
+                //     reviewDao.updateReview(existingReview);
+                //     return false;
+                // }
+                return true;
             }
             return false;
         } else {
@@ -67,7 +72,7 @@ public class ReviewService {
     }
 
     // Elimina una recensione dal database
-    public boolean deleteReview(ObjectId reviewId, User currentUser) {
+    public boolean deleteReview(ObjectId reviewId, User currentUser, ObjectId bookId) {
         Review review = reviewDao.findReviewById(reviewId);
 
         if (review == null) {
@@ -78,16 +83,17 @@ public class ReviewService {
         // Check if the current user is the author of the review or an admin
         if (currentUser instanceof Admin || review.getUserId().equals(currentUser.getId())) {
 
-            if(reviewDao.deleteReview(reviewId)){
+            if(reviewDao.deleteReview(reviewId) && bookDao.removeReviewFromBook(bookId, reviewId)){
                 // Successfully deleted the review from mongodb
-                if(reviewGraphDao.deleteReview(review)){
-                    // Successfully deleted the review from neo4j
-                    return true;
-                } else {
-                    // Failed to delete the review from neo4j
-                    reviewDao.addReview(review);
-                    return false;
-                }
+                // if(reviewGraphDao.deleteReview(review)){
+                //     // Successfully deleted the review from neo4j
+                //     return true;
+                // } else {
+                //     // Failed to delete the review from neo4j
+                //     reviewDao.addReview(review);
+                //     return false;
+                // }
+                return true;
             }
             return false;
         } else {

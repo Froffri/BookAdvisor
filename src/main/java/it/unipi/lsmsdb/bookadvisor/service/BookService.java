@@ -131,6 +131,14 @@ public class BookService {
             return false;
         }
     }
+
+    public List<Book> getAllBooks() {
+        return bookDao.getAllBooks();
+    }
+
+    public Book getBookById(ObjectId id) {
+        return bookDao.getBookById(id);
+    }
     
     public List<Book> getBooksByTitle(String title) {
         return bookDao.getBooksByTitle(title);
