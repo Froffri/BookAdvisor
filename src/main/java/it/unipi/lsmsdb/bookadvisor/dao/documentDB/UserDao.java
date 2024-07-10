@@ -7,8 +7,11 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 
+import it.unipi.lsmsdb.bookadvisor.model.book.Book;
+import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
 
+import org.bson.BsonValue;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -28,13 +31,26 @@ public class UserDao {
     // Insert user into MongoDB
     public boolean addUser(User user) {
         try {
-            collection.insertOne(user.toDocument());
-            System.out.println("Inserimento dell'utente riuscito.");
-            return true;
+            BsonValue insertedId = collection.insertOne(user.toDocument()).getInsertedId();
+            ObjectId userid = insertedId.asObjectId().getValue();
+            user.setId(userid);
+            System.out.println("User inserted with ID: " + userid);
         } catch (Exception e) {
-            System.err.println("Errore durante l'inserimento dell'utente: " + e.getMessage());
+            System.err.println("Errore durante l'inserimento del libro: " + e.getMessage());
             return false;
         }
+        return true;
+    }
+
+    public boolean addUser(ObjectId userId, User user) {
+        try {
+            // Insert the user with the given ID
+            collection.insertOne(user.toDocument().append("_id", userId));
+        } catch (Exception e) {
+            System.err.println("Errore durante l'inserimento del libro: " + e.getMessage());
+            return false;
+        }
+        return true;
     }
 
     // Find a user by their ID
@@ -83,6 +99,25 @@ public class UserDao {
             System.err.println("Errore durante la ricerca degli utenti per username: " + e.getMessage());
         }
         return users;
+    }
+
+    public List<Review> getReviewsByUserId(ObjectId userId, ReviewDao reviewDao) {
+        List<Review> reviews = new ArrayList<>();
+        try {
+            Document doc = collection.find(Filters.eq("_id", userId)).first();
+            if (doc != null && doc.containsKey("reviewIds")) {
+                List<ObjectId> reviewIds = (List<ObjectId>) doc.get("reviewIds");
+                for (ObjectId reviewId : reviewIds) {
+                    Review review = reviewDao.findReviewById(reviewId);
+                    if (review != null) {
+                        reviews.add(review);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Errore durante la ricerca delle recensioni per ID utente: " + e.getMessage());
+        }
+        return reviews;
     }
 
     public boolean addBookToAuthor(ObjectId authorId, ObjectId bookId) {

@@ -12,8 +12,6 @@ public class FollowService {
         this.followGraphDAO = followGraphDAO;
     }
 
-    
-
     // Create
 
     /**
@@ -21,16 +19,16 @@ public class FollowService {
      * @param follower the user who follows.
      * @param followed the user who is followed.
      */
-    public void addFollow(Reviewer follower, Reviewer followed) {
-        followGraphDAO.addFollow(follower, followed);
+    public boolean addFollow(Reviewer follower, Reviewer followed) {
+        return followGraphDAO.addFollow(follower, followed);
     }
 
     /**
      * Add a follow relationship using Follow object.
      * @param follow the follow relationship object.
      */
-    public void addFollow(Follow follow) {
-        followGraphDAO.addFollow(follow);
+    public boolean addFollow(Follow follow) {
+        return followGraphDAO.addFollow(follow);
     }
 
     /**
@@ -38,8 +36,8 @@ public class FollowService {
      * @param followerId the ID of the follower.
      * @param followedId the ID of the followed.
      */
-    public void followUser(ObjectId followerId, ObjectId followedId) {        
-        followGraphDAO.addFollowByIds(followerId, followedId);
+    public boolean followUser(ObjectId followerId, ObjectId followedId) {        
+        return followGraphDAO.addFollowByIds(followerId, followedId);
     }
 
     // Read
@@ -71,16 +69,16 @@ public class FollowService {
      * @param follower the user who follows.
      * @param followed the user who is followed.
      */
-    public void removeFollow(Reviewer follower, Reviewer followed) {
-        followGraphDAO.deleteFollow(follower, followed);
+    public boolean removeFollow(Reviewer follower, Reviewer followed) {
+        return followGraphDAO.deleteFollow(follower, followed);
     }
 
     /**
      * Delete a follow relationship using Follow object.
      * @param follow the follow relationship object.
      */
-    public void removeFollow(Follow follow) {
-        followGraphDAO.deleteFollow(follow);
+    public boolean removeFollow(Follow follow) {
+        return followGraphDAO.deleteFollow(follow);
     }
 
     /**
@@ -88,7 +86,7 @@ public class FollowService {
      * @param followerId the ID of the follower.
      * @param followedId the ID of the followed.
      */
-    public void removeFollowByIds(ObjectId followerId, ObjectId followedId) {
-        followGraphDAO.deleteFollow(followerId, followedId);
+    public boolean removeFollowByIds(ObjectId followerId, ObjectId followedId) {
+        return followGraphDAO.deleteFollow(followerId, followedId);
     }
 }

@@ -30,6 +30,7 @@ public class ReviewService {
                 return true;
             } else {
                 // Failed to add the review in neo4j
+                System.out.println("Failed to insert review in graph");
                 reviewDao.deleteReview(review.getId());
                 return false;
             }
@@ -54,15 +55,15 @@ public class ReviewService {
         if (existingReview.getUserId().equals(currentUser.getId())) {
             if(reviewDao.updateReview(updatedReview)){
                 // Successfully updated the review in mongodb
-                // if(reviewGraphDao.updateReview(updatedReview)){
-                //     // Successfully updated the review in neo4j
-                //     return true;
-                // } else {
-                //     // Failed to update the review in neo4j
-                //     reviewDao.updateReview(existingReview);
-                //     return false;
-                // }
-                return true;
+                if(reviewGraphDao.updateReview(updatedReview)){
+                    // Successfully updated the review in neo4j
+                    return true;
+                } else {
+                    // Failed to update the review in neo4j
+                    System.out.println("Failed to update review in graph");
+                    reviewDao.updateReview(existingReview);
+                    return false;
+                }
             }
             return false;
         } else {
@@ -83,17 +84,25 @@ public class ReviewService {
         // Check if the current user is the author of the review or an admin
         if (currentUser instanceof Admin || review.getUserId().equals(currentUser.getId())) {
 
-            if(reviewDao.deleteReview(reviewId) && bookDao.removeReviewFromBook(bookId, reviewId)){
-                // Successfully deleted the review from mongodb
-                // if(reviewGraphDao.deleteReview(review)){
-                //     // Successfully deleted the review from neo4j
-                //     return true;
-                // } else {
-                //     // Failed to delete the review from neo4j
-                //     reviewDao.addReview(review);
-                //     return false;
-                // }
-                return true;
+            if(reviewDao.deleteReview(reviewId)){
+                if(bookDao.removeReviewFromBook(bookId, reviewId)){
+                    // Successfully deleted the review from mongodb
+                    if(reviewGraphDao.deleteReview(review)){
+                        // Successfully deleted the review from neo4j
+                        return true;
+                    } else {
+                        // Failed to delete the review from neo4j
+                        System.out.println("Failed to delete review from graph");
+                        reviewDao.addReview(review.getId(), review);
+                        bookDao.addReviewToBook(bookId, reviewId);
+                        return false;
+                    }
+                } else {
+                    // Failed to delete the review from mongodb
+                    System.out.println("Failed to delete review from book");
+                    reviewDao.addReview(review.getId(), review);
+                    return false;
+                }
             }
             return false;
         } else {

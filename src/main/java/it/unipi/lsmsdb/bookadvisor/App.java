@@ -471,7 +471,7 @@ public class App extends Application {
         allReviewsBox.setPadding(new Insets(10));
     
         for (ObjectId reviewId : currentUser.getReviewIds()) {
-            Review review = reviewDao.findReviewById(reviewId);
+            Review review = reviewService.findReviewById(reviewId);
             if (review != null) {
                 VBox reviewBox = new VBox(5);
                 Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
@@ -719,7 +719,7 @@ public class App extends Application {
         reviewsBox.setPadding(new Insets(10));
 
         for (ObjectId reviewId : reviewIds) {
-            Review review = reviewDao.findReviewById(reviewId);
+            Review review = reviewService.findReviewById(reviewId);
             if (review != null) {
                 VBox reviewBox = new VBox(5);
                 Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
@@ -847,7 +847,7 @@ public class App extends Application {
 
                 // Create and submit the review
                 Review newReview = new Review(new ObjectId(), currentUser.getId(), book.getId(), currentUser.getNickname(), text, ((Reviewer) currentUser).getNationality(), rating, 0, 0);
-                if (reviewDao.addReview(newReview)) {
+                if (reviewService.addReview(newReview)) {
 
                     // Reload the book from the database
                     Book updatedBook = bookService.getBookById(book.getId());
@@ -1072,7 +1072,7 @@ public class App extends Application {
         allReviewsBox.setPadding(new Insets(10));
 
         for (ObjectId reviewId : book.getReviewIds()) {
-            Review review = reviewDao.findReviewById(reviewId);
+            Review review = reviewService.findReviewById(reviewId);
             if (review != null) {
                 VBox reviewBox = new VBox(5);
                 Label reviewerLabel = new Label("Reviewer: " + review.getNickname());

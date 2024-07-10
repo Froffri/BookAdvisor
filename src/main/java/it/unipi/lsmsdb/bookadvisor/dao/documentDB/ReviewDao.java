@@ -37,6 +37,8 @@ public class ReviewDao {
             bookDao.updateBookRating(review.getBookId(), review.getStars(), review.getCountry());
             bookDao.addReviewToBook(review.getBookId(), id);
             userDao.addReview(review.getUserId(), id);
+            // Add the review to the object
+            review.setId(id);
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiunta della recensione: " + e.getMessage());
             return false;
@@ -44,6 +46,16 @@ public class ReviewDao {
         return true;
     }
 
+    public boolean addReview(ObjectId reviewId, Review review) {
+        try {
+            // Insert the book with the given ID
+            collection.insertOne(review.toDocument().append("_id", reviewId));
+        } catch (Exception e) {
+            System.err.println("Errore durante l'inserimento del libro: " + e.getMessage());
+            return false;
+        }
+        return true;
+    }
     // Update a review's information
     public boolean updateReview(Review review) {
         try {

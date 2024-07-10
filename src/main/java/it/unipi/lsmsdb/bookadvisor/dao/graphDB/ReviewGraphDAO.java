@@ -31,9 +31,9 @@ public class ReviewGraphDAO {
             String userIdString = userId.toHexString();
             String bookIdString = bookId.toHexString();
             session.run(
-                "MATCH (usr:User {id: $user})" +
+                "MATCH (usr:User {id: '$user'})" +
                 "WITH usr" +
-                "MATCH (bk:Book {id: $book})" +
+                "MATCH (bk:Book {id: '$book'})" +
                 "WHERE NOT (usr)-[:RATES]->(bk)" +
                 "CREATE (usr)-[:RATES {stars: $rating}]->(bk)", 
                 parameters("user", userIdString, 
@@ -51,12 +51,21 @@ public class ReviewGraphDAO {
      */
     public boolean addReview(Review review) {
         try (Session session = connector.getSession()) {
+
+            System.out.println("Adding review: " + review.getUserId().toHexString() + " " + review.getBookId().toHexString() + " " + review.getStars());
+
+            System.out.println("MATCH (usr:User {id: " + review.getUserId().toHexString() + "})" +
+                                "WITH usr" +
+                                "MATCH (bk:Book {id: " + review.getBookId().toHexString() + "})" +
+                                "WHERE NOT (usr)-[:RATES]->(bk)" +
+                                "CREATE (usr)-[:RATES {stars: " + review.getStars() + "}]->(bk)");
+
             session.run(
-                "MATCH (usr:User {id: $user})" +
-                "WITH usr" +
-                "MATCH (bk:Book {id: $book})" +
-                "WHERE NOT (usr)-[:RATES]->(bk)" +
-                "CREATE (usr)-[:RATES {stars: $rating}]->(bk)", 
+                "MATCH (usr:User {id: '$user'}) " +
+                "WITH usr " +
+                "MATCH (bk:Book {id: '$book'}) " +
+                "WHERE NOT (usr)-[:RATES]->(bk) " +
+                "CREATE (usr)-[:RATES {stars: $rating}]->(bk) ", 
                 parameters("user", review.getUserId().toHexString(), 
                             "book", review.getBookId().toHexString(), 
                             "rating", review.getStars())
@@ -76,7 +85,7 @@ public class ReviewGraphDAO {
     public Review getReview(ObjectId userId, ObjectId bookId) {
         try (Session session = connector.getSession()) {
             Result result = session.run(
-                "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book})" +
+                "MATCH (usr:User {id: '$user'})-[r:RATES]->(bk:Book {id: '$book'})" +
                 "RETURN r.stars AS rating",
                 parameters("user", userId.toHexString(), 
                             "book", bookId.toHexString())
@@ -94,7 +103,7 @@ public class ReviewGraphDAO {
     public boolean checkReview(ObjectId userId, ObjectId bookId) {
         try (Session session = connector.getSession()) {
             Result result = session.run(
-                "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book})" +
+                "MATCH (usr:User {id: '$user'})-[r:RATES]->(bk:Book {id: '$book'})" +
                 "RETURN r.stars AS rating",
                 parameters("user", userId.toHexString(), 
                             "book", bookId.toHexString())
@@ -117,9 +126,9 @@ public class ReviewGraphDAO {
     public boolean updateReview(ObjectId userId, ObjectId bookId, int rating) {
         try (Session session = connector.getSession()) {
             session.run(
-                "MATCH (usr:User {id: $user})" +
+                "MATCH (usr:User {id: '$user'})" +
                 "WITH usr" +
-                "MATCH (bk:Book {id: $book})" +
+                "MATCH (bk:Book {id: '$book'})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "SET r.rating = $rating",
                 parameters("user", userId.toHexString(), 
@@ -139,9 +148,9 @@ public class ReviewGraphDAO {
     public boolean updateReview(Review review) {
         try (Session session = connector.getSession()) {
             session.run(
-                "MATCH (usr:User {id: $user})" +
+                "MATCH (usr:User {id: '$user'})" +
                 "WITH usr" +
-                "MATCH (bk:Book {id: $book})" +
+                "MATCH (bk:Book {id: '$book'})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "SET r.rating = $rating",
                 parameters("user", review.getUserId().toHexString(), 
@@ -164,9 +173,9 @@ public class ReviewGraphDAO {
     public boolean deleteReview(ObjectId userId, ObjectId bookId) {
         try (Session session = connector.getSession()) {
             session.run(
-                "MATCH (usr:User {id: $user})" +
+                "MATCH (usr:User {id: '$user'})" +
                 "WITH usr" +
-                "MATCH (bk:Book {id: $book})" +
+                "MATCH (bk:Book {id: '$book'})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "DELETE r",
                 parameters("user", userId.toHexString(), 
@@ -186,9 +195,9 @@ public class ReviewGraphDAO {
     public boolean deleteReview(Review review) {
         try (Session session = connector.getSession()) {
             session.run(
-                "MATCH (usr:User {id: $user})" +
+                "MATCH (usr:User {id: '$user'})" +
                 "WITH usr" +
-                "MATCH (bk:Book {id: $book})" +
+                "MATCH (bk:Book {id: '$book'})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "DELETE r",
                 parameters("user", review.getUserId().toHexString(), 
@@ -208,9 +217,9 @@ public class ReviewGraphDAO {
     public boolean deleteReview(Reviewer user, Book book) {
         try (Session session = connector.getSession()) {
             session.run(
-                "MATCH (usr:User {id: $user})" +
+                "MATCH (usr:User {id: '$user'})" +
                 "WITH usr" +
-                "MATCH (bk:Book {id: $book})" +
+                "MATCH (bk:Book {id: '$book'})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "DELETE r",
                 parameters("user", user.getId().toHexString(), 

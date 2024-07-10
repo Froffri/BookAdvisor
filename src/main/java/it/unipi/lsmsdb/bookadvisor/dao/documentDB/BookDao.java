@@ -56,7 +56,17 @@ public class BookDao {
             BsonValue insertedId = collection.insertOne(book.toDocument()).getInsertedId();
             ObjectId bookid = insertedId.asObjectId().getValue();
             book.setId(bookid);
+        } catch (Exception e) {
+            System.err.println("Errore durante l'inserimento del libro: " + e.getMessage());
+            return false;
+        }
+        return true;
+    }
 
+    public boolean addBook(ObjectId bookId, Book book) {
+        try {
+            // Insert the book with the given ID
+            collection.insertOne(book.toDocument().append("_id", bookId));
         } catch (Exception e) {
             System.err.println("Errore durante l'inserimento del libro: " + e.getMessage());
             return false;

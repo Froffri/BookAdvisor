@@ -45,18 +45,17 @@ public class UserService {
     public boolean updateAccountInformation(ObjectId userId, User updatedUser) {
         User existingUser = userDao.findUserById(userId);
         if (existingUser instanceof Admin || existingUser.getId().equals(updatedUser.getId())) {
-
             if(userDao.updateUser(updatedUser)){
                 // Successfully updated the user in mongodb
-                // if(userGraphDao.updateUser(updatedUser)){
-                //     // Successfully updated the user in neo4j
-                //     return true;
-                // } else {
-                //     // Failed to update the user in neo4j
-                //     userDao.updateUser(existingUser);
-                //     return false;
-                // }
-                return true;
+                if(userGraphDao.updateUser(updatedUser)){
+                    // Successfully updated the user in neo4j
+                    return true;
+                } else {
+                    // Failed to update the user in neo4j
+                    System.out.println("Failed to update the user in neo4j");
+                    userDao.updateUser(existingUser);
+                    return false;
+                }
             }
             return false;
         }
@@ -69,19 +68,31 @@ public class UserService {
         if (requestingUser instanceof Admin || requestingUserId.equals(targetUserId)) {
 
             User targetUser = userDao.findUserById(targetUserId);
+            List<Review> reviews = userDao.getReviewsByUserId(targetUserId, reviewDao);
 
-            if(reviewDao.deleteReviewsByUserId(targetUserId) && userDao.deleteUser(targetUserId)){
-                // // Successfully deleted the user in mongodb
-                // if(userGraphDao.deleteUserById(new ObjectId(targetUserId))){
-                //     // Successfully deleted the user in neo4j
-                //     return true;
-                // } else {
-                //     // Failed to delete the user in neo4j
-                //     userDao.addUser(targetUser);
-                //     return false;
-                // }
-                return true;
-            }
+            if(reviewDao.deleteReviewsByUserId(targetUserId)){
+                if(userDao.deleteUser(targetUserId)){
+                    // Successfully deleted the user in mongodb
+                    if(userGraphDao.deleteUserById(targetUserId)){
+                        // Successfully deleted the user in neo4j
+                        return true;
+                    } else {
+                        // Failed to delete the user in neo4j
+                        userDao.addUser(targetUser.getId(), targetUser);
+                        for(Review review : reviews){
+                            reviewDao.addReview(review);
+                        }
+                        return false;
+                    }
+                } else {
+                    // Failed to delete the user in mongodb
+                    // Restore the user's reviews
+                    for(Review review : reviews){
+                        reviewDao.addReview(review);
+                    }
+                    return false;
+                }
+            } 
             return false;
         }
         throw new IllegalArgumentException("Non hai i permessi per eliminare questo utente.");

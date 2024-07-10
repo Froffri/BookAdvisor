@@ -26,9 +26,9 @@ public class BookGraphDAO {
     public boolean addBook(Book book) {
         try (Session session = connector.getSession()) {
             session.run(
-                "MERGE (b:Book {id: $id}) " + 
+                "MERGE (b:Book {id: '$id'}) " + 
                 "ON CREATE SET b.title = $title, b.language = '$language'", 
-                parameters("id", book.getId(), 
+                parameters("id", book.getId().toHexString(), 
                             "title", book.getTitle(), 
                             "language", book.getLanguage())
             );
@@ -46,7 +46,7 @@ public class BookGraphDAO {
             // Convert ObjectId to string
             String idString = bookId.toHexString();
             Result result = session.run(
-                "MATCH (b:Book {id: $id}) " +
+                "MATCH (b:Book {id: '$id'}) " +
                 "RETURN b", 
                 parameters("id", idString)
             );
@@ -71,7 +71,7 @@ public class BookGraphDAO {
             // Convert ObjectId to string
             String idString = book.getId().toHexString();
             session.run(
-                "MATCH (b:Book {id: $id})" +
+                "MATCH (b:Book {id: '$id'})" +
                 "SET b.title = $title, b.language = '$language'",
                 parameters("id", idString,
                                     "title", book.getTitle(),
@@ -94,7 +94,7 @@ public class BookGraphDAO {
             // Convert ObjectId to string
             String idString = book.getId().toHexString();
             session.run(
-                "MATCH (b:Book {id: $id}) DELETE b",
+                "MATCH (b:Book {id: '$id'}) DELETE b",
                 parameters("id", idString)
             );
         } catch(Neo4jException e) {
@@ -112,7 +112,7 @@ public class BookGraphDAO {
             // Convert ObjectId to string
             String idString = bookId.toHexString();
             session.run(
-                "MATCH (b:Book {id: $id}) DELETE b",
+                "MATCH (b:Book {id: '$id'}) DELETE b",
                 parameters("id", idString)
             );
         } catch (Neo4jException e) {
