@@ -39,30 +39,39 @@ public class Procedures {
     }
 
     // Given an author, find the average rating of their books, the number of ratings, and the average rating per country and number of ratings per country
-    public void calculateAuthorStats(ObjectId authorId) {
+    public List<Document> calculateAuthorStats(ObjectId authorId) {
         // Get the database and collection
         MongoDatabase database = connector.getDatabase();
         MongoCollection<Document> collection = database.getCollection("books");
-
+    
         // Define the aggregation pipeline stages
         AggregateIterable<Document> iterable = collection.aggregate(Arrays.asList(
                 // Match stage
-                new Document("$match", new Document("author", authorId)),
-
+                new Document("$match", new Document("authors.id", authorId)),
+    
                 // AddFields stage for averageRating
                 new Document("$addFields", new Document("averageRating",
-                        new Document("$divide", Arrays.asList("$sumStars", "$numRatings")))),
-
+                        new Document("$cond", Arrays.asList(
+                                new Document("$eq", Arrays.asList("$numRatings", 0)),
+                                0,
+                                new Document("$divide", Arrays.asList("$sumStars", "$numRatings"))
+                        ))
+                )),
+    
                 // AddFields stage for countryRatings
                 new Document("$addFields", new Document("countryRatings",
                         new Document("$map", new Document("input",
-                                new Document("$objectToArray", "$ratingsAggByNat"))
+                                new Document("$objectToArray", "$ratings_agg_by_nat"))
                                 .append("as", "rating")
                                 .append("in", new Document("country", "$$rating.k")
                                         .append("data", new Document("averageRating",
-                                                new Document("$divide", Arrays.asList("$$rating.v.sumRating", "$$rating.v.cardinality")))
+                                                new Document("$cond", Arrays.asList(
+                                                        new Document("$eq", Arrays.asList("$$rating.v.cardinality", 0)),
+                                                        0,
+                                                        new Document("$divide", Arrays.asList("$$rating.v.sum_stars", "$$rating.v.cardinality"))
+                                                )))
                                                 .append("numRatings", "$$rating.v.cardinality")))))),
-
+    
                 // AddFields stage for detailedCountryRatings
                 new Document("$addFields", new Document("detailedCountryRatings",
                         new Document("$reduce", new Document("input", "$countryRatings")
@@ -71,7 +80,7 @@ public class Procedures {
                                         new Document("country", "$$this.country")
                                                 .append("averageRating", "$$this.data.averageRating")
                                                 .append("numRatings", "$$this.data.numRatings")))))))),
-
+    
                 // Project stage
                 new Document("$project", new Document("bookTitle", "$title")
                         .append("bookRating", "$averageRating")
@@ -82,118 +91,105 @@ public class Procedures {
                                         .append("in", new Document("country", "$$countryDetail.country")
                                                 .append("averageRating", new Document("$round", Arrays.asList("$$countryDetail.averageRating", 2)))
                                                 .append("numRatings", "$$countryDetail.numRatings"))))),
-
+    
                 // Sorting stage
                 new Document("$sort", new Document("bookTitle", 1))
         ));
-
-        // Iterate and process the results
+    
+        // Collect the results
+        List<Document> results = new ArrayList<>();
         for (Document doc : iterable) {
-            System.out.println(doc.toJson());
+            results.add(doc);
         }
-
+    
+        return results;
     }
+
+    
 
     // Find the most famous books for a given genre in each country
-    public void findMostFamousBooks(String genre) {
-        // Connect to MongoDB
-        // Get the database and collection
+    public List<Document> findMostFamousBooks(String genre) {
         MongoDatabase database = connector.getDatabase();
         MongoCollection<Document> collection = database.getCollection("books");
-
-        // Define the aggregation pipeline stages
+    
         AggregateIterable<Document> iterable = collection.aggregate(Arrays.asList(
-                // Match stage
-                new Document("$match", new Document("genre", genre)),
-
-                // Project stage
-                new Document("$project", new Document("title", 1)
-                        .append("ratingsAggByNat", 1)
-                        .append("countryReviews", new Document("$map", new Document("input",
-                                new Document("$objectToArray", "$ratingsAggByNat"))
-                                .append("as", "country")
-                                .append("in", new Document("country", "$$country.k")
-                                        .append("numReviews", "$$country.v.cardinality")
-                                        .append("bookTitle", "$title")
-                                        .append("bookId", "$_id"))))),
-
-                // Unwind stage
-                new Document("$unwind", "$countryReviews"),
-
-                // Group stage
-                new Document("$group", new Document("_id", "$countryReviews.country")
-                        .append("mostFamousBook", new Document("$first", new Document("title", "$countryReviews.bookTitle")
-                                .append("bookId", "$countryReviews.bookId")
-                                .append("numReviews", "$countryReviews.numReviews")))
-                        .append("maxNumReviews", new Document("$max", "$countryReviews.numReviews"))),
-
-                // Project stage for final result
-                new Document("$project", new Document("_id", 0)
-                        .append("country", "$_id")
-                        .append("title", "$mostFamousBook.title")
-                        .append("bookId", "$mostFamousBook.bookId")
-                        .append("numReviews", "$mostFamousBook.numReviews"))
+            new Document("$match", new Document("genre", genre)),
+            new Document("$project", new Document("title", 1)
+                    .append("ratings_agg_by_nat", 1)
+                    .append("image_url", 1)
+                    .append("countryReviews", new Document("$map", new Document("input",
+                            new Document("$objectToArray", "$ratings_agg_by_nat"))
+                            .append("as", "country")
+                            .append("in", new Document("country", "$$country.k")
+                                    .append("numReviews", "$$country.v.cardinality")
+                                    .append("bookTitle", "$title")
+                                    .append("bookId", "$_id")
+                                    .append("imageUrl", "$image_url"))))),
+            new Document("$unwind", "$countryReviews"),
+            new Document("$group", new Document("_id", "$countryReviews.country")
+                    .append("mostFamousBook", new Document("$first", new Document("title", "$countryReviews.bookTitle")
+                            .append("bookId", "$countryReviews.bookId")
+                            .append("numReviews", "$countryReviews.numReviews")
+                            .append("imageUrl", "$countryReviews.imageUrl")))
+                    .append("maxNumReviews", new Document("$max", "$countryReviews.numReviews"))),
+            new Document("$project", new Document("_id", 0)
+                    .append("country", "$_id")
+                    .append("title", "$mostFamousBook.title")
+                    .append("bookId", "$mostFamousBook.bookId")
+                    .append("numReviews", "$mostFamousBook.numReviews")
+                    .append("imageUrl", "$mostFamousBook.imageUrl"))
         ));
-
-        // Iterate and process the results
+    
+        List<Document> results = new ArrayList<>();
         for (Document doc : iterable) {
-            System.out.println(doc.toJson());
+            results.add(doc);
         }
+    
+        return results;
     }
-
-
-    // Find the three most useful reviews for a given user
-    public void findMostUsefulReviews(String username) {
-
-        // Get the database and collection
+    
+    // Find the top useful reviews for a given user
+    public List<Document> findMostUsefulReviews(String username) {
         MongoDatabase database = connector.getDatabase();
         MongoCollection<Document> collection = database.getCollection("books");
-
-        // Define the aggregation pipeline stages
+    
         AggregateIterable<Document> iterable = collection.aggregate(Arrays.asList(
-                // Match stage
-                new Document("$match", new Document("most10UsefulReviews.userName", username)),
-
-                // AddFields stage to calculate review usefulness
-                new Document("$addFields", new Document("most10UsefulReviews",
-                        new Document("$map", new Document("input", "$most10UsefulReviews")
-                                .append("as", "review")
-                                .append("in", new Document("$mergeObjects", Arrays.asList(
-                                        "$$review",
-                                        new Document("usefulness",
-                                                new Document("$subtract", Arrays.asList("$$review.countUpVote", "$$review.countDownVote")))
-                                )))))),
-
-                // Filter stage to include reviews by the given username
-                new Document("$addFields", new Document("most10UsefulReviews",
-                        new Document("$filter", new Document("input", "$most10UsefulReviews")
-                                .append("as", "review")
-                                .append("cond", new Document("$eq", Arrays.asList("$$review.userName", username)))))),
-
-                // Sort stage by usefulness in descending order
-                new Document("$addFields", new Document("most10UsefulReviews",
-                        new Document("$slice", Arrays.asList(
-                                new Document("$sortArray",
-                                        new Document("input", "$most10UsefulReviews")
-                                                .append("sortBy", new Document("usefulness", -1))),
-                                3)))),
-
-                // Project stage to output desired fields
-                new Document("$project", new Document("_id", 0)
-                        .append("bookTitle", "$title")
-                        .append("author", 1)
-                        .append("language", 1)
-                        .append("year", 1)
-                        .append("genre", 1)
-                        .append("imageUrl", 1)
-                        .append("numPages", 1)
-                        .append("mostUsefulReviews", "$most10UsefulReviews"))
+            new Document("$match", new Document("most_10_useful_reviews.nickname", username)),
+            new Document("$addFields", new Document("most_10_useful_reviews",
+                    new Document("$map", new Document("input", "$most_10_useful_reviews")
+                            .append("as", "review")
+                            .append("in", new Document("$mergeObjects", Arrays.asList(
+                                    "$$review",
+                                    new Document("usefulness",
+                                            new Document("$subtract", Arrays.asList("$$review.count_up_votes", "$$review.count_down_votes")))
+                            )))))),
+            new Document("$addFields", new Document("most_10_useful_reviews",
+                    new Document("$filter", new Document("input", "$most_10_useful_reviews")
+                            .append("as", "review")
+                            .append("cond", new Document("$eq", Arrays.asList("$$review.nickname", username)))))),
+            new Document("$addFields", new Document("most_10_useful_reviews",
+                    new Document("$slice", Arrays.asList(
+                            new Document("$sortArray",
+                                    new Document("input", "$most_10_useful_reviews")
+                                            .append("sortBy", new Document("usefulness", -1))),
+                            3)))),
+            new Document("$project", new Document("_id", 0)
+                    .append("title", "$title")
+                    .append("author", "$authors")
+                    .append("language", "$language")
+                    .append("year", "$year")
+                    .append("genre", "$genre")
+                    .append("image_url", "$image_url")
+                    .append("num_pages", "$num_pages")
+                    .append("most_useful_reviews", "$most_10_useful_reviews"))
         ));
-
-        // Iterate and process the results
+    
+        List<Document> results = new ArrayList<>();
         for (Document doc : iterable) {
-            System.out.println(doc.toJson());
+            results.add(doc);
         }
+    
+        return results;
     }
 
 //     public List<Map<String, Object>> getBookRecommendations(Object userId) {

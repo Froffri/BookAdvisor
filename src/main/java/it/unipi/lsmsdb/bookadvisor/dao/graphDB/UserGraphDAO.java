@@ -121,7 +121,7 @@ public class UserGraphDAO {
             Result result = session.run(
                 "MATCH (u:User {id: $id}) " +
                 "RETURN u", 
-                parameters("id", id)
+                parameters("id", id.toHexString())
             );
 
             if (result.hasNext()) {
@@ -157,7 +157,7 @@ public class UserGraphDAO {
             session.run(
                 "MATCH (u:User {id: $id}) " +
                 "SET u.fav_genres = $fav_genres",
-                parameters("id", user.getId(), 
+                parameters("id", user.getId().toHexString(), 
                             "fav_genres", user.getFavouriteGenresString())
             );
         } catch (Neo4jException e) {
@@ -193,7 +193,7 @@ public class UserGraphDAO {
             session.run(
                 "MATCH (u:User {id: $id}) " +
                 "DETACH DELETE u", 
-                parameters("id", user.getId())
+                parameters("id", user.getId().toHexString())
             );
         } catch (Neo4jException e) {
             System.err.println("Error while deleting user: " + e.getMessage());
@@ -211,7 +211,7 @@ public class UserGraphDAO {
             session.run(
                 "MATCH (u:User {id: $id}) " +
                 "DETACH DELETE u", 
-                parameters("id", userId)
+                parameters("id", userId.toHexString())
             );
         } catch (Neo4jException e) {
             System.err.println("Error while deleting user: " + e.getMessage());

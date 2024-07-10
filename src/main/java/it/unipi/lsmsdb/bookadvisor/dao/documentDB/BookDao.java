@@ -7,6 +7,8 @@ import com.mongodb.client.model.Updates;
 
 import it.unipi.lsmsdb.bookadvisor.model.book.Book;
 import it.unipi.lsmsdb.bookadvisor.model.book.Book.Author;
+
+import org.bson.BsonValue;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
@@ -14,21 +16,28 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class BookDao {
     private static final String COLLECTION_NAME = "books";
     private MongoCollection<Document> collection;
+    private UserDao userDao;
 
     // Constructor
     public BookDao(MongoDBConnector connector) {
         MongoDatabase database = connector.getDatabase();
         collection = database.getCollection(COLLECTION_NAME);
+        this.userDao = new UserDao(connector);
     }
 
     // Find a book by its ID
-    public Optional<Book> findBookById(ObjectId id) {
+    public Book findBookById(ObjectId id) {
         Document doc = collection.find(Filters.eq("_id", id)).first();
-        return Optional.ofNullable(doc).map(Book::new);
+        if (doc != null) {
+            return new Book(doc);
+        } else {
+            return null;
+        }
     }
 
     // Find books by title
@@ -44,8 +53,10 @@ public class BookDao {
     // Insert a new book into the database
     public boolean addBook(Book book) {
         try {
-            Document doc = book.toDocument();
-            collection.insertOne(doc);
+            BsonValue insertedId = collection.insertOne(book.toDocument()).getInsertedId();
+            ObjectId bookid = insertedId.asObjectId().getValue();
+            book.setId(bookid);
+
         } catch (Exception e) {
             System.err.println("Errore durante l'inserimento del libro: " + e.getMessage());
             return false;
@@ -77,23 +88,9 @@ public class BookDao {
     }
 
     // Update a book's information
-    public boolean updateBook(Book book) {
+    public boolean updateBook(ObjectId bookId, Document book){
         try {
-            collection.updateOne(Filters.eq("_id", book.getId()),
-                Updates.combine(
-                    Updates.set("sumStars", book.getSumStars()),
-                    Updates.set("numRatings", book.getNumRatings()),
-                    Updates.set("language", book.getLanguage()),
-                    Updates.set("title", book.getTitle()),
-                    Updates.set("author", convertAuthorsToIds(book.getAuthors())), // Converts authors to their IDs
-                    Updates.set("genre", book.getGenre()),
-                    Updates.set("year", book.getYear()),
-                    Updates.set("image_url", book.getImageUrl()),
-                    Updates.set("num_pages", book.getNumPages()),
-                    Updates.set("review_ids", book.getReviewIds()),
-                    Updates.set("ratings_agg_by_nat", book.getRatingsAggByNat()),
-                    Updates.set("most_10_useful_reviews", book.getMost10UsefulReviews())
-                ));
+            collection.updateOne(Filters.eq("_id", bookId), new Document("$set", book));
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiornamento del libro: " + e.getMessage());
             return false;
@@ -122,15 +119,6 @@ public class BookDao {
     public List<Book> getBooksByTitle(String title) {
         List<Book> books = new ArrayList<>();
         for (Document doc : collection.find(Filters.eq("title", title))) {
-            books.add(new Book(doc));
-        }
-        return books;
-    }
-
-    // Get all books by a given author
-    public List<Book> getBooksByAuthor(ObjectId authorId) {
-        List<Book> books = new ArrayList<>();
-        for (Document doc : collection.find(Filters.in("author", authorId))) {
             books.add(new Book(doc));
         }
         return books;
@@ -194,21 +182,25 @@ public class BookDao {
         return books;
     }
 
-    // Get books by multiple authors with AND/OR logic
-    public List<Book> getBooksByAuthors(List<ObjectId> authors, boolean isAnd) {
-        List<Book> books = new ArrayList<>();
-        if (isAnd) {
-            for (Document doc : collection.find(Filters.all("author", authors))) {
-                books.add(new Book(doc));
-            }
-        } else {
-            for (Document doc : collection.find(Filters.in("author", authors))) {
-                books.add(new Book(doc));
-            }
-        }
-        return books;
-    }
 
+    // Get books by author ID using the book ids contained in the author document
+    public List<Book> getBooksByAuthor(ObjectId authorId) {
+        Document authorDoc = userDao.findAuthorById(authorId).toDocument();
+        if (authorDoc != null) {
+            List<ObjectId> bookIds = authorDoc.getList("bookIds", ObjectId.class);
+            List<Book> books = new ArrayList<>();
+            for (ObjectId bookId : bookIds) {
+                Document bookDoc = collection.find(Filters.eq("_id", bookId)).first();
+                if (bookDoc != null) {
+                    books.add(new Book(bookDoc));
+                }
+            }
+            return books;
+        } else {
+            return new ArrayList<>();
+        }
+    }
+    
     // Get books by multiple genres with AND/OR logic
     public List<Book> getBooksByGenres(List<String> genres, boolean isAnd) {
         List<Book> books = new ArrayList<>();
@@ -279,7 +271,7 @@ public class BookDao {
     // Helper method to convert Author array to ObjectId array
     private List<ObjectId> convertAuthorsToIds(Author[] authors) {
         List<ObjectId> authorIds = new ArrayList<>();
-        for (Author author : authors) {
+        for (Book.Author author : authors) {
             authorIds.add(author.getId());
         }
         return authorIds;

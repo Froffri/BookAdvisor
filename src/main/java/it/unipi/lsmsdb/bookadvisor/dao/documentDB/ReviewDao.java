@@ -115,12 +115,12 @@ public class ReviewDao {
         }
     }
 
-    // Find reviews by book ID
+    // Find reviews by book ID using the book's review IDs
     public List<Review> findReviewsByBookId(ObjectId bookId) {
         List<Review> reviews = new ArrayList<>();
         try {
-            for (Document doc : collection.find(Filters.eq("bookId", bookId))) {
-                reviews.add(new Review(doc));
+            for (ObjectId reviewId : bookDao.findBookById(bookId).getReviewIds()) {
+                reviews.add(findReviewById(reviewId));
             }
         } catch (Exception e) {
             System.err.println("Errore durante la ricerca delle recensioni per ID libro: " + e.getMessage());
@@ -128,12 +128,12 @@ public class ReviewDao {
         return reviews;
     }
 
-    // Find reviews by user ID
+    // Find reviews by user ID using document linking of the review ids contained in user
     public List<Review> findReviewsByUserId(ObjectId userId) {
         List<Review> reviews = new ArrayList<>();
         try {
-            for (Document doc : collection.find(Filters.eq("userId", userId))) {
-                reviews.add(new Review(doc));
+            for (ObjectId reviewId : userDao.findReviewerById(userId).getReviewIds()) {
+                reviews.add(findReviewById(reviewId));
             }
         } catch (Exception e) {
             System.err.println("Errore durante la ricerca delle recensioni per ID utente: " + e.getMessage());

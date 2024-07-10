@@ -25,16 +25,19 @@ public class ReviewGraphDAO {
      * @param bookId
      * @param rating
      */
-    public boolean addReview(String userId, String bookId, int rating) {
+    public boolean addReview(ObjectId userId, ObjectId bookId, int rating) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String userIdString = userId.toHexString();
+            String bookIdString = bookId.toHexString();
             session.run(
                 "MATCH (usr:User {id: $user})" +
                 "WITH usr" +
                 "MATCH (bk:Book {id: $book})" +
                 "WHERE NOT (usr)-[:RATES]->(bk)" +
                 "CREATE (usr)-[:RATES {stars: $rating}]->(bk)", 
-                parameters("user", userId, 
-                            "book", bookId, 
+                parameters("user", userIdString, 
+                            "book", bookIdString, 
                             "rating", rating)
             );
         } catch (Neo4jException e) {
@@ -54,8 +57,8 @@ public class ReviewGraphDAO {
                 "MATCH (bk:Book {id: $book})" +
                 "WHERE NOT (usr)-[:RATES]->(bk)" +
                 "CREATE (usr)-[:RATES {stars: $rating}]->(bk)", 
-                parameters("user", review.getUserId(), 
-                            "book", review.getBookId(), 
+                parameters("user", review.getUserId().toHexString(), 
+                            "book", review.getBookId().toHexString(), 
                             "rating", review.getStars())
             );
         } catch (Neo4jException e) {
@@ -70,13 +73,13 @@ public class ReviewGraphDAO {
      * @param userId
      * @param bookId
      */
-    public Review getReview(String userId, String bookId) {
+    public Review getReview(ObjectId userId, ObjectId bookId) {
         try (Session session = connector.getSession()) {
             Result result = session.run(
                 "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book})" +
                 "RETURN r.stars AS rating",
-                parameters("user", userId, 
-                            "book", bookId)
+                parameters("user", userId.toHexString(), 
+                            "book", bookId.toHexString())
             );
 
             if (result.hasNext()) {
@@ -88,13 +91,13 @@ public class ReviewGraphDAO {
         }
     }
 
-    public boolean checkReview(String userId, String bookId) {
+    public boolean checkReview(ObjectId userId, ObjectId bookId) {
         try (Session session = connector.getSession()) {
             Result result = session.run(
                 "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book})" +
                 "RETURN r.stars AS rating",
-                parameters("user", userId, 
-                            "book", bookId)
+                parameters("user", userId.toHexString(), 
+                            "book", bookId.toHexString())
             );
 
             if (result.hasNext()) {
@@ -111,7 +114,7 @@ public class ReviewGraphDAO {
      * @param bookId
      * @param rating
      */
-    public boolean updateReview(String userId, String bookId, int rating) {
+    public boolean updateReview(ObjectId userId, ObjectId bookId, int rating) {
         try (Session session = connector.getSession()) {
             session.run(
                 "MATCH (usr:User {id: $user})" +
@@ -119,8 +122,8 @@ public class ReviewGraphDAO {
                 "MATCH (bk:Book {id: $book})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "SET r.rating = $rating",
-                parameters("user", userId, 
-                            "book", bookId, 
+                parameters("user", userId.toHexString(), 
+                            "book", bookId.toHexString(), 
                             "rating", rating) 
             );
         } catch (Neo4jException e) {
@@ -141,8 +144,8 @@ public class ReviewGraphDAO {
                 "MATCH (bk:Book {id: $book})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "SET r.rating = $rating",
-                parameters("user", review.getUserId(), 
-                            "book", review.getBookId(), 
+                parameters("user", review.getUserId().toHexString(), 
+                            "book", review.getBookId().toHexString(), 
                             "rating", review.getStars()) 
             );
         } catch (Neo4jException e) {
@@ -166,8 +169,8 @@ public class ReviewGraphDAO {
                 "MATCH (bk:Book {id: $book})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "DELETE r",
-                parameters("user", userId, 
-                            "book", bookId)
+                parameters("user", userId.toHexString(), 
+                            "book", bookId.toHexString())
             );
         } catch (Neo4jException e) {
             return false;
@@ -188,8 +191,8 @@ public class ReviewGraphDAO {
                 "MATCH (bk:Book {id: $book})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "DELETE r",
-                parameters("user", review.getUserId(), 
-                            "book", review.getBookId())
+                parameters("user", review.getUserId().toHexString(), 
+                            "book", review.getBookId().toHexString())
             );
         } catch (Neo4jException e) {
             return false;
@@ -210,8 +213,8 @@ public class ReviewGraphDAO {
                 "MATCH (bk:Book {id: $book})" +
                 "WHERE (usr)-[r:RATES]->(bk)" +
                 "DELETE r",
-                parameters("user", user.getId(), 
-                            "book", book.getId())
+                parameters("user", user.getId().toHexString(), 
+                            "book", book.getId().toHexString())
             );
         } catch (Neo4jException e) {
             return false;

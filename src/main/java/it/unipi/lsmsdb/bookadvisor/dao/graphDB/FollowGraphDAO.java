@@ -23,14 +23,17 @@ public class FollowGraphDAO {
      */
     public void addFollow(Follow follow) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String fwString = follow.getFollowerId().toHexString();
+            String fdString = follow.getFollowedId().toHexString();
             session.run(
                 "MATCH (fwer:User {id: $follower})" +
                 "WITH fwer" +
                 "MATCH (fwed:User {id: $followed})" +
                 "WHERE NOT (fwer)-[:FOLLOWS]->(fwed)" +
                 "CREATE (fwer)-[:FOLLOWS]->(fwed)", 
-                parameters("follower", follow.getFollowerId(), 
-                            "followed", follow.getFollowedId())
+                parameters("follower", fwString, 
+                            "followed", fdString)
             );
         } 
     }
@@ -65,14 +68,17 @@ public class FollowGraphDAO {
      */
     public void addFollowByIds(ObjectId followerId, ObjectId followedId) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String fwString = followerId.toHexString();
+            String fdString = followedId.toHexString();
             session.run(
                 "MATCH (fwer:User {id: $follower})" +
                 "WITH fwer" +
                 "MATCH (fwed:User {id: $followed}) " +
                 "WHERE NOT (fwer)-[:FOLLOWS]->(fwed)" +
                 "CREATE (fwer)-[:FOLLOWS]->(fwed)", 
-                parameters("follower", followerId, 
-                            "followed", followedId)
+                parameters("follower", fwString, 
+                            "followed", fdString)
             );
         } 
     }
@@ -81,11 +87,14 @@ public class FollowGraphDAO {
 
     public boolean getFollow(Reviewer follower, Reviewer followed) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String fwString = follower.getId().toHexString();
+            String fdString = followed.getId().toHexString();
             Result result = session.run(
                 "MATCH (fwr:User {id: $follower})-[f:FOLLOWS]->(fwd:User {id: $followed})" +
                 "RETURN f",
-                parameters("follower", follower.getId(), 
-                            "followed", followed.getId())
+                parameters("follower", fwString, 
+                            "followed", fdString)
             );
 
             if (result.hasNext()) 
@@ -97,11 +106,14 @@ public class FollowGraphDAO {
     
     public boolean getFollowbyId(ObjectId followerId, ObjectId followedId) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String fwString = followerId.toHexString();
+            String fdString = followedId.toHexString();
             Result result = session.run(
                 "MATCH (fwr:User {id: $follower})-[f:FOLLOWS]->(fwd:User {id: $followed})" +
                 "RETURN f",
-                parameters("follower", followerId, 
-                            "followed", followedId)
+                parameters("follower", fwString, 
+                            "followed", fdString)
             );
 
             if (result.hasNext()) 
@@ -113,11 +125,14 @@ public class FollowGraphDAO {
 
     public boolean checkFollow(Follow follow) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String fwString = follow.getFollowerId().toHexString();
+            String fdString = follow.getFollowedId().toHexString();
             Result result = session.run(
                 "MATCH (fwr:User {id: $follower})-[f:FOLLOWS]->(fwd:User {id: $followed})" +
                 "RETURN f",
-                parameters("follower", follow.getFollowerId(), 
-                            "followed", follow.getFollowedId())
+                parameters("follower", fwString, 
+                            "followed", fdString)
             );
 
             if (result.hasNext()) 
@@ -129,11 +144,14 @@ public class FollowGraphDAO {
 
     public boolean checkFollow(ObjectId followerId, ObjectId followedId) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String fwString = followerId.toHexString();
+            String fdString = followedId.toHexString();
             Result result = session.run(
                 "MATCH (fwr:User {id: $follower})-[f:FOLLOWS]->(fwd:User {id: $followed})" +
                 "RETURN f",
-                parameters("follower", followerId, 
-                            "followed", followedId)
+                parameters("follower", fwString, 
+                            "followed", fdString)
             );
 
             if (result.hasNext()) 
@@ -152,14 +170,17 @@ public class FollowGraphDAO {
      */
     public void deleteFollow(Reviewer follower, Reviewer followed) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String fwString = follower.getId().toHexString();
+            String fdString = followed.getId().toHexString();
             session.run(
                 "MATCH (fwr:User {id: $follower})" +
                 "WITH fwr" +
                 "MATCH (fwd:User {id: $followed})" +
                 "WHERE (fwr)-[f:FOLLOWS]->(fwd)" +
                 "DELETE f",
-                parameters("user", follower.getId(), 
-                            "followed", followed.getId())
+                parameters("user", fwString, 
+                            "followed", fdString)
             );
         }
     }
@@ -170,11 +191,14 @@ public class FollowGraphDAO {
      */
     public void deleteFollow(Follow follow) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String fwString = follow.getFollowerId().toHexString();
+            String fdString = follow.getFollowedId().toHexString();
             session.run(
                 "MATCH (fwer:User {id: $follower})-[f:FOLLOWS]->(fwed:User {id: $followed}) " +
                 "DELETE f", 
-                parameters("follower", follow.getFollowerId(), 
-                            "followed", follow.getFollowedId())
+                parameters("follower", fwString, 
+                            "followed", fdString)
             );
         } 
     }
@@ -186,12 +210,15 @@ public class FollowGraphDAO {
      */
     public void deleteFollow(ObjectId followerId, ObjectId followedId) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String fwString = followerId.toHexString();
+            String fdString = followedId.toHexString();
             session.run(
                 "MATCH (fwr:User {id: $follower}), (fwd:User {id: $followed})" +
                 "WHERE (fwr)-[f:FOLLOWS]->(fwd)" +
                 "DELETE f",
-                parameters("user", followerId, 
-                            "followed", followedId)
+                parameters("user", fwString, 
+                            "followed", fdString)
             );
         }
     }

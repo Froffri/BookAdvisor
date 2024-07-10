@@ -85,6 +85,39 @@ public class UserDao {
         return users;
     }
 
+    public boolean addBookToAuthor(ObjectId authorId, ObjectId bookId) {
+        try {
+            UpdateResult result = collection.updateOne(Filters.eq("_id", authorId),
+                                                      new Document("$push", new Document("bookIds", bookId)));
+            return result.getModifiedCount() > 0;
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiunta del libro all'autore: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean removeBookFromAuthors(List<ObjectId> authorIds, ObjectId bookId) {
+        try {
+            UpdateResult result = collection.updateMany(Filters.in("_id", authorIds),
+                                                      new Document("$pull", new Document("bookIds", bookId)));
+            return result.getModifiedCount() > 0;
+        } catch (Exception e) {
+            System.err.println("Errore durante la rimozione del libro dagli autori: " + e.getMessage());
+            return false;
+        }
+    }
+
+    public boolean addBookToAuthors(List<ObjectId> authorIds, ObjectId bookId) {
+        try {
+            UpdateResult result = collection.updateMany(Filters.in("_id", authorIds),
+                                                      new Document("$push", new Document("bookIds", bookId)));
+            return result.getModifiedCount() > 0;
+        } catch (Exception e) {
+            System.err.println("Errore durante l'aggiunta del libro agli autori: " + e.getMessage());
+            return false;
+        }
+    }
+
     // Find a user by their username
     public User findUserByUsername(String username) {
         try {

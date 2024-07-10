@@ -42,10 +42,13 @@ public class BookGraphDAO {
 
     public Book getBookById(ObjectId bookId) {
         try (Session session = connector.getSession()) {
+
+            // Convert ObjectId to string
+            String idString = bookId.toHexString();
             Result result = session.run(
                 "MATCH (b:Book {id: $id}) " +
                 "RETURN b", 
-                parameters("id", bookId)
+                parameters("id", idString)
             );
 
             if (result.hasNext()) {
@@ -65,10 +68,12 @@ public class BookGraphDAO {
      */
     public boolean updateBook(Book book) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String idString = book.getId().toHexString();
             session.run(
                 "MATCH (b:Book {id: $id})" +
                 "SET b.title = $title, b.language = '$language'",
-                parameters("id", book.getId(),
+                parameters("id", idString,
                                     "title", book.getTitle(),
                                     "language", book.getLanguage())
                 );
@@ -86,9 +91,11 @@ public class BookGraphDAO {
      */
     public boolean deleteBook(Book book) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String idString = book.getId().toHexString();
             session.run(
                 "MATCH (b:Book {id: $id}) DELETE b",
-                parameters("id", book.getId())
+                parameters("id", idString)
             );
         } catch(Neo4jException e) {
             return false;
@@ -102,9 +109,11 @@ public class BookGraphDAO {
      */
     public boolean deleteBookById(ObjectId bookId) {
         try (Session session = connector.getSession()) {
+            // Convert ObjectId to string
+            String idString = bookId.toHexString();
             session.run(
                 "MATCH (b:Book {id: $id}) DELETE b",
-                parameters("id", bookId)
+                parameters("id", idString)
             );
         } catch (Neo4jException e) {
             return false;
