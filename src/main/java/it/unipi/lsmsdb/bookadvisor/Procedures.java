@@ -195,7 +195,7 @@ public class Procedures {
 //     public List<Map<String, Object>> getBookRecommendations(Object userId) {
 //         try (Session session = graphConnector.getSession()) {
 //             String cypherQuery =
-//                     "MATCH (user:User {id: $userId}) " +
+//                     "MATCH (user:User {id: '$userId'}) " +
 //                     "MATCH (book1:Book)<-[r1:RATES]-(user)-[f:FOLLOWS]->(other:User)-[r2:RATES]->(recommended:Book) " +
 //                     "WHERE r1.rating > 3 AND book1 <> recommended AND r2.rating > 3 " +
 //                     "WITH book1, recommended, r2.rating AS recommendedRating, f " +
@@ -232,10 +232,10 @@ public class Procedures {
      * @param userId The ID of the user for whom the book recommendations are to be found.
      * @return A list of maps containing the books the user has rated and the corresponding book recommendations.
      */
-    public List<Map<String, Object>> getBookRecommendations(Object userId) {
+    public List<Map<String, Object>> getBookRecommendations(ObjectId userId) {
         try (Session session = graphConnector.getSession()) {
                 String cypherQuery =
-                        "MATCH (user:User {id: $userId}) " +
+                        "MATCH (user:User {id: '$userId'}) " +
                         "MATCH (book1:Book)<-[r1:RATES]-(user)-[f:FOLLOWS]->(other:User)-[r2:RATES]->(recommended:Book) " +
                         "WHERE r1.rating > 3 AND book1 <> recommended AND r2.rating > 3 AND book1.language = recommended.language " +
                         "WITH book1, recommended, r2.rating AS recommendedRating, f " +
@@ -243,7 +243,7 @@ public class Procedures {
                         "WITH book1, COLLECT({recommended: recommended, score: recommendedRating})[..3] AS recommendations " +
                         "RETURN book1, recommendations";
 
-                Result result = session.run(cypherQuery, parameters("userId", userId));
+                Result result = session.run(cypherQuery, parameters("userId", userId.toHexString()));
                 List<Map<String, Object>> results = new ArrayList<>();
 
                 while (result.hasNext()) {
@@ -274,10 +274,10 @@ public class Procedures {
      *          along with the titles of the common books and the count of the followers who have rated these books.
      *          The results are ordered by the follower count in descending order, and only the top 10 results are returned.
      */
-    public List<Map<String, Object>> getUsersWithSimilarTastes(Object userId) {
+    public List<Map<String, Object>> getUsersWithSimilarTastes(ObjectId userId) {
         try (Session session = graphConnector.getSession()) {
             String cypherQuery =
-                    "MATCH (u1:User {id: $userId})-[r1:RATES]->(book:Book)<-[r2:RATES]-(u2:User) " +
+                    "MATCH (u1:User {id: '$userId'})-[r1:RATES]->(book:Book)<-[r2:RATES]-(u2:User) " +
                     "WHERE id(u1) < id(u2) " +
                     "WITH u1, u2, book, r1, r2 " +
                     "WHERE abs(r1.rating - r2.rating) < 2 " +
@@ -294,7 +294,7 @@ public class Procedures {
                     "ORDER BY followerRatingCount DESC " +
                     "LIMIT 10";
     
-            Result result = session.run(cypherQuery, parameters("userId", userId));
+            Result result = session.run(cypherQuery, parameters("userId", userId.toHexString()));
             List<Map<String, Object>> results = new ArrayList<>();
     
             while (result.hasNext()) {

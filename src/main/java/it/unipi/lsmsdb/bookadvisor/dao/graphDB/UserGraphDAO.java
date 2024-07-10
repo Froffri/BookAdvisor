@@ -29,7 +29,7 @@ public class UserGraphDAO {
     //     try (Session session = connector.getSession()) {
     //         // Create the node only if it hasn't been created
     //         session.run(
-    //             "MERGE (u:User {id: $id}) " + 
+    //             "MERGE (u:User {id: '$id'}) " + 
     //             "ON CREATE SET u.fav_genres = $fav_genres", 
     //             parameters("id", author.getId(), 
     //                         "fav_genres", author.getFavouriteGenresString())
@@ -57,7 +57,7 @@ public class UserGraphDAO {
     
             // Create the node only if it hasn't been created
             session.run(
-                "MERGE (u:User {id: $id}) " + 
+                "MERGE (u:User {id: '$id'}) " + 
                 "ON CREATE SET u.fav_genres = $fav_genres, u.nickname = $nickname", 
                 parameters("id", idString, 
                             "fav_genres", user.getFavouriteGenresString(),
@@ -78,7 +78,7 @@ public class UserGraphDAO {
     //     try (Session session = connector.getSession()) {
     //         // Create the node only if it hasn't been created
     //         session.run(
-    //             "MERGE (u:User {id: $id}) "/* + 
+    //             "MERGE (u:User {id: '$id'}) "/* + 
     //             "ON CREATE SET u.fav_genres = $fav_genres, u.spoken_lang = $spoken_lang", 
     //             parameters("id", user.getId())*/
     //         );
@@ -119,7 +119,7 @@ public class UserGraphDAO {
     public User getUserById(ObjectId id) {
         try (Session session = connector.getSession()) {
             Result result = session.run(
-                "MATCH (u:User {id: $id}) " +
+                "MATCH (u:User {id: '$id'}) " +
                 "RETURN u", 
                 parameters("id", id.toHexString())
             );
@@ -155,7 +155,7 @@ public class UserGraphDAO {
     public boolean updateUser(Reviewer user) {
         try(Session session = connector.getSession()) {
             session.run(
-                "MATCH (u:User {id: $id}) " +
+                "MATCH (u:User {id: '$id'}) " +
                 "SET u.fav_genres = $fav_genres",
                 parameters("id", user.getId().toHexString(), 
                             "fav_genres", user.getFavouriteGenresString())
@@ -169,7 +169,7 @@ public class UserGraphDAO {
     // public boolean updateUser(Author author) {
     //     try(Session session = connector.getSession()) {
     //         session.run(
-    //             "MATCH (u:User {id: $id}) " +
+    //             "MATCH (u:User {id: '$id'}) " +
     //             "SET u.fav_genres = $fav_genres, u.genres = $genres, u.spoken_lang = $spoken_lang",
     //             parameters("id", author.getId(), 
     //                         "fav_genres", author.getFavouriteGenresString(), 
@@ -191,7 +191,7 @@ public class UserGraphDAO {
     public boolean deleteUser(User user) {
         try (Session session = connector.getSession()) {
             session.run(
-                "MATCH (u:User {id: $id}) " +
+                "MATCH (u:User {id: '$id'}) " +
                 "DETACH DELETE u", 
                 parameters("id", user.getId().toHexString())
             );
@@ -209,7 +209,7 @@ public class UserGraphDAO {
     public boolean deleteUserById(ObjectId userId) {
         try (Session session = connector.getSession()) {
             session.run(
-                "MATCH (u:User {id: $id}) " +
+                "MATCH (u:User {id: '$id'}) " +
                 "DETACH DELETE u", 
                 parameters("id", userId.toHexString())
             );
