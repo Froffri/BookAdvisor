@@ -27,11 +27,15 @@ import javafx.stage.Stage;
 import javafx.scene.Node;
 import javafx.collections.FXCollections;
 import org.controlsfx.control.CheckComboBox;
+import javafx.geometry.Pos;
+import org.neo4j.driver.internal.InternalNode;
+import java.util.stream.Collectors;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -51,6 +55,9 @@ public class App extends Application {
     private ReviewService reviewService;
     private Stage primaryStage;
     private Procedures procedures;
+    private int currentPage = 0;
+    private int totalBooks = 0;
+    private int booksPerPage = 10;
 
     @Override
     public void start(Stage primaryStage) {
@@ -194,12 +201,15 @@ public class App extends Application {
         });
     
         Button searchButton = new Button("Search");
-        searchButton.setOnAction(e -> handleSearch(searchField.getText(), vbox));
+        searchButton.setOnAction(e -> {
+            currentPage = 0;
+            handleSearch(searchField.getText(), vbox);
+        });
     
-        Button findMostFamousBookButton = new Button("Find most famous book by genre");
-        findMostFamousBookButton.setOnAction(e -> openFindMostFamousBookWindow());
+        Button findMostFamousBooksButton = new Button("Find Most Famous Books by Genre");
+        findMostFamousBooksButton.setOnAction(e -> openFindMostFamousBookWindow());
     
-        searchBox.getChildren().addAll(searchField, searchModeButton, searchButton, findMostFamousBookButton);
+        searchBox.getChildren().addAll(searchField, searchModeButton, searchButton, findMostFamousBooksButton);
     
         vbox.getChildren().addAll(new Label("Search"), searchBox);
     
@@ -290,12 +300,139 @@ public class App extends Application {
         Tab tab = new Tab("Feed");
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
-
-        vbox.getChildren().addAll(new Label("Feed"));
-
+        vbox.setAlignment(Pos.CENTER);
+    
+        HBox buttonBox = new HBox(10);
+        buttonBox.setAlignment(Pos.CENTER);
+    
+        Button bookRecommendationsButton = new Button("Get Book Recommendations");
+        bookRecommendationsButton.setOnAction(e -> handleGetBookRecommendations());
+    
+        Button userRecommendationsButton = new Button("Get User Recommendations");
+        userRecommendationsButton.setOnAction(e -> handleGetUserRecommendations());
+    
+        buttonBox.getChildren().addAll(bookRecommendationsButton, userRecommendationsButton);
+        vbox.getChildren().add(buttonBox);
+    
+        // Get recent follows and recent ratings
+        List<Map<String, Object>> recentFollows = procedures.getRecentFollowsByFollowedUsers(currentUser.getId());
+        List<Map<String, Object>> recentRatings = procedures.getRecentRatingsByFollowedUsers(currentUser.getId());
+    
+        // Interleave the results and display them
+        VBox interleavedBox = new VBox(10);
+        int maxSize = Math.max(recentFollows.size(), recentRatings.size());
+    
+        for (int i = 0; i < maxSize; i++) {
+            if (i < recentFollows.size()) {
+                Map<String, Object> follow = recentFollows.get(i);
+                String followedUserNickname = (String) follow.get("followedUserNickname");
+                String followedUserFollowNickname = (String) follow.get("followedUserFollowNickname");
+                String followedUserFollowId = (String) follow.get("followedUserFollowId");
+    
+                HBox followBox = new HBox(10);
+                Label followLabel = new Label(followedUserNickname + " followed " + followedUserFollowNickname);
+                Button viewProfileButton = new Button("View Profile");
+                viewProfileButton.setOnAction(e -> {
+                    Reviewer reviewer = (Reviewer) userService.viewInfoAccount(followedUserFollowId);
+                    if (reviewer != null) {
+                        displayUserDetails(reviewer);
+                    }
+                });
+    
+                followBox.getChildren().addAll(followLabel, viewProfileButton);
+                interleavedBox.getChildren().add(followBox);
+            }
+    
+            if (i < recentRatings.size()) {
+                Map<String, Object> rating = recentRatings.get(i);
+                String followedUserNickname = (String) rating.get("followedUserNickname");
+                String bookTitle = (String) rating.get("bookTitle");
+                int bookRating = (int) rating.get("rating");
+                String bookId = (String) rating.get("bookId");
+    
+                HBox ratingBox = new HBox(10);
+                Label ratingLabel = new Label(followedUserNickname + " has just finished reading " + bookTitle + " and rated it " + bookRating + "/5");
+                Button goToBookButton = new Button("Go to Book");
+                goToBookButton.setOnAction(e -> {
+                    Book book = bookService.getBookById(new ObjectId(bookId));
+                    if (book != null) {
+                        displayBookDetails(book, (Stage) vbox.getScene().getWindow());
+                    }
+                });
+    
+                ratingBox.getChildren().addAll(ratingLabel, goToBookButton);
+                interleavedBox.getChildren().add(ratingBox);
+            }
+        }
+    
+        vbox.getChildren().add(interleavedBox);
+    
         ScrollPane scrollPane = new ScrollPane(vbox);
         tab.setContent(scrollPane);
         return tab;
+    }
+    
+    private void handleGetBookRecommendations() {
+        List<Map<String, Object>> recommendations = procedures.getBookRecommendation(currentUser.getId(), currentUser.getSpokenLanguages());
+    
+        Stage recommendationsStage = new Stage();
+        VBox recommendationsBox = new VBox(10);
+        recommendationsBox.setPadding(new Insets(10));
+    
+        for (Map<String, Object> rec : recommendations) {
+            Map<String, Object> bookMap = (Map<String, Object>) rec.get("book");
+            String title = (String) bookMap.get("title");
+            String bookId = (String) bookMap.get("id");
+    
+            VBox bookBox = new VBox(5);
+            Label titleLabel = new Label("Title: " + title);
+            Button goToBookButton = new Button("Go to Book");
+            goToBookButton.setOnAction(e -> {
+                Book book = bookService.getBookById(new ObjectId(bookId));
+                if (book != null) {
+                    displayBookDetails(book, recommendationsStage);
+                }
+            });
+    
+            bookBox.getChildren().addAll(titleLabel, goToBookButton);
+            recommendationsBox.getChildren().add(bookBox);
+        }
+    
+        ScrollPane scrollPane = new ScrollPane(recommendationsBox);
+        Scene scene = new Scene(scrollPane, 400, 600);
+        recommendationsStage.setScene(scene);
+        recommendationsStage.show();
+    }
+    
+    private void handleGetUserRecommendations() {
+        List<Map<String, Object>> recommendations = procedures.getUsersWithSimilarTastes(currentUser.getId());
+    
+        Stage recommendationsStage = new Stage();
+        VBox recommendationsBox = new VBox(10);
+        recommendationsBox.setPadding(new Insets(10));
+    
+        for (Map<String, Object> rec : recommendations) {
+            String nickname = (String) rec.get("Nickname");
+            String userId = (String) rec.get("user2");
+    
+            VBox userBox = new VBox(5);
+            Label nicknameLabel = new Label("Username: " + nickname);
+            Button viewProfileButton = new Button("View Profile");
+            viewProfileButton.setOnAction(e -> {
+                Reviewer reviewer = (Reviewer) userService.viewInfoAccount(userId);
+                if (reviewer != null) {
+                    displayUserDetails(reviewer);
+                }
+            });
+    
+            userBox.getChildren().addAll(nicknameLabel, viewProfileButton);
+            recommendationsBox.getChildren().add(userBox);
+        }
+    
+        ScrollPane scrollPane = new ScrollPane(recommendationsBox);
+        Scene scene = new Scene(scrollPane, 400, 600);
+        recommendationsStage.setScene(scene);
+        recommendationsStage.show();
     }
 
     private Tab createProfileTab() {
@@ -553,16 +690,44 @@ public class App extends Application {
             searchBooks = !searchBooks;
             searchModeButton.setText(searchBooks ? "Search Mode: Books" : "Search Mode: Users");
         });
-
+    
         Button searchButton = new Button("Search");
-        searchButton.setOnAction(e -> handleSearch(searchField.getText(), vbox));
-
+        searchButton.setOnAction(e -> {
+            currentPage = 0;
+            handleSearch(searchField.getText(), vbox);
+        });
+    
         searchBox.getChildren().addAll(searchField, searchModeButton, searchButton);
         vbox.getChildren().addAll(new Label("Search"), searchBox);
-
+    
         if (searchBooks) {
             List<Book> books = bookService.findBooksByTitle(query);
-            displayBooks(books, vbox);
+            totalBooks = books.size();
+            List<Book> booksToDisplay = books.subList(currentPage * booksPerPage, Math.min((currentPage + 1) * booksPerPage, totalBooks));
+            displayBooks(booksToDisplay, vbox);
+    
+            // Add pagination controls
+            HBox paginationBox = new HBox(10);
+            Button previousPageButton = new Button("Previous");
+            previousPageButton.setDisable(currentPage == 0);
+            previousPageButton.setOnAction(e -> {
+                if (currentPage > 0) {
+                    currentPage--;
+                    handleSearch(query, vbox);
+                }
+            });
+    
+            Button nextPageButton = new Button("Next");
+            nextPageButton.setDisable((currentPage + 1) * booksPerPage >= totalBooks);
+            nextPageButton.setOnAction(e -> {
+                if ((currentPage + 1) * booksPerPage < totalBooks) {
+                    currentPage++;
+                    handleSearch(query, vbox);
+                }
+            });
+    
+            paginationBox.getChildren().addAll(previousPageButton, new Label("Page " + (currentPage + 1)), nextPageButton);
+            vbox.getChildren().add(paginationBox);
         } else {
             List<User> users = userService.searchUsersByUsername(query);
             displayUsers(users, vbox);
@@ -577,10 +742,10 @@ public class App extends Application {
             imageView.setFitHeight(100);
             imageView.setFitWidth(80);
             Label ratingLabel = new Label(String.format("Rating: %.2f", (double) book.getSumStars() / book.getNumRatings()));
-
+    
             bookBox.getChildren().addAll(titleLabel, imageView, ratingLabel);
             bookBox.setOnMouseClicked(e -> displayBookDetails(book, (Stage) vbox.getScene().getWindow()));
-
+    
             vbox.getChildren().add(bookBox);
         }
     }
@@ -1081,7 +1246,7 @@ public class App extends Application {
                 tabPane.getTabs().add(uploadTab);
             }
 
-            tabPane.getSelectionModel().select(2); // Switch to home tab
+            tabPane.getSelectionModel().select(0); // Switch to home tab
         } else {
             System.out.println("Login failed for user: " + username);
             // Show an error message to the user
@@ -1098,31 +1263,6 @@ public class App extends Application {
             // Show an error message to the user
             // You can show an alert here
         }
-    }
-
-    private void modifyUserInfo() {
-        Stage modifyStage = new Stage();
-        VBox modifyBox = new VBox(10);
-        modifyBox.setPadding(new Insets(10));
-
-        PasswordField newPasswordField = new PasswordField();
-        newPasswordField.setPromptText("New Password");
-
-        Button changePasswordButton = new Button("Change Password");
-        changePasswordButton.setOnAction(e -> {
-            if (userService.changePassword(currentUser.getId(), newPasswordField.getText())) {
-                System.out.println("Password changed successfully.");
-            } else {
-                System.out.println("Failed to change password.");
-            }
-            modifyStage.close();
-        });
-
-        modifyBox.getChildren().addAll(new Label("New Password"), newPasswordField, changePasswordButton);
-
-        Scene scene = new Scene(modifyBox, 300, 200);
-        modifyStage.setScene(scene);
-        modifyStage.show();
     }
 
     private void showAllReviews(Book book) {
