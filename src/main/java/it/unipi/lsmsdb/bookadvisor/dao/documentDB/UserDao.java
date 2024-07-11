@@ -268,24 +268,26 @@ public class UserDao {
 
 
     // Add a review to a user
-    public void addReview(ObjectId userId, ObjectId reviewId) {
+    public boolean addReview(ObjectId userId, ObjectId reviewId) {
         Reviewer user = findReviewerById(userId);
         if (user != null) {
             if (user.getReviewIds() == null) {
                 user.setReviewIds(new ArrayList<>());
             }
             user.addReview(reviewId);
-            updateUser(user);
+            return updateUser(user);
         }
+        return false;
     }
 
     // Remove a review from a user
-    public void removeReview(ObjectId userId, ObjectId reviewId) {
+    public boolean removeReview(ObjectId userId, ObjectId reviewId) {
         Reviewer user = findReviewerById(userId);
         if (user != null) {
             user.removeReview(reviewId);
-            updateUser(user);
+            return updateUser(user);
         }
+        return false;
     }
 
     // Helper method to create a User object from a MongoDB document

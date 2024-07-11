@@ -2,6 +2,7 @@ package it.unipi.lsmsdb.bookadvisor.service;
 
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.BookDao;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.ReviewDao;
+import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
 import it.unipi.lsmsdb.bookadvisor.dao.graphDB.ReviewGraphDAO;
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
@@ -13,25 +14,59 @@ public class ReviewService {
     private ReviewDao reviewDao;
     private ReviewGraphDAO reviewGraphDao;
     private BookDao bookDao;
+    private UserDao userDao;
 
-    public ReviewService(ReviewDao reviewDao, ReviewGraphDAO reviewGraphDAO, BookDao bookDao) {
+    public ReviewService(ReviewDao reviewDao, ReviewGraphDAO reviewGraphDAO, BookDao bookDao, UserDao userDao) {
         this.reviewDao = reviewDao;
         this.bookDao = bookDao;
         this.reviewGraphDao = reviewGraphDAO;
+        this.userDao = userDao;
     }
 
     // Aggiungi una nuova recensione al database
     public boolean addReview(Review review) {
+        // Validate the rating
         validateStars(review.getStars());
-        if(reviewDao.addReview(review)){
-            // Successfully added the review in mongodb
-            if(reviewGraphDao.addReview(review)){
-                // Successfully added the review in neo4j
-                return true;
+
+        // Check if the review already exists
+        if (reviewDao.findReviewByUserIdAndBookId(review.getUserId(), review.getBookId()) != null) {
+            System.err.println("Recensione già presente.");
+            return false;
+        }
+
+        if(reviewDao.addReview(review.getId(), review)){
+            if(bookDao.addReviewToBook(review.getBookId(), review.getId())){
+                if(userDao.addReview(review.getUserId(), review.getId())){
+                    if(bookDao.updateBookRating(review.getBookId(), review.getStars(), review.getCountry())){
+                        // Successfully added the review to mongodb
+                        if(reviewGraphDao.addReview(review)){
+                            // Successfully added the review to neo4j
+                            return true;
+                        } else {
+                            // Failed to add the review to neo4j
+                            System.out.println("Failed to add review to graph");
+                            reviewDao.deleteReview(review.getId());
+                            return false;
+                        }
+                    } else {
+                        // Failed to add the review to mongodb
+                        System.out.println("Failed to add review to book");
+                        reviewDao.deleteReviewById(review.getId());
+                        bookDao.removeReviewFromBook(review.getBookId(), review.getId());
+                        userDao.removeReview(review.getUserId(), review.getId());
+                        return false;
+                    }
+                } else {
+                    // Failed to add the review to mongodb
+                    System.out.println("Failed to add review to user");
+                    reviewDao.deleteReviewById(review.getId());
+                    bookDao.removeReviewFromBook(review.getBookId(), review.getId());
+                    return false;
+                }
             } else {
-                // Failed to add the review in neo4j
-                System.out.println("Failed to insert review in graph");
-                reviewDao.deleteReview(review.getId());
+                // Failed to add the review to mongodb
+                System.out.println("Failed to add review to book");
+                reviewDao.deleteReviewById(review.getId());
                 return false;
             }
         }
@@ -95,6 +130,12 @@ public class ReviewService {
                         System.out.println("Failed to delete review from graph");
                         reviewDao.addReview(review.getId(), review);
                         bookDao.addReviewToBook(bookId, reviewId);
+
+                        // Rollback the deletion from mongodb
+                        bookDao.updateBookRating(bookId, review.getStars(), review.getCountry());
+
+                        userDao.addReview(review.getUserId(), reviewId);
+
                         return false;
                     }
                 } else {

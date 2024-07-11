@@ -70,7 +70,7 @@ public class App extends Application {
         bookService = new BookService(bookDao, userDao, new BookGraphDAO(neo4jConnector));
         followService = new FollowService(followGraphDAO);
         userService = new UserService(userDao, reviewDao, userGraphDAO);
-        reviewService = new ReviewService(reviewDao, new ReviewGraphDAO(neo4jConnector), bookDao);
+        reviewService = new ReviewService(reviewDao, new ReviewGraphDAO(neo4jConnector), bookDao, userDao);
         procedures = new Procedures(neo4jConnector, connector);
 
         primaryStage.setTitle("Book Advisor");

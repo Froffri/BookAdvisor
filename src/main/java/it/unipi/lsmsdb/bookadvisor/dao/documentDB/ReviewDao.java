@@ -82,24 +82,81 @@ public class ReviewDao {
     // Delete a review from the database
     public boolean deleteReview(ObjectId id) {
         try {
-            // Trova la recensione prima dell'eliminazione
-            Review deletedReview = findReviewById(id);
+            // Find the review before deleting it
+            Review review = findReviewById(id);
+            if (review == null) {
+                System.err.println("Recensione non trovata.");
+                return false;
+            }
 
-            // Elimina la recensione dal database
+            // Delete the review from the database
             DeleteResult result = collection.deleteOne(Filters.eq("_id", id));
 
-            // Se la recensione è stata effettivamente eliminata
+            // If the review was successfully deleted
             if (result.getDeletedCount() > 0) {
-                // Sottrai il punteggio della recensione eliminata dal punteggio totale del libro
-                bookDao.updateBookRating(deletedReview.getBookId(), -deletedReview.getStars(), deletedReview.getCountry());
-                // Rimuovi la recensione dal libro
-                bookDao.removeReviewFromBook(deletedReview.getBookId(), deletedReview.getId());
-                userDao.removeReview(deletedReview.getUserId(), deletedReview.getId());
+                // Remove the review from the book
+                if(bookDao.removeReviewFromBook(review.getBookId(), id)){
+                    // Remove the review from the user
+                    if(userDao.removeReview(review.getUserId(), id)){
+                        // Successfully deleted the review from the database
+                        if(bookDao.updateBookRating(review.getBookId(), -review.getStars(), review.getCountry())){
+                            // Successfully updated the book rating
+                            return true;
+                        } else {
+                            // Failed to update the book rating
+                            System.out.println("Failed to update book rating");
+                            // Add the review back to the database
+                            collection.insertOne(review.toDocument().append("_id", id));
+                            // Add the review back to the book
+                            bookDao.addReviewToBook(review.getBookId(), id);
+                            // Add the review back to the user
+                            userDao.addReview(review.getUserId(), id);
+                            return false;
+                        }
+                    } else {
+                        // Failed to remove the review from the user
+                        System.out.println("Failed to remove review from user");
+                        // Add the review back to the database
+                        collection.insertOne(review.toDocument().append("_id", id));
+                        // Add the review back to the book
+                        bookDao.addReviewToBook(review.getBookId(), id);
+                        return false;
+                    }
+                } else {
+                    // Failed to remove the review from the book
+                    System.out.println("Failed to remove review from book");
+                    // Add the review back to the database
+                    collection.insertOne(review.toDocument().append("_id", id));
+                    return false;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("Errore durante l'eliminazione della recensione: " + e.getMessage());
+            return false;
+        }
+    }
+
+    // Delete a review by its ID by only removing it from the review collection
+    public boolean deleteReviewById(ObjectId id) {
+        try {
+            // Find the review before deleting it
+            Review review = findReviewById(id);
+            if (review == null) {
+                System.err.println("Recensione non trovata.");
+                return false;
+            }
+
+            // Delete the review from the database
+            DeleteResult result = collection.deleteOne(Filters.eq("_id", id));
+
+            // If the review was successfully deleted
+            if (result.getDeletedCount() > 0) {
                 return true;
             }
             return false;
         } catch (Exception e) {
-            System.err.println("Errore durante la cancellazione della recensione: " + e.getMessage());
+            System.err.println("Errore durante l'eliminazione della recensione: " + e.getMessage());
             return false;
         }
     }

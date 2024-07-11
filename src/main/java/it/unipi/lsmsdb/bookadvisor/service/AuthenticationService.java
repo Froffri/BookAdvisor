@@ -91,7 +91,6 @@ public class AuthenticationService {
                 } else {
                     // Insertion in graph failed
                     System.out.println("Failed to insert user in graph");
-                    //TODO TODO TODO TODO CHECK IF IT WORKS
                     userDao.deleteUser(newUser.getId());
                     return false;
                 }
