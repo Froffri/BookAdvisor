@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
 import org.bson.Document;
@@ -664,7 +665,7 @@ public class App extends Application {
                 userDetailsBox.getChildren().add(deleteAccountButton);
             }
     
-            Button viewTop3ReviewsButton = new Button("View top 3 useful reviews");
+            Button viewTop3ReviewsButton = new Button("View top useful reviews");
             viewTop3ReviewsButton.setOnAction(e -> displayTop3UsefulReviews(reviewer));
             userDetailsBox.getChildren().add(viewTop3ReviewsButton);
         }
@@ -778,8 +779,14 @@ public class App extends Application {
     }
 
     private void followUser(Reviewer reviewer) {
-        followService.followUser(currentUser.getId(), reviewer.getId());
-        System.out.println("Followed user: " + reviewer.getNickname());
+        // Check if the user already follows the reviewer
+        if(followService.isFollowing(currentUser, reviewer)) {
+            followService.removeFollowByIds(currentUser.getId(), reviewer.getId());
+            System.out.println("Unfollowed user: " + reviewer.getNickname());
+        } else {
+            followService.followUser(currentUser.getId(), reviewer.getId());
+            System.out.println("Followed user: " + reviewer.getNickname());
+        }
     }
 
     private void displayBookDetails(Book book, Stage ownerStage) {
@@ -842,35 +849,52 @@ public class App extends Application {
 
             Button submitReviewButton = new Button("Submit Review");
             submitReviewButton.setOnAction(e -> {
-                int rating = ratingComboBox.getValue();
-                String text = reviewTextArea.getText();
-
-                // Create and submit the review
-                Review newReview = new Review(new ObjectId(), currentUser.getId(), book.getId(), currentUser.getNickname(), text, ((Reviewer) currentUser).getNationality(), rating, 0, 0);
-                if (reviewService.addReview(newReview)) {
-
-                    // Reload the book from the database
-                    Book updatedBook = bookService.getBookById(book.getId());
-
-                    // Update the local book object
-                    book.setReviewIds(updatedBook.getReviewIds());
-                    book.setMost10UsefulReviews(updatedBook.getMost10UsefulReviews());
-
-                    // Reload the user from the database
-                    currentUser = (Reviewer) userService.viewInfoAccount(currentUser.getId().toString());
-
-                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                    alert.setTitle("Success");
-                    alert.setHeaderText(null);
-                    alert.setContentText("Review submitted successfully.");
-                    alert.showAndWait();
-                } else {
+                System.out.println("Submit review button clicked");
+                // If the user has already reviewed the book, show an error message
+                if (userService.checkReview(currentUser.getId(), book.getId())) {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setTitle("Error");
                     alert.setHeaderText(null);
-                    alert.setContentText("Failed to submit review.");
+                    alert.setContentText("You have already reviewed this book.");
                     alert.showAndWait();
+                } else if(Arrays.stream(book.getAuthors()).anyMatch(a -> a.getId().equals(currentUser.getId()))){
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setTitle("Error");
+                    alert.setHeaderText(null);
+                    alert.setContentText("You cannot review your own book.");
+                    alert.showAndWait();
+                } else {
+                    int rating = ratingComboBox.getValue();
+                    String text = reviewTextArea.getText();
+    
+                    // Create and submit the review
+                    Review newReview = new Review(new ObjectId(), currentUser.getId(), book.getId(), currentUser.getNickname(), text, ((Reviewer) currentUser).getNationality(), rating, 0, 0);
+                    if (reviewService.addReview(newReview)) {
+    
+                        // Reload the book from the database
+                        Book updatedBook = bookService.getBookById(book.getId());
+    
+                        // Update the local book object
+                        book.setReviewIds(updatedBook.getReviewIds());
+                        book.setMost10UsefulReviews(updatedBook.getMost10UsefulReviews());
+    
+                        // Reload the user from the database
+                        currentUser = (Reviewer) userService.viewInfoAccount(currentUser.getId().toString());
+    
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                        alert.setTitle("Success");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Review submitted successfully.");
+                        alert.showAndWait();
+                    } else {
+                        Alert alert = new Alert(Alert.AlertType.ERROR);
+                        alert.setTitle("Error");
+                        alert.setHeaderText(null);
+                        alert.setContentText("Failed to submit review.");
+                        alert.showAndWait();
+                    }
                 }
+
             });
 
             VBox leaveReviewBox = new VBox(5);
@@ -924,6 +948,26 @@ public class App extends Application {
         bookStage.show();
     }
 
+    public class NumericTextField extends TextField {
+        public NumericTextField() {
+            this.setPromptText("Enter a number");
+        }
+    
+        @Override
+        public void replaceText(int start, int end, String text) {
+            if (text.matches("[0-9]*")) {
+                super.replaceText(start, end, text);
+            }
+        }
+    
+        @Override
+        public void replaceSelection(String text) {
+            if (text.matches("[0-9]*")) {
+                super.replaceSelection(text);
+            }
+        }
+    }
+
     private void editBook(Book book) {
         Stage editStage = new Stage();
         VBox editBox = new VBox(10);
@@ -943,9 +987,24 @@ public class App extends Application {
             "ukr", "und", "urd", "vie", "vls", "wak", "zho"
         );
         languageComboBox.setValue(book.getLanguage());
+
+        // Create a formatter to accept only numeric input
+        UnaryOperator<TextFormatter.Change> filter = change -> {
+            String text = change.getText();
+            if (text.matches("[0-9]*")) {
+                return change;
+            }
+            return null; // reject change
+        };
     
-        TextField numPagesField = new TextField(String.valueOf(book.getNumPages()));
-        TextField yearField = new TextField(String.valueOf(book.getYear()));
+        TextField numPagesField = new TextField();
+        numPagesField.setTextFormatter(new TextFormatter<>(filter));
+        numPagesField.setText(String.valueOf(book.getNumPages()));
+
+        TextField yearField = new TextField();
+        yearField.setTextFormatter(new TextFormatter<>(filter));
+        yearField.setText(String.valueOf(book.getYear()));
+        
         CheckComboBox<String> genresCheckComboBox = new CheckComboBox<>(FXCollections.observableArrayList(
             "biography", "children", "comics", "crime", "fantasy", "fiction", "graphic", "historical fiction",
             "history", "mystery", "non-fiction", "paranormal", "poetry", "romance", "thriller", "young-adult"

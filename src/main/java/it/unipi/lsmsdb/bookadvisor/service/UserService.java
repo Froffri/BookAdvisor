@@ -45,19 +45,10 @@ public class UserService {
     public boolean updateAccountInformation(ObjectId userId, User updatedUser) {
         User existingUser = userDao.findUserById(userId);
         if (existingUser instanceof Admin || existingUser.getId().equals(updatedUser.getId())) {
-            if(userDao.updateUser(updatedUser)){
-                // Successfully updated the user in mongodb
-                if(userGraphDao.updateUser(updatedUser)){
-                    // Successfully updated the user in neo4j
-                    return true;
-                } else {
-                    // Failed to update the user in neo4j
-                    System.out.println("Failed to update the user in neo4j");
-                    userDao.updateUser(existingUser);
-                    return false;
-                }
-            }
-            return false;
+            if(userDao.updateUser(updatedUser))
+                return true;
+            else
+                return false;
         }
         throw new IllegalArgumentException("Non hai i permessi per modificare questo utente.");
     }
@@ -142,6 +133,11 @@ public class UserService {
         return review != null
                 && !review.getUserId().equals(user.getId()) // Ensure the vote is not from the same user
                 && review.getText() != null && !review.getText().isEmpty(); // Ensure the associated review has non-empty text
+    }
+
+    public boolean checkReview(ObjectId userId, ObjectId bookId) {
+        Review review = reviewDao.findReviewByUserIdAndBookId(userId, bookId);
+        return review != null;
     }
     
     // Additional business logic for checking if a user is authorized

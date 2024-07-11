@@ -131,11 +131,6 @@ public class ReviewService {
         return reviewDao.findReviewByUserIdAndBookId(userId, bookId);
     }
 
-    // Trova recensioni per nome libro
-    public List<Review> findReviewsByBookName(String bookName) {
-        return reviewDao.findReviewsByBookName(bookName);
-    }
-
     // Trova recensioni per username
     public List<Review> findReviewsByUsername(String username) {
         return reviewDao.findReviewsByUsername(username);

@@ -156,7 +156,9 @@ public class ReviewDao {
     // Find reviews by user ID and book ID
     public Review findReviewByUserIdAndBookId(ObjectId userId, ObjectId bookId) {
         try {
-            Document doc = collection.find(Filters.and(Filters.eq("userId", userId), Filters.eq("bookId", bookId))).first();
+            Document doc = collection.find(Filters.and(Filters.eq("user_id", userId), Filters.eq("book_id", bookId))).first();
+            // Print the result
+            System.out.println(doc);
             return doc != null ? new Review(doc) : null;
         } catch (Exception e) {
             System.err.println("Errore durante la ricerca della recensione per ID utente e ID libro: " + e.getMessage());
@@ -164,24 +166,11 @@ public class ReviewDao {
         }
     }
 
-    // Find reviews by book's name
-    public List<Review> findReviewsByBookName(String bookName) {
-        List<Review> reviews = new ArrayList<>();
-        try {
-            for (Document doc : collection.find(Filters.eq("bookName", bookName))) {
-                reviews.add(new Review(doc));
-            }
-        } catch (Exception e) {
-            System.err.println("Errore durante la ricerca delle recensioni per nome libro: " + e.getMessage());
-        }
-        return reviews;
-    }
-
     // Find reviews by user's username
     public List<Review> findReviewsByUsername(String username) {
         List<Review> reviews = new ArrayList<>();
         try {
-            for (Document doc : collection.find(Filters.eq("username", username))) {
+            for (Document doc : collection.find(Filters.eq("nickname", username))) {
                 reviews.add(new Review(doc));
             }
         } catch (Exception e) {

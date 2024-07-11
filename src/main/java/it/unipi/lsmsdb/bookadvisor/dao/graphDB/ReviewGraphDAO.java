@@ -1,15 +1,13 @@
 package it.unipi.lsmsdb.bookadvisor.dao.graphDB;
-import static org.neo4j.driver.Values.parameters;
 
 import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
-import org.neo4j.driver.Record;
 import org.neo4j.driver.exceptions.Neo4jException;
 import org.neo4j.driver.types.Node;
 
-import it.unipi.lsmsdb.bookadvisor.model.book.Book;
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
-import it.unipi.lsmsdb.bookadvisor.model.user.Reviewer;
+
+import static org.neo4j.driver.Values.parameters;
 
 public class ReviewGraphDAO {
     private final Neo4jConnector connector;
@@ -18,76 +16,64 @@ public class ReviewGraphDAO {
         this.connector = connector;
     }
 
-    // CREATE 
+    // CREATE
+
     /**
      * Create a review relationship in the graph database
+     *
      * @param userId
      * @param bookId
      * @param rating
      */
     public boolean addReview(ObjectId userId, ObjectId bookId, int rating) {
         try (Session session = connector.getSession()) {
-            // Convert ObjectId to string
-            String userIdString = userId.toHexString();
-            String bookIdString = bookId.toHexString();
-            session.run(
-                "MATCH (usr:User {id: '$user'})" +
-                "WITH usr" +
-                "MATCH (bk:Book {id: '$book'})" +
-                "WHERE NOT (usr)-[:RATES]->(bk)" +
-                "CREATE (usr)-[:RATES {stars: $rating}]->(bk)", 
-                parameters("user", userIdString, 
-                            "book", bookIdString, 
+            return session.run(
+                    "MATCH (usr:User {id: $user}) " +
+                    "MATCH (bk:Book {id: $book}) " +
+                    "MERGE (usr)-[:RATES {stars: $rating}]->(bk)",
+                    parameters("user", userId.toHexString(),
+                            "book", bookId.toHexString(),
                             "rating", rating)
-            );
+            ).consume().counters().relationshipsCreated() > 0;
         } catch (Neo4jException e) {
             return false;
         }
-        return true;
     }
+
     /**
      * Create a review relationship in the graph database
+     *
      * @param review
      */
     public boolean addReview(Review review) {
         try (Session session = connector.getSession()) {
-
-            System.out.println("Adding review: " + review.getUserId().toHexString() + " " + review.getBookId().toHexString() + " " + review.getStars());
-
-            System.out.println("MATCH (usr:User {id: " + review.getUserId().toHexString() + "})" +
-                                "WITH usr" +
-                                "MATCH (bk:Book {id: " + review.getBookId().toHexString() + "})" +
-                                "WHERE NOT (usr)-[:RATES]->(bk)" +
-                                "CREATE (usr)-[:RATES {stars: " + review.getStars() + "}]->(bk)");
-
-            session.run(
-                "MATCH (usr:User {id: '$user'}) " +
-                "WITH usr " +
-                "MATCH (bk:Book {id: '$book'}) " +
-                "WHERE NOT (usr)-[:RATES]->(bk) " +
-                "CREATE (usr)-[:RATES {stars: $rating}]->(bk) ", 
-                parameters("user", review.getUserId().toHexString(), 
-                            "book", review.getBookId().toHexString(), 
+            return session.run(
+                    "MATCH (usr:User {id: $user}) " +
+                    "MATCH (bk:Book {id: $book}) " +
+                    "MERGE (usr)-[:RATES {stars: $rating}]->(bk)",
+                    parameters("user", review.getUserId().toHexString(),
+                            "book", review.getBookId().toHexString(),
                             "rating", review.getStars())
-            );
+            ).consume().counters().relationshipsCreated() > 0;
         } catch (Neo4jException e) {
             return false;
         }
-        return true;
     }
 
     // READ
+
     /**
      * Get a review from the graph database
+     *
      * @param userId
      * @param bookId
      */
     public Review getReview(ObjectId userId, ObjectId bookId) {
         try (Session session = connector.getSession()) {
             Result result = session.run(
-                "MATCH (usr:User {id: '$user'})-[r:RATES]->(bk:Book {id: '$book'})" +
-                "RETURN r.stars AS rating",
-                parameters("user", userId.toHexString(), 
+                    "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book}) " +
+                    "RETURN r.stars AS rating",
+                    parameters("user", userId.toHexString(),
                             "book", bookId.toHexString())
             );
 
@@ -102,133 +88,93 @@ public class ReviewGraphDAO {
 
     public boolean checkReview(ObjectId userId, ObjectId bookId) {
         try (Session session = connector.getSession()) {
-            Result result = session.run(
-                "MATCH (usr:User {id: '$user'})-[r:RATES]->(bk:Book {id: '$book'})" +
-                "RETURN r.stars AS rating",
-                parameters("user", userId.toHexString(), 
+            return session.run(
+                    "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book}) " +
+                    "RETURN r.stars AS rating",
+                    parameters("user", userId.toHexString(),
                             "book", bookId.toHexString())
-            );
-
-            if (result.hasNext()) {
-                return true;
-            }
-            return false;
+            ).hasNext();
         }
     }
 
     // UPDATE
+
     /**
      * Update a review in the graph database
-     * @param userId 
+     *
+     * @param userId
      * @param bookId
      * @param rating
      */
     public boolean updateReview(ObjectId userId, ObjectId bookId, int rating) {
         try (Session session = connector.getSession()) {
-            session.run(
-                "MATCH (usr:User {id: '$user'})" +
-                "WITH usr" +
-                "MATCH (bk:Book {id: '$book'})" +
-                "WHERE (usr)-[r:RATES]->(bk)" +
-                "SET r.rating = $rating",
-                parameters("user", userId.toHexString(), 
-                            "book", bookId.toHexString(), 
-                            "rating", rating) 
-            );
+            return session.run(
+                    "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book}) " +
+                    "SET r.stars = $rating",
+                    parameters("user", userId.toHexString(),
+                            "book", bookId.toHexString(),
+                            "rating", rating)
+            ).consume().counters().containsUpdates();
         } catch (Neo4jException e) {
             return false;
         }
-        return true;
     }
 
     /**
      * Update a review in the graph database
+     *
      * @param review
      */
     public boolean updateReview(Review review) {
         try (Session session = connector.getSession()) {
-            session.run(
-                "MATCH (usr:User {id: '$user'})" +
-                "WITH usr" +
-                "MATCH (bk:Book {id: '$book'})" +
-                "WHERE (usr)-[r:RATES]->(bk)" +
-                "SET r.rating = $rating",
-                parameters("user", review.getUserId().toHexString(), 
-                            "book", review.getBookId().toHexString(), 
-                            "rating", review.getStars()) 
-            );
+            return session.run(
+                    "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book}) " +
+                    "SET r.stars = $rating",
+                    parameters("user", review.getUserId().toHexString(),
+                            "book", review.getBookId().toHexString(),
+                            "rating", review.getStars())
+            ).consume().counters().containsUpdates();
         } catch (Neo4jException e) {
             return false;
         }
-        return true;
     }
 
     // DELETE
 
     /**
      * Delete a review from the graph database
+     *
      * @param userId
      * @param bookId
      */
     public boolean deleteReview(ObjectId userId, ObjectId bookId) {
         try (Session session = connector.getSession()) {
-            session.run(
-                "MATCH (usr:User {id: '$user'})" +
-                "WITH usr" +
-                "MATCH (bk:Book {id: '$book'})" +
-                "WHERE (usr)-[r:RATES]->(bk)" +
-                "DELETE r",
-                parameters("user", userId.toHexString(), 
+            return session.run(
+                    "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book}) " +
+                    "DELETE r",
+                    parameters("user", userId.toHexString(),
                             "book", bookId.toHexString())
-            );
+            ).consume().counters().relationshipsDeleted() > 0;
         } catch (Neo4jException e) {
             return false;
         }
-        return true;
     }
 
     /**
      * Delete a review from the graph database
-     * @param userId
-     * @param bookId
+     *
+     * @param review
      */
     public boolean deleteReview(Review review) {
         try (Session session = connector.getSession()) {
-            session.run(
-                "MATCH (usr:User {id: '$user'})" +
-                "WITH usr" +
-                "MATCH (bk:Book {id: '$book'})" +
-                "WHERE (usr)-[r:RATES]->(bk)" +
-                "DELETE r",
-                parameters("user", review.getUserId().toHexString(), 
+            return session.run(
+                    "MATCH (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book}) " +
+                    "DELETE r",
+                    parameters("user", review.getUserId().toHexString(),
                             "book", review.getBookId().toHexString())
-            );
+            ).consume().counters().relationshipsDeleted() > 0;
         } catch (Neo4jException e) {
             return false;
         }
-        return true;
     }
-
-    /**
-     * Delete a review from the graph database
-     * @param user
-     * @param book
-     */
-    public boolean deleteReview(Reviewer user, Book book) {
-        try (Session session = connector.getSession()) {
-            session.run(
-                "MATCH (usr:User {id: '$user'})" +
-                "WITH usr" +
-                "MATCH (bk:Book {id: '$book'})" +
-                "WHERE (usr)-[r:RATES]->(bk)" +
-                "DELETE r",
-                parameters("user", user.getId().toHexString(), 
-                            "book", book.getId().toHexString())
-            );
-        } catch (Neo4jException e) {
-            return false;
-        }
-        return true;
-    }
-
 }
