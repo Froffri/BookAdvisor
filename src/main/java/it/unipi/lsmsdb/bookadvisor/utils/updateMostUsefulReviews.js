@@ -1,7 +1,31 @@
-// Create indexes to optimize query performance
-// db.reviews.createIndex({ "book_id": 1 });
-// db.reviews.createIndex({ "count_up_votes": 1 });
-// db.reviews.createIndex({ "count_down_votes": 1 });
+// Certainly! Using MongoDB Atlas's Scheduled Triggers is a powerful way to automate tasks directly in the cloud. Here’s a step-by-step guide on how to set up and use Scheduled Triggers in MongoDB Atlas.
+
+// ### Step-by-Step Guide to Using MongoDB Atlas Scheduled Triggers
+
+// #### 1. **Set Up MongoDB Atlas**
+
+// If you haven’t already, sign up for MongoDB Atlas and create a cluster:
+// - [Sign up for MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register)
+
+// #### 2. **Access MongoDB Atlas App Services**
+
+// 1. **Navigate to your cluster in MongoDB Atlas.**
+// 2. **Click on the `App Services` tab in the left-hand sidebar.**
+// 3. **Click `Create New App`** and follow the prompts to set up your app.
+
+// #### 3. **Create a Scheduled Trigger**
+
+// 1. **Within your App Services, navigate to `Triggers` in the left-hand menu.**
+// 2. **Click on `Add Trigger`.**
+// 3. **Select `Scheduled Trigger` and provide the necessary details:**
+//    - **Name:** Provide a name for your trigger.
+//    - **Schedule:** Define when and how often your trigger should run (e.g., every day at midnight).
+
+// #### 4. **Define the Trigger Function**
+
+// 1. **In the Function section, click on `New Function`.**
+// 2. **Name your function** (e.g., `updateMostUsefulReviews`).
+// 3. **Add the following code** in the function editor to implement the logic for updating the most useful reviews:
 
 exports = async function() {
   const db = context.services.get("mongodb-atlas").db("yourDatabase");
@@ -17,7 +41,7 @@ exports = async function() {
       { "$addFields": { "helpfulness": { "$subtract": ["$count_up_votes", "$count_down_votes"] } } },
       { "$sort": { "helpfulness": -1 } },
       { "$limit": 10 },
-      { "$project": { "helpfulness": 0 } } // Exclude the 'helpfulness' field
+      { "$project": { "helpfulness": 0 } }
     ]).toArray();
 
     await booksCollection.updateOne(
@@ -26,3 +50,23 @@ exports = async function() {
     );
   }
 };
+
+// 4. **Save your function.**
+
+// #### 5. **Configure Authentication and Roles (Optional)**
+
+// Depending on your data access needs and security considerations, you might need to configure authentication and roles to ensure that the function has the necessary permissions to read from and write to your collections.
+
+// 1. **Navigate to `Rules` under the `Data` section.**
+// 2. **Configure the rules** to allow the function to access the `books` and `reviews` collections.
+
+// #### 6. **Deploy Your App**
+
+// 1. **Click `Deploy` in the upper right corner** of the App Services dashboard.
+// 2. **Follow the prompts** to deploy your changes.
+
+// ### Summary
+
+// By following these steps, you can set up a Scheduled Trigger in MongoDB Atlas to periodically update the most useful reviews for each book in your collection. This is a convenient and scalable way to automate backend processes directly within MongoDB's managed cloud environment.
+
+// If you encounter any issues or need more advanced configurations, refer to the [MongoDB Atlas App Services documentation](https://www.mongodb.com/docs/atlas/app-services/) for detailed guidance and troubleshooting tips.

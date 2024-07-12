@@ -138,6 +138,22 @@ public class Review {
         this.nickname = nickname;
     }
 
+    public void incrementUpVote() {
+        this.countUpVote++;
+    }
+
+    public void decrementUpVote() {
+        this.countUpVote--;
+    }
+
+    public void incrementDownVote() {
+        this.countDownVote++;
+    }
+
+    public void decrementDownVote() {
+        this.countDownVote--;
+    }
+
     // toString method for debugging and logging
     @Override
     public String toString() {

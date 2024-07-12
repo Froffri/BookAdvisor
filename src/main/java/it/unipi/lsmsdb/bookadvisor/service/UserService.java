@@ -144,6 +144,17 @@ public class UserService {
         Review review = reviewDao.findReviewByUserIdAndBookId(userId, bookId);
         return review != null;
     }
+
+    // Additional business logic for checking if a user has upvoted a review
+    public boolean hasUpvoted(Reviewer user, ObjectId reviewId){
+        System.out.println(user.getUpVotedReviews());
+        System.out.println(reviewId);
+        return user.getUpVotedReviews().contains(reviewId);
+    }
+
+    public boolean hasDownvoted(Reviewer user, ObjectId reviewId){
+        return user.getDownVotedReviews().contains(reviewId);
+    }
     
     // Additional business logic for checking if a user is authorized
     private boolean isUserAuthorized(String userId) {

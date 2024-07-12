@@ -12,8 +12,6 @@ import it.unipi.lsmsdb.bookadvisor.service.BookService;
 import it.unipi.lsmsdb.bookadvisor.service.FollowService;
 import it.unipi.lsmsdb.bookadvisor.service.ReviewService;
 import it.unipi.lsmsdb.bookadvisor.service.UserService;
-import it.unipi.lsmsdb.bookadvisor.utils.HashingUtility;
-import it.unipi.lsmsdb.bookadvisor.Procedures;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -27,7 +25,6 @@ import javafx.scene.Node;
 import javafx.collections.FXCollections;
 import org.controlsfx.control.CheckComboBox;
 import javafx.geometry.Pos;
-import org.neo4j.driver.internal.InternalNode;
 import java.util.stream.Collectors;
 
 import java.time.LocalDate;
@@ -37,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 import org.bson.Document;
 import org.bson.types.ObjectId;
@@ -55,8 +51,11 @@ public class App extends Application {
     private Stage primaryStage;
     private Procedures procedures;
     private int currentPage = 0;
+    private int curPageBookByGenre = 0;
     private int totalBooks = 0;
+    private int totalReviews = 0;
     private int booksPerPage = 10;
+    private int reviewsPerPage = 10;
     private HBox searchBox;
     private Button goToHomeButton;
 
@@ -247,8 +246,10 @@ public class App extends Application {
         findButton.setOnAction(e -> {
             String selectedGenre = genreComboBox.getValue();
             if (selectedGenre != null) {
+                curPageBookByGenre = 0; // Reset to first page
                 List<Document> results = procedures.findMostFamousBooks(selectedGenre);
-                displayMostFamousBooks(results);
+                totalBooks = results.size();
+                displayMostFamousBooksWithPagination(results);
                 genreStage.close();
             } else {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -267,12 +268,28 @@ public class App extends Application {
         genreStage.show();
     }
     
-    private void displayMostFamousBooks(List<Document> results) {
+    private void displayMostFamousBooksWithPagination(List<Document> results) {
         Stage resultsStage = new Stage();
         VBox resultsBox = new VBox(10);
         resultsBox.setPadding(new Insets(10));
     
-        for (Document result : results) {
+        updateResultsDisplay(results, resultsBox);
+    
+        ScrollPane scrollPane = new ScrollPane(resultsBox);
+        Scene resultsScene = new Scene(scrollPane, 400, 600);
+        resultsStage.setScene(resultsScene);
+        resultsStage.setTitle("Most Famous Books by Genre");
+        resultsStage.show();
+    }
+    
+    private void updateResultsDisplay(List<Document> results, VBox vbox) {
+        vbox.getChildren().clear();
+    
+        int start = curPageBookByGenre * booksPerPage;
+        int end = Math.min(start + booksPerPage, totalBooks);
+        List<Document> resultsToDisplay = results.subList(start, end);
+    
+        for (Document result : resultsToDisplay) {
             VBox resultBox = new VBox(5);
             resultBox.getChildren().add(new Label("Country: " + result.getString("country")));
             resultBox.getChildren().add(new Label("Title: " + result.getString("title")));
@@ -289,19 +306,36 @@ public class App extends Application {
             resultBox.setOnMouseClicked(e -> {
                 Book book = bookService.getBookById(result.getObjectId("bookId"));
                 if (book != null) {
-                    displayBookDetails(book, resultsStage);
+                    displayBookDetails(book, null); // Pass null to avoid closing the current stage
                 }
             });
     
-            resultsBox.getChildren().add(resultBox);
-            resultsBox.getChildren().add(new Separator()); // Add a line separator between each book's data
+            vbox.getChildren().add(resultBox);
+            vbox.getChildren().add(new Separator()); // Add a line separator between each book's data
         }
     
-        Scene resultsScene = new Scene(new ScrollPane(resultsBox), 400, 600);
-
-        resultsStage.setScene(resultsScene);
-        resultsStage.setTitle("Most Famous Books by Genre");
-        resultsStage.show();
+        // Add pagination controls
+        HBox paginationBox = new HBox(10);
+        Button previousPageButton = new Button("Previous");
+        previousPageButton.setDisable(curPageBookByGenre == 0);
+        previousPageButton.setOnAction(e -> {
+            if (curPageBookByGenre > 0) {
+                curPageBookByGenre--;
+                updateResultsDisplay(results, vbox);
+            }
+        });
+    
+        Button nextPageButton = new Button("Next");
+        nextPageButton.setDisable((curPageBookByGenre + 1) * booksPerPage >= totalBooks);
+        nextPageButton.setOnAction(e -> {
+            if ((curPageBookByGenre + 1) * booksPerPage < totalBooks) {
+                curPageBookByGenre++;
+                updateResultsDisplay(results, vbox);
+            }
+        });
+    
+        paginationBox.getChildren().addAll(previousPageButton, new Label("Page " + (curPageBookByGenre + 1)), nextPageButton);
+        vbox.getChildren().add(paginationBox);
     }
 
     private Tab createFeedTab() {
@@ -825,8 +859,12 @@ public class App extends Application {
         );
     
         if (currentUser != null) {
-            Button followButton = new Button("Follow");
-            followButton.setOnAction(e -> followUser(reviewer));
+            boolean isFollowing = followService.isFollowing(currentUser, reviewer);
+            Button followButton = new Button(isFollowing ? "Unfollow" : "Follow");
+            followButton.setOnAction(e -> {
+                followUser(reviewer);
+                followButton.setText(followService.isFollowing(currentUser, reviewer) ? "Unfollow" : "Follow");
+            });
             userDetailsBox.getChildren().add(followButton);
     
             if (currentUser instanceof Admin) {
@@ -858,7 +896,7 @@ public class App extends Application {
         Scene scene = new Scene(userDetailsBox, 300, 400);
         userStage.setScene(scene);
         userStage.show();
-    }
+    }    
     
     private void displayTop3UsefulReviews(Reviewer reviewer) {
         List<Document> reviews = procedures.findMostUsefulReviews(reviewer.getNickname());
@@ -953,7 +991,7 @@ public class App extends Application {
                 userService.voteForReview(currentUser.getId().toString(), review.getId(), false);
             }
         } else {
-            System.out.println("You must be logged in to vote.");
+            // Removed System.out.println("You must be logged in to vote.");
             // Show an alert to the user
             Alert alert = new Alert(Alert.AlertType.INFORMATION);
             alert.setTitle("Login Required");
@@ -962,17 +1000,27 @@ public class App extends Application {
             alert.showAndWait();
         }
     }
-
+    
     private void followUser(Reviewer reviewer) {
         // Check if the user already follows the reviewer
         if(followService.isFollowing(currentUser, reviewer)) {
             followService.removeFollowByIds(currentUser.getId(), reviewer.getId());
-            System.out.println("Unfollowed user: " + reviewer.getNickname());
+            // Alert for unfollowing
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Unfollowed");
+            alert.setHeaderText(null);
+            alert.setContentText("You have unfollowed user: " + reviewer.getNickname());
+            alert.showAndWait();
         } else {
             followService.followUser(currentUser.getId(), reviewer.getId());
-            System.out.println("Followed user: " + reviewer.getNickname());
+            // Alert for following
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Followed");
+            alert.setHeaderText(null);
+            alert.setContentText("You are now following user: " + reviewer.getNickname());
+            alert.showAndWait();
         }
-    }
+    }    
 
     private void displayBookDetails(Book book, Stage ownerStage) {
         Stage bookStage = new Stage();
@@ -1247,41 +1295,59 @@ public class App extends Application {
         // Use AuthenticationService to validate the user credentials
         Reviewer user = authenticationService.logIn(username, password);
         if (user != null) {
-            System.out.println("Login successful for user: " + user.getNickname());
+            // Removed System.out.println("Login successful for user: " + user.getNickname());
+            Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+            successAlert.setTitle("Login Successful");
+            successAlert.setHeaderText(null);
+            successAlert.setContentText("Login successful for user: " + user.getNickname());
+            successAlert.showAndWait();
+    
             currentUser = user;
             // Enable and switch to home tab
             TabPane tabPane = (TabPane) sourceNode.getScene().getRoot();
-
+    
             // Remove login and register tabs
             tabPane.getTabs().removeIf(tab -> tab.getText().equals("Login") || tab.getText().equals("Register"));
-
+    
             // Add Feed and Profile tabs
             Tab feedTab = createFeedTab();
             Tab profileTab = createProfileTab();
             tabPane.getTabs().addAll(feedTab, profileTab);
-
+    
             // If the user is an author, add the Upload tab
             if (user instanceof Author) {
                 Tab uploadTab = createUploadTab();
                 tabPane.getTabs().add(uploadTab);
             }
-
+    
             tabPane.getSelectionModel().select(0); // Switch to home tab
         } else {
-            System.out.println("Login failed for user: " + username);
-            // Show an error message to the user
-            // You can show an alert here
+            // Removed System.out.println("Login failed for user: " + username);
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+            errorAlert.setTitle("Login Failed");
+            errorAlert.setHeaderText(null);
+            errorAlert.setContentText("Login failed for user: " + username);
+            errorAlert.showAndWait();
         }
-    }
+    }    
 
     private void handleRegister(String username, String password, String name, String gender, LocalDate birthdate, String nationality, List<String> favouriteGenres, List<String> spokenLanguages, List<String> genres) {
         // Use AuthenticationService to register a new user
-        if (authenticationService.signUp(username, password, name, gender, birthdate, nationality, favouriteGenres, spokenLanguages, genres)) {
-            System.out.println("Registration successful for user: " + username);
+        boolean registrationSuccess = authenticationService.signUp(username, password, name, gender, birthdate, nationality, favouriteGenres, spokenLanguages, genres);
+        if (registrationSuccess) {
+            // Removed System.out.println("Registration successful for user: " + username);
+            Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
+            successAlert.setTitle("Registration Successful");
+            successAlert.setHeaderText(null);
+            successAlert.setContentText("Registration successful for user: " + username);
+            successAlert.showAndWait();
         } else {
-            System.out.println("Registration failed for user: " + username);
-            // Show an error message to the user
-            // You can show an alert here
+            // Removed System.out.println("Registration failed for user: " + username);
+            Alert errorAlert = new Alert(Alert.AlertType.ERROR);
+            errorAlert.setTitle("Registration Failed");
+            errorAlert.setHeaderText(null);
+            errorAlert.setContentText("Registration failed for user: " + username);
+            errorAlert.showAndWait();
         }
     }
 
@@ -1289,36 +1355,76 @@ public class App extends Application {
         Stage reviewsStage = new Stage();
         VBox allReviewsBox = new VBox(10);
         allReviewsBox.setPadding(new Insets(10));
-
+    
+        List<Review> reviews = new ArrayList<>();
         for (ObjectId reviewId : book.getReviewIds()) {
             Review review = reviewService.findReviewById(reviewId);
             if (review != null) {
-                VBox reviewBox = new VBox(5);
-                Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
-                Label reviewTextLabel = new Label("Review: " + review.getText());
-                Label reviewStarsLabel = new Label("Stars: " + review.getStars());
-
-                reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel);
-                
-                if (currentUser != null && review.getText() != null && !review.getText().isEmpty()) {
-                    Label reviewUpVotesLabel = new Label("Upvotes: " + review.getCountUpVote());
-                    Label reviewDownVotesLabel = new Label("Downvotes: " + review.getCountDownVote());
-                    Button upvoteButton = new Button("Upvote");
-                    upvoteButton.setOnAction(e -> handleVote(review, true));
-                    Button downvoteButton = new Button("Downvote");
-                    downvoteButton.setOnAction(e -> handleVote(review, false));
-                    reviewBox.getChildren().addAll(reviewUpVotesLabel, reviewDownVotesLabel, upvoteButton, downvoteButton);
-                }
-                
-                allReviewsBox.getChildren().add(reviewBox);
+                reviews.add(review);
             }
         }
-
+    
+        totalReviews = reviews.size();
+        displayReviewsWithPagination(reviews, allReviewsBox);
+    
         ScrollPane scrollPane = new ScrollPane(allReviewsBox);
         Scene scene = new Scene(scrollPane, 400, 600);
         reviewsStage.setScene(scene);
         reviewsStage.show();
     }
+    
+    private void displayReviewsWithPagination(List<Review> reviews, VBox vbox) {
+        vbox.getChildren().clear();
+    
+        int start = currentPage * reviewsPerPage;
+        int end = Math.min(start + reviewsPerPage, totalReviews);
+        List<Review> reviewsToDisplay = reviews.subList(start, end);
+    
+        for (Review review : reviewsToDisplay) {
+            VBox reviewBox = new VBox(5);
+            Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
+            Label reviewTextLabel = new Label("Review: " + review.getText());
+            Label reviewStarsLabel = new Label("Stars: " + review.getStars());
+    
+            reviewBox.getChildren().addAll(reviewerLabel, reviewTextLabel, reviewStarsLabel);
+            
+            if (currentUser != null && review.getText() != null && !review.getText().isEmpty()) {
+                Label reviewUpVotesLabel = new Label("Upvotes: " + review.getCountUpVote());
+                Label reviewDownVotesLabel = new Label("Downvotes: " + review.getCountDownVote());
+                Button upvoteButton = new Button("Upvote");
+                upvoteButton.setOnAction(e -> handleVote(review, true));
+                Button downvoteButton = new Button("Downvote");
+                downvoteButton.setOnAction(e -> handleVote(review, false));
+                reviewBox.getChildren().addAll(reviewUpVotesLabel, reviewDownVotesLabel, upvoteButton, downvoteButton);
+            }
+            
+            vbox.getChildren().add(reviewBox);
+        }
+    
+        // Add pagination controls
+        HBox paginationBox = new HBox(10);
+        Button previousPageButton = new Button("Previous");
+        previousPageButton.setDisable(currentPage == 0);
+        previousPageButton.setOnAction(e -> {
+            if (currentPage > 0) {
+                currentPage--;
+                displayReviewsWithPagination(reviews, vbox);
+            }
+        });
+    
+        Button nextPageButton = new Button("Next");
+        nextPageButton.setDisable((currentPage + 1) * reviewsPerPage >= totalReviews);
+        nextPageButton.setOnAction(e -> {
+            if ((currentPage + 1) * reviewsPerPage < totalReviews) {
+                currentPage++;
+                displayReviewsWithPagination(reviews, vbox);
+            }
+        });
+    
+        paginationBox.getChildren().addAll(previousPageButton, new Label("Page " + (currentPage + 1)), nextPageButton);
+        vbox.getChildren().add(paginationBox);
+    }
+    
 
     private Tab createUploadTab() {
         Tab tab = new Tab("Upload");
