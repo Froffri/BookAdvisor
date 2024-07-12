@@ -7,7 +7,6 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 
-import it.unipi.lsmsdb.bookadvisor.model.book.Book;
 import it.unipi.lsmsdb.bookadvisor.model.review.Review;
 import it.unipi.lsmsdb.bookadvisor.model.user.*;
 

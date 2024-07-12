@@ -4,7 +4,6 @@ import static org.neo4j.driver.Values.parameters;
 
 import org.bson.types.ObjectId;
 import org.neo4j.driver.*;
-import org.neo4j.driver.summary.ResultSummary;
 
 import it.unipi.lsmsdb.bookadvisor.model.follow.Follow;
 import it.unipi.lsmsdb.bookadvisor.model.user.Reviewer;

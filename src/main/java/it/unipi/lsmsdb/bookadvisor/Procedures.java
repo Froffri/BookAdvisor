@@ -15,17 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.mongodb.client.model.Aggregates.*;
-import static com.mongodb.client.model.Filters.*;
-import static com.mongodb.client.model.Projections.*;
-import static com.mongodb.client.model.Sorts.*;
-import static com.mongodb.client.model.Accumulators.*;
-import static com.mongodb.client.model.Projections.computed;
-import static com.mongodb.client.model.Projections.fields;
-
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.MongoDBConnector;
 import it.unipi.lsmsdb.bookadvisor.dao.graphDB.Neo4jConnector;
-import it.unipi.lsmsdb.bookadvisor.model.book.Book;
 
 public class Procedures {
     private final Neo4jConnector graphConnector;
@@ -335,11 +326,5 @@ public class Procedures {
             return results;
         }
     }
-
-    public static void main(String[] args) {
-        String username = "AliceJones89"; // Replace with the desired username
-        // new Procedures().findMostUsefulReviews(username);
-    }
-
     
 }

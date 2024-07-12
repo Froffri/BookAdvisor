@@ -6,17 +6,14 @@ import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Updates;
 
 import it.unipi.lsmsdb.bookadvisor.model.book.Book;
-import it.unipi.lsmsdb.bookadvisor.model.book.Book.Author;
 
 import org.bson.BsonValue;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 
-import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class BookDao {
     private static final String COLLECTION_NAME = "books";
@@ -278,15 +275,6 @@ public class BookDao {
         } catch (Exception e) {
             System.err.println("Errore durante l'aggiornamento delle recensioni più utili del libro: " + e.getMessage());
         }
-    }
-
-    // Helper method to convert Author array to ObjectId array
-    private List<ObjectId> convertAuthorsToIds(Author[] authors) {
-        List<ObjectId> authorIds = new ArrayList<>();
-        for (Book.Author author : authors) {
-            authorIds.add(author.getId());
-        }
-        return authorIds;
     }
 
     public List<Book> getAllBooks() {
