@@ -29,7 +29,7 @@ public class UserDao {
     }
 
     // Insert user into MongoDB
-    public boolean addUser(User user) {
+    public boolean addUser(Reviewer user) {
         try {
             BsonValue insertedId = collection.insertOne(user.toDocument()).getInsertedId();
             ObjectId userid = insertedId.asObjectId().getValue();
@@ -42,7 +42,7 @@ public class UserDao {
         return true;
     }
 
-    public boolean addUser(ObjectId userId, User user) {
+    public boolean addUser(ObjectId userId, Reviewer user) {
         try {
             // Insert the user with the given ID
             collection.insertOne(user.toDocument().append("_id", userId));
@@ -54,7 +54,7 @@ public class UserDao {
     }
 
     // Find a user by their ID
-    public User findUserById(ObjectId id) {
+    public Reviewer findUserById(ObjectId id) {
         try {
             Document doc = collection.find(Filters.eq("_id", id)).first();
             return createUserFromDocument(doc);
@@ -87,8 +87,8 @@ public class UserDao {
     }
 
     // Find users by their username
-    public List<User> findUsersByUsername(String username) {
-        List<User> users = new ArrayList<>();
+    public List<Reviewer> findUsersByUsername(String username) {
+        List<Reviewer> users = new ArrayList<>();
         try {
             Pattern pattern = Pattern.compile(username, Pattern.CASE_INSENSITIVE);
             FindIterable<Document> documents = collection.find(Filters.regex("nickname", pattern));
@@ -154,7 +154,7 @@ public class UserDao {
     }
 
     // Find a user by their username
-    public User findUserByUsername(String username) {
+    public Reviewer findUserByUsername(String username) {
         try {
             Pattern pattern = Pattern.compile(username, Pattern.CASE_INSENSITIVE);
             Document doc = collection.find(Filters.regex("nickname", pattern)).first();
@@ -166,7 +166,7 @@ public class UserDao {
     }
 
     // Update a user's information
-    public boolean updateUser(User user) {
+    public boolean updateUser(Reviewer user) {
         try {
             UpdateResult result = collection.updateOne(Filters.eq("_id", user.getId()), 
                                                       new Document("$set", user.toDocument()));
@@ -189,8 +189,8 @@ public class UserDao {
     }
 
     // List all users
-    public List<User> listAllUsers() {
-        List<User> users = new ArrayList<>();
+    public List<Reviewer> listAllUsers() {
+        List<Reviewer> users = new ArrayList<>();
         try {
             for (Document doc : collection.find()) {
                 users.add(createUserFromDocument(doc));
@@ -291,7 +291,7 @@ public class UserDao {
     }
 
     // Helper method to create a User object from a MongoDB document
-    private User createUserFromDocument(Document doc) {
+    private Reviewer createUserFromDocument(Document doc) {
         if (doc == null) {
             return null;
         }

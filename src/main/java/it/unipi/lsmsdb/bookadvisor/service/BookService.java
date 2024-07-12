@@ -31,7 +31,7 @@ public class BookService {
         return bookDao.findBooksByTitle(title);
     }
 
-    public boolean addBook(Book book, User user) {
+    public boolean addBook(Book book, Reviewer user) {
         System.out.println("Adding book: " + book.toString());
         if (user instanceof Author) {
             if(bookDao.addBook(book)){
@@ -61,7 +61,7 @@ public class BookService {
         }
     }
 
-    public boolean updateBook(Book book, User user) {
+    public boolean updateBook(Book book, Reviewer user) {
         if (user instanceof Admin) {
             // Get the old book from the database
             Book oldBook = bookDao.getBookById(book.getId());
@@ -115,7 +115,7 @@ public class BookService {
         }
     }
 
-    public boolean deleteBook(Book book, User user) {
+    public boolean deleteBook(Book book, Reviewer user) {
         if (user instanceof Admin) {
 
             List<ObjectId> authorIds = new ArrayList<>();
