@@ -196,29 +196,32 @@ public class Procedures {
      *         and the rating score. The list contains up to 5 entries.
      */
     public List<Map<String, Object>> getBookRecommendation(ObjectId userId, List<String> languages) {
-        // Establish the Neo4j session
         try (Session session = graphConnector.getSession()) {
-            // Build and execute the Cypher query
-            String query = "MATCH (u:User)-[:FOLLOWS]->(f:User)-[r:RATED]->(b:Book) " +
-                    "WHERE id(u) = $userId AND b.language IN $languages " +
-                    "RETURN f.nickname AS followedUser, b.title AS bookTitle, r.rating AS rating " +
-                    "ORDER BY r.rating DESC LIMIT 5";
-
-            Result result = session.run(query, parameters("userId", userId.toHexString(), "languages", languages));
-
-            // Collect the results into a list of maps
+            String cypherQuery =
+                    "MATCH (user:User {id: $userId})-[:FOLLOWS]->(other:User)-[r:RATES]->(book:Book) " +
+                    "WHERE book.language IN $languages " +
+                    "RETURN other, book, r.rating AS rating " +
+                    "ORDER BY rating DESC " +
+                    "LIMIT 10";
+    
+            Result result = session.run(cypherQuery, 
+                                        parameters("userId", userId.toHexString(), 
+                                                   "languages", languages));
             List<Map<String, Object>> results = new ArrayList<>();
-            for (org.neo4j.driver.Record record : result.list()) {
-                Map<String, Object> map = new HashMap<>();
-                map.put("followedUser", record.get("followedUser").asString());
-                map.put("bookTitle", record.get("bookTitle").asString());
-                map.put("rating", record.get("rating").asDouble());
-                results.add(map);
+    
+            while (result.hasNext()) {
+                org.neo4j.driver.Record record = result.next();
+                Map<String, Object> followedUserRatedBook = new HashMap<>();
+                followedUserRatedBook.put("user", record.get("other").asMap());
+                followedUserRatedBook.put("book", record.get("book").asMap());
+                followedUserRatedBook.put("rating", record.get("rating").asInt());
+                results.add(followedUserRatedBook);
             }
-
+    
             return results;
         }
     }
+
     
     /**
      * Retrieves a list of the 10 most similar users to a given user based on the number of commonly 

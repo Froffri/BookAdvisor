@@ -57,6 +57,8 @@ public class App extends Application {
     private int currentPage = 0;
     private int totalBooks = 0;
     private int booksPerPage = 10;
+    private HBox searchBox;
+    private Button goToHomeButton;
 
     @Override
     public void start(Stage primaryStage) {
@@ -176,7 +178,7 @@ public class App extends Application {
                 new Label("Nationality"), nationalityComboBox,
                 new Label("Favorite Genres"), favGenresCheckComboBox,
                 new Label("Spoken Languages"), spokenLanguagesCheckComboBox,
-                new Label("Genres"), genresCheckComboBox,
+                new Label("Genres (Authors only)"), genresCheckComboBox,
                 registerButton
         );
         ScrollPane scrollPane = new ScrollPane(vbox);
@@ -190,7 +192,7 @@ public class App extends Application {
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
     
-        HBox searchBox = new HBox(10);
+        searchBox = new HBox(10);
         TextField searchField = new TextField();
         searchField.setPromptText("Search for books by title or users by nickname");
         Button searchModeButton = new Button("Search Mode: Books");
@@ -208,14 +210,21 @@ public class App extends Application {
         Button findMostFamousBooksButton = new Button("Find Most Famous Books by Genre");
         findMostFamousBooksButton.setOnAction(e -> openFindMostFamousBookWindow());
     
-        searchBox.getChildren().addAll(searchField, searchModeButton, searchButton, findMostFamousBooksButton);
+        goToHomeButton = new Button("Go to Home");
+        goToHomeButton.setVisible(false);
+        goToHomeButton.setOnAction(e -> {
+            vbox.getChildren().clear();
+            vbox.getChildren().addAll(new Label("Search"), searchBox);
+            displayInitialHomeContent(vbox);
+            goToHomeButton.setVisible(false);
+        });
+    
+        searchBox.getChildren().addAll(searchField, searchModeButton, searchButton, findMostFamousBooksButton, goToHomeButton);
     
         vbox.getChildren().addAll(new Label("Search"), searchBox);
     
         // Display popular books
-        List<Book> popularBooks = bookService.getPopularBooks(5);
-        vbox.getChildren().add(new Label("Popular Books"));
-        displayBooks(popularBooks, vbox);
+        displayInitialHomeContent(vbox);
     
         ScrollPane scrollPane = new ScrollPane(vbox);
         tab.setContent(scrollPane);
@@ -461,10 +470,12 @@ public class App extends Application {
             String newName = nameField.getText();
             LocalDate newBirthdate = birthdatePicker.getValue();
             String newPassword = newPasswordField.getText();
-    
-            if (newPassword.isEmpty() || userService.changePassword(currentUser.getId(), newPassword)) {
+            System.out.println(newPassword);
+
+            if (userService.changedData(currentUser, newName, newBirthdate, newPassword)) {
                 currentUser.setName(newName);
                 currentUser.setBirthdate(newBirthdate);
+                currentUser.setPassword(newPassword);
                 boolean success = userService.updateAccountInformation(currentUser.getId(), currentUser);
     
                 if (success) {
@@ -681,7 +692,6 @@ public class App extends Application {
 
     private void handleSearch(String query, VBox vbox) {
         vbox.getChildren().clear();
-        HBox searchBox = new HBox(10);
         TextField searchField = new TextField();
         searchField.setPromptText("Search for books by title or users by nickname");
         Button searchModeButton = new Button(searchBooks ? "Search Mode: Books" : "Search Mode: Users");
@@ -695,8 +705,15 @@ public class App extends Application {
             currentPage = 0;
             handleSearch(searchField.getText(), vbox);
         });
+
+        Button findMostFamousBooksButton = new Button("Find Most Famous Books by Genre");
+        findMostFamousBooksButton.setOnAction(e -> openFindMostFamousBookWindow());
     
-        searchBox.getChildren().addAll(searchField, searchModeButton, searchButton);
+        searchBox.getChildren().clear(); // Clear existing children
+        searchBox.getChildren().addAll(searchField, searchModeButton, searchButton, findMostFamousBooksButton, goToHomeButton);
+    
+        goToHomeButton.setVisible(true);
+    
         vbox.getChildren().addAll(new Label("Search"), searchBox);
     
         if (searchBooks) {
@@ -731,6 +748,13 @@ public class App extends Application {
             List<Reviewer> users = userService.searchUsersByUsername(query);
             displayUsers(users, vbox);
         }
+    }
+
+    private void displayInitialHomeContent(VBox vbox) {
+        // Display initial popular books
+        List<Book> popularBooks = bookService.getPopularBooks(5);
+        vbox.getChildren().add(new Label("Popular Books"));
+        displayBooks(popularBooks, vbox);
     }
 
     private void displayBooks(List<Book> books, VBox vbox) {

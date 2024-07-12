@@ -7,6 +7,7 @@ import it.unipi.lsmsdb.bookadvisor.dao.graphDB.UserGraphDAO;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.ReviewDao;
 import it.unipi.lsmsdb.bookadvisor.utils.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.bson.types.ObjectId;
@@ -35,12 +36,16 @@ public class UserService {
         return false;
     }
 
+    // Function that returns a true value if the data has been changed
+    public boolean changedData(Reviewer user, String name, LocalDate birthdate, String password) {
+        return !user.getName().equals(name) || !user.getBirthdate().equals(birthdate) || !user.getPassword().equals(password);
+    }
+
     // Visualizzazione dei dettagli utente
     public Reviewer viewInfoAccount(String userId) {
         return userDao.findUserById(new ObjectId(userId));
     }
 
-    // CHANGED USER TO REGISTEREDUSER
     // Aggiornamento dei dettagli utente
     public boolean updateAccountInformation(ObjectId userId, Reviewer updatedUser) {
         Reviewer existingUser = userDao.findUserById(userId);
