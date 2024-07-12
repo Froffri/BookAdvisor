@@ -28,9 +28,8 @@ public class ReviewGraphDAO {
     public boolean addReview(ObjectId userId, ObjectId bookId, int rating) {
         try (Session session = connector.getSession()) {
             return session.run(
-                    "MATCH (usr:User {id: $user}) " +
-                    "MATCH (bk:Book {id: $book}) " +
-                    "MERGE (usr)-[:RATES {stars: $rating}]->(bk)",
+                    "MERGE (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book})" +
+                    "ON CREATE SET r.stars = $rating",
                     parameters("user", userId.toHexString(),
                             "book", bookId.toHexString(),
                             "rating", rating)
@@ -48,9 +47,8 @@ public class ReviewGraphDAO {
     public boolean addReview(Review review) {
         try (Session session = connector.getSession()) {
             return session.run(
-                    "MATCH (usr:User {id: $user}) " +
-                    "MATCH (bk:Book {id: $book}) " +
-                    "MERGE (usr)-[:RATES {stars: $rating}]->(bk)",
+                    "MERGE (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book})" +
+                    "ON CREATE SET r.stars = $rating",
                     parameters("user", review.getUserId().toHexString(),
                             "book", review.getBookId().toHexString(),
                             "rating", review.getStars())
