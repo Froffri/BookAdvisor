@@ -8,7 +8,13 @@ import org.bson.types.ObjectId;
 import org.neo4j.driver.Value;
 import org.neo4j.driver.types.Node;
 
-public class Reviewer extends User {
+public class Reviewer {
+    private ObjectId id;
+    private String name;
+    private String nickname;
+    private String password;
+    private LocalDate birthdate;
+    private String gender;
     private String nationality;
     private List<String> favouriteGenres;
     private List<String> spokenLanguages;
@@ -18,13 +24,18 @@ public class Reviewer extends User {
 
     // Default constructor
     public Reviewer() {
-        super();
+        
     }
 
     // Parameterized constructor
     public Reviewer(ObjectId id, String name, String nickname, String password, LocalDate birthdate,
                           String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages) {
-        super(id, name, nickname, password, birthdate, gender);
+        this.id = id;
+        this.name = name;
+        this.nickname = nickname;
+        this.password = password;
+        this.birthdate = birthdate;
+        this.gender = gender;
         this.nationality = nationality;
         this.favouriteGenres = favouriteGenres;
         this.spokenLanguages = spokenLanguages;
@@ -35,7 +46,11 @@ public class Reviewer extends User {
 
     public Reviewer(String name, String nickname, String password, LocalDate birthdate,
                           String gender, String nationality, List<String> favouriteGenres, List<String> spokenLanguages) {
-        super(name, nickname, password, birthdate, gender);
+        this.name = name;
+        this.nickname = nickname;
+        this.password = password;
+        this.birthdate = birthdate;
+        this.gender = gender;
         this.nationality = nationality;
         this.favouriteGenres = favouriteGenres;
         this.spokenLanguages = spokenLanguages;
@@ -46,7 +61,14 @@ public class Reviewer extends User {
 
     // Constructor from MongoDB Document
     public Reviewer(Document doc) {
-        super(doc);
+        this.id = doc.getObjectId("_id");
+        this.name = doc.getString("name");
+        this.nickname = doc.getString("nickname");
+        this.password = doc.getString("password");
+        this.gender = doc.getString("gender");
+        
+        // Conversione della stringa di data in LocalDate
+        this.birthdate = LocalDate.parse(doc.getString("birth"));
         this.nationality = doc.getString("nationality");
         this.favouriteGenres = doc.getList("favourite_genres", String.class);
         this.spokenLanguages = doc.getList("spoken_languages", String.class);
@@ -57,7 +79,12 @@ public class Reviewer extends User {
     
     // Constructor from Neo4j Node
     public Reviewer(Node node) {
-        super(node);
+        this.id = new ObjectId(node.get("id").asString());
+        this.name = null;
+        this.nickname = node.get("nickname").asString();
+        this.password = null;
+        this.birthdate = null;
+        this.gender = null; 
         this.favouriteGenres = node.get("favourite_genres").asList(Value::asString);
         this.spokenLanguages = null;
         this.downVotedReviews = null;
@@ -66,6 +93,54 @@ public class Reviewer extends User {
     }
 
     // Getters and Setters
+
+    public ObjectId getId() {
+        return id;
+    }
+
+    public void setId(ObjectId id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getNickname() {
+        return nickname;
+    }
+
+    public void setNickname(String nickname) {
+        this.nickname = nickname;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public LocalDate getBirthdate() {
+        return birthdate;
+    }
+
+    public void setBirthdate(LocalDate birthdate) {
+        this.birthdate = birthdate;
+    }
+
+    public String getGender() {
+        return gender;
+    }
+
+    public void setGender(String gender) {
+        this.gender = gender;
+    }
 
     public String getNationality() {
         return nationality;
@@ -161,7 +236,13 @@ public class Reviewer extends User {
     @Override
     public String toString() {
         return "Reviewer{" +
-                "nationality='" + nationality + '\'' +
+                "_id='" + id + '\'' +
+                ", name='" + name + '\'' +
+                ", nickname='" + nickname + '\'' +
+                ", password='" + password + '\'' +
+                ", birth='" + birthdate + '\'' +
+                ", gender='" + gender + '\'' +
+                ", nationality='" + nationality + '\'' +
                 ", favouriteGenres=" + favouriteGenres +
                 ", spokenLanguages=" + spokenLanguages +
                 ", upVotedReviews=" + upVotedReviews +
@@ -171,16 +252,18 @@ public class Reviewer extends User {
     }
 
     // toDocument method for MongoDB
-    @Override
     public Document toDocument() {
-        Document doc = super.toDocument();
-        doc.append("nationality", nationality)
-        .append("favourite_genres", favouriteGenres)
-        .append("spoken_languages", spokenLanguages)
-        .append("up_voted_reviews", upVotedReviews)
-        .append("down_voted_reviews", downVotedReviews)
-        .append("reviews", reviewIds);
-        return doc;
+        return new Document("name", name)
+                .append("nickname", nickname)
+                .append("password", password)
+                .append("birth", birthdate.toString())
+                .append("gender", gender)
+                .append("nationality", nationality)
+                .append("favourite_genres", favouriteGenres)
+                .append("spoken_languages", spokenLanguages)
+                .append("up_voted_reviews", upVotedReviews)
+                .append("down_voted_reviews", downVotedReviews)
+                .append("reviews", reviewIds);
     }
 
     // CRUD operations for reviews

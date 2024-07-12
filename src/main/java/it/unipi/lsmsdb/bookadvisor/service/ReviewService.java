@@ -74,7 +74,7 @@ public class ReviewService {
     }
 
     // Aggiorna le informazioni di una recensione
-    public boolean updateReview(Review updatedReview, User currentUser) {
+    public boolean updateReview(Review updatedReview, Reviewer currentUser) {
         // Validate the rating
         validateStars(updatedReview.getStars());
 
@@ -108,7 +108,7 @@ public class ReviewService {
     }
 
     // Elimina una recensione dal database
-    public boolean deleteReview(ObjectId reviewId, User currentUser, ObjectId bookId) {
+    public boolean deleteReview(ObjectId reviewId, Reviewer currentUser, ObjectId bookId) {
         Review review = reviewDao.findReviewById(reviewId);
 
         if (review == null) {

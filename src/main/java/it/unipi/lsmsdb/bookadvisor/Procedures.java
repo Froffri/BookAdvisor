@@ -27,12 +27,10 @@ import it.unipi.lsmsdb.bookadvisor.dao.documentDB.MongoDBConnector;
 import it.unipi.lsmsdb.bookadvisor.dao.graphDB.Neo4jConnector;
 import it.unipi.lsmsdb.bookadvisor.model.book.Book;
 
-
 public class Procedures {
     private final Neo4jConnector graphConnector;
     private final MongoDBConnector connector;
 
-    
     public Procedures(Neo4jConnector graphConnector, MongoDBConnector connector) {
         this.graphConnector = graphConnector;
         this.connector = connector;
@@ -43,12 +41,12 @@ public class Procedures {
         // Get the database and collection
         MongoDatabase database = connector.getDatabase();
         MongoCollection<Document> collection = database.getCollection("books");
-    
+
         // Define the aggregation pipeline stages
         AggregateIterable<Document> iterable = collection.aggregate(Arrays.asList(
                 // Match stage
                 new Document("$match", new Document("authors.id", authorId)),
-    
+
                 // AddFields stage for averageRating
                 new Document("$addFields", new Document("averageRating",
                         new Document("$cond", Arrays.asList(
@@ -57,7 +55,7 @@ public class Procedures {
                                 new Document("$divide", Arrays.asList("$sumStars", "$numRatings"))
                         ))
                 )),
-    
+
                 // AddFields stage for countryRatings
                 new Document("$addFields", new Document("countryRatings",
                         new Document("$map", new Document("input",
@@ -71,7 +69,6 @@ public class Procedures {
                                                         new Document("$divide", Arrays.asList("$$rating.v.sum_stars", "$$rating.v.cardinality"))
                                                 )))
                                                 .append("numRatings", "$$rating.v.cardinality")))))),
-    
                 // AddFields stage for detailedCountryRatings
                 new Document("$addFields", new Document("detailedCountryRatings",
                         new Document("$reduce", new Document("input", "$countryRatings")
@@ -80,7 +77,6 @@ public class Procedures {
                                         new Document("country", "$$this.country")
                                                 .append("averageRating", "$$this.data.averageRating")
                                                 .append("numRatings", "$$this.data.numRatings")))))))),
-    
                 // Project stage
                 new Document("$project", new Document("bookTitle", "$title")
                         .append("bookRating", "$averageRating")
@@ -91,27 +87,24 @@ public class Procedures {
                                         .append("in", new Document("country", "$$countryDetail.country")
                                                 .append("averageRating", new Document("$round", Arrays.asList("$$countryDetail.averageRating", 2)))
                                                 .append("numRatings", "$$countryDetail.numRatings"))))),
-    
                 // Sorting stage
                 new Document("$sort", new Document("bookTitle", 1))
         ));
-    
+
         // Collect the results
         List<Document> results = new ArrayList<>();
         for (Document doc : iterable) {
             results.add(doc);
         }
-    
+
         return results;
     }
-
-    
 
     // Find the most famous books for a given genre in each country
     public List<Document> findMostFamousBooks(String genre) {
         MongoDatabase database = connector.getDatabase();
         MongoCollection<Document> collection = database.getCollection("books");
-    
+
         AggregateIterable<Document> iterable = collection.aggregate(Arrays.asList(
             new Document("$match", new Document("genre", genre)),
             new Document("$project", new Document("title", 1)
@@ -139,20 +132,20 @@ public class Procedures {
                     .append("numReviews", "$mostFamousBook.numReviews")
                     .append("imageUrl", "$mostFamousBook.imageUrl"))
         ));
-    
+
         List<Document> results = new ArrayList<>();
         for (Document doc : iterable) {
             results.add(doc);
         }
-    
+
         return results;
     }
-    
+
     // Find the top useful reviews for a given user
     public List<Document> findMostUsefulReviews(String username) {
         MongoDatabase database = connector.getDatabase();
         MongoCollection<Document> collection = database.getCollection("books");
-    
+
         AggregateIterable<Document> iterable = collection.aggregate(Arrays.asList(
             new Document("$match", new Document("most_10_useful_reviews.nickname", username)),
             new Document("$addFields", new Document("most_10_useful_reviews",
@@ -183,12 +176,12 @@ public class Procedures {
                     .append("num_pages", "$num_pages")
                     .append("most_useful_reviews", "$most_10_useful_reviews"))
         ));
-    
+
         List<Document> results = new ArrayList<>();
         for (Document doc : iterable) {
             results.add(doc);
         }
-    
+
         return results;
     }
 
@@ -200,8 +193,7 @@ public class Procedures {
      * @param userId The ObjectId of the user for whom the recommendations are generated.
      * @param languages A list of languages spoken by the user, used to filter the books.
      * @return A list of maps where each map represents a followed user, a book they rated,
-     *         and the rating score. The list contains up to 5 entries, ordered by the rating 
-     *         in descending order.
+     *         and the rating score. The list contains up to 5 entries.
      */
     public List<Map<String, Object>> getBookRecommendation(ObjectId userId, List<String> languages) {
         try (Session session = graphConnector.getSession()) {
@@ -218,7 +210,7 @@ public class Procedures {
             List<Map<String, Object>> results = new ArrayList<>();
     
             while (result.hasNext()) {
-                Record record = result.next();
+                org.neo4j.driver.Record record = result.next();
                 Map<String, Object> followedUserRatedBook = new HashMap<>();
                 followedUserRatedBook.put("user", record.get("other").asMap());
                 followedUserRatedBook.put("book", record.get("book").asMap());
@@ -229,6 +221,7 @@ public class Procedures {
             return results;
         }
     }
+
     
     /**
      * Retrieves a list of the 10 most similar users to a given user based on the number of commonly 
@@ -255,7 +248,7 @@ public class Procedures {
             List<Map<String, Object>> results = new ArrayList<>();
     
             while (result.hasNext()) {
-                Record record = result.next();
+                org.neo4j.driver.Record record = result.next();
                 Map<String, Object> userWithSimilarTastes = new HashMap<>();
                 userWithSimilarTastes.put("user2", record.get("user2").asString());
                 userWithSimilarTastes.put("Nickname", record.get("Nickname").asString());
@@ -292,7 +285,7 @@ public class Procedures {
             List<Map<String, Object>> results = new ArrayList<>();
     
             while (result.hasNext()) {
-                Record record = result.next();
+                org.neo4j.driver.Record record = result.next();
                 Map<String, Object> follow = new HashMap<>();
                 follow.put("followedUserId", record.get("followedUserId").asString());
                 follow.put("followedUserNickname", record.get("followedUserNickname").asString());
@@ -328,7 +321,7 @@ public class Procedures {
             List<Map<String, Object>> results = new ArrayList<>();
     
             while (result.hasNext()) {
-                Record record = result.next();
+                org.neo4j.driver.Record record = result.next();
                 Map<String, Object> rating = new HashMap<>();
                 rating.put("followedUserId", record.get("followedUserId").asString());
                 rating.put("followedUserNickname", record.get("followedUserNickname").asString());

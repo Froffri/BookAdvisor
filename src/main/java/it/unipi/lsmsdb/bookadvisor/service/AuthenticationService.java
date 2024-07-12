@@ -2,7 +2,6 @@ package it.unipi.lsmsdb.bookadvisor.service;
 
 import it.unipi.lsmsdb.bookadvisor.model.user.Author;
 import it.unipi.lsmsdb.bookadvisor.model.user.Reviewer;
-import it.unipi.lsmsdb.bookadvisor.model.user.User;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.UserDao;
 import it.unipi.lsmsdb.bookadvisor.dao.graphDB.UserGraphDAO;
 import it.unipi.lsmsdb.bookadvisor.utils.*;
@@ -78,32 +77,14 @@ public class AuthenticationService {
                 return false;
             }
         } else {
-            User newUser = new User(name, username, hashedPassword, birthdate, gender);
-
-            // Aggiunta dell'utente al database
-            if (userDao.addUser(newUser)) {
-                // Get the real user id
-                newUser = userDao.findUserByUsername(username);
-                // Insertion in document successful
-                if (userGraphDAO.addUser(userDao.findUserByUsername(username).getId(), newUser)) {
-                    // Insertion in graph successful
-                    return true;
-                } else {
-                    // Insertion in graph failed
-                    System.out.println("Failed to insert user in graph");
-                    userDao.deleteUser(newUser.getId());
-                    return false;
-                }
-            } else {
-                // Insertion in document failed
-                System.out.println("Failed to insert user in document database");
-                return false;
-            }
+            // Invalid user type
+            System.out.println("Invalid user type");
+            return false;
         }
     }
 
-    public User logIn(String username, String password) {
-        User user = userDao.findUserByUsername(username);
+    public Reviewer logIn(String username, String password) {
+        Reviewer user = userDao.findUserByUsername(username);
         if (user != null && HashingUtility.checkPassword(password, user.getPassword())) {
             // Successful login
             return user;

@@ -7,6 +7,7 @@ import it.unipi.lsmsdb.bookadvisor.dao.graphDB.UserGraphDAO;
 import it.unipi.lsmsdb.bookadvisor.dao.documentDB.ReviewDao;
 import it.unipi.lsmsdb.bookadvisor.utils.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.bson.types.ObjectId;
@@ -24,7 +25,7 @@ public class UserService {
 
     // Cambiare la password dell'utente
     public boolean changePassword(ObjectId userId, String newPassword) {
-        User user = userDao.findUserById(userId);
+        Reviewer user = userDao.findUserById(userId);
         if (user != null) {
             if (PasswordValidator.newPasswordMeetsCriteria(newPassword)) {
                 user.setPassword(HashingUtility.hashPassword(newPassword));
@@ -35,15 +36,19 @@ public class UserService {
         return false;
     }
 
+    // Function that returns a true value if the data has been changed
+    public boolean changedData(Reviewer user, String name, LocalDate birthdate, String password) {
+        return !user.getName().equals(name) || !user.getBirthdate().equals(birthdate) || !user.getPassword().equals(password);
+    }
+
     // Visualizzazione dei dettagli utente
-    public User viewInfoAccount(String userId) {
+    public Reviewer viewInfoAccount(String userId) {
         return userDao.findUserById(new ObjectId(userId));
     }
 
-    // CHANGED USER TO REGISTEREDUSER
     // Aggiornamento dei dettagli utente
-    public boolean updateAccountInformation(ObjectId userId, User updatedUser) {
-        User existingUser = userDao.findUserById(userId);
+    public boolean updateAccountInformation(ObjectId userId, Reviewer updatedUser) {
+        Reviewer existingUser = userDao.findUserById(userId);
         if (existingUser instanceof Admin || existingUser.getId().equals(updatedUser.getId())) {
             if(userDao.updateUser(updatedUser))
                 return true;
@@ -55,10 +60,10 @@ public class UserService {
 
     // Metodo per eliminare un account utente
     public boolean deleteAccount(ObjectId requestingUserId, ObjectId targetUserId) {
-        User requestingUser = userDao.findUserById(requestingUserId);
+        Reviewer requestingUser = userDao.findUserById(requestingUserId);
         if (requestingUser instanceof Admin || requestingUserId.equals(targetUserId)) {
 
-            User targetUser = userDao.findUserById(targetUserId);
+            Reviewer targetUser = userDao.findUserById(targetUserId);
             List<Review> reviews = userDao.getReviewsByUserId(targetUserId, reviewDao);
 
             if(reviewDao.deleteReviewsByUserId(targetUserId)){
@@ -90,7 +95,7 @@ public class UserService {
     }
 
     // Visualizzazione della lista degli utenti
-    public List<User> listAllUsers() {
+    public List<Reviewer> listAllUsers() {
         return userDao.listAllUsers();
     }
 
@@ -129,7 +134,7 @@ public class UserService {
     }
     
     // Additional business logic for validating a vote
-    private boolean isValidVote(User user, Review review) {
+    private boolean isValidVote(Reviewer user, Review review) {
         return review != null
                 && !review.getUserId().equals(user.getId()) // Ensure the vote is not from the same user
                 && review.getText() != null && !review.getText().isEmpty(); // Ensure the associated review has non-empty text
@@ -143,11 +148,11 @@ public class UserService {
     // Additional business logic for checking if a user is authorized
     private boolean isUserAuthorized(String userId) {
         // Verifica se l'ID utente è valido e corrisponde a un utente nel sistema
-        User user = userDao.findUserById(new ObjectId(userId));
+        Reviewer user = userDao.findUserById(new ObjectId(userId));
         return user != null;
     }
 
-    public List<User> searchUsersByUsername(String username) {
+    public List<Reviewer> searchUsersByUsername(String username) {
         return userDao.findUsersByUsername(username);
     }
        

@@ -41,11 +41,6 @@ public class UserGraphDAO {
     //     return true;
     // }
 
-    // TEMPORARY FIX
-    public boolean addUser(ObjectId id, User user){
-        return addUser(id, (Reviewer) user);
-    }
-
     /**
      * Add a user to the graph database
      * @param user 
@@ -90,14 +85,14 @@ public class UserGraphDAO {
 
     // READ OPERATIONS
 
-    public List<User> getAllUsers() {
+    public List<Reviewer> getAllUsers() {
         try (Session session = connector.getSession()) {
             Result result = session.run(
                 "MATCH (u:User) " +
                 "RETURN u"
             );
 
-            List<User> userList = new ArrayList<>();
+            List<Reviewer> userList = new ArrayList<>();
             while (result.hasNext()) {
                 Node userNode = result.next().get("u").asNode();
                 
@@ -115,7 +110,7 @@ public class UserGraphDAO {
         }
     }
 
-    public User getUserById(ObjectId id) {
+    public Reviewer getUserById(ObjectId id) {
         try (Session session = connector.getSession()) {
             Result result = session.run(
                 "MATCH (u:User {id: $id}) " +
@@ -141,15 +136,6 @@ public class UserGraphDAO {
     }
 
     // UPDATE OPERATIONS
-
-    public boolean updateUser(User user) {
-        // if(user instanceof Author)
-        //     return updateUser((Author) user);
-        // else if(user instanceof RegisteredUser)
-            return updateUser((Reviewer) user);
-
-        // throw new IllegalArgumentException("User type not supported");
-    }
 
     public boolean updateUser(Reviewer user) {
         try(Session session = connector.getSession()) {
@@ -186,7 +172,7 @@ public class UserGraphDAO {
      * Delete a user from the graph database
      * @param user
      */
-    public boolean deleteUser(User user) {
+    public boolean deleteUser(Reviewer user) {
         try (Session session = connector.getSession()) {
             return session.run(
                 "MATCH (u:User {id: $id}) " +
