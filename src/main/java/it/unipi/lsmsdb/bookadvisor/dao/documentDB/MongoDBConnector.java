@@ -16,8 +16,8 @@ public class MongoDBConnector {
     private MongoDBConnector() {
         try {
             // Replica Set URI with all nodes and the replica set name
-            // String uri = "mongodb://10.1.1.20:27020,10.1.1.21:27020,10.1.1.23:27020/?readPreference=secondary";
-            String uri = "mongodb://localhost:27017";
+            String uri = "mongodb://10.1.1.20:27020,10.1.1.21:27020,10.1.1.23:27020/?readPreference=secondary";
+            // String uri = "mongodb://localhost:27017";
 
             // Configure MongoClientSettings, if necessary
             MongoClientSettings.Builder settingsBuilder = MongoClientSettings.builder()
