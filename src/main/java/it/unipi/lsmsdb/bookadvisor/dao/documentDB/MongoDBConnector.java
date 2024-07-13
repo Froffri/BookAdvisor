@@ -1,10 +1,7 @@
 package it.unipi.lsmsdb.bookadvisor.dao.documentDB;
 
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.*;
+import com.mongodb.client.*;
 
 public class MongoDBConnector {
     private static final String DATABASE_NAME = "BookAdvisor";
@@ -23,8 +20,8 @@ public class MongoDBConnector {
             MongoClientSettings.Builder settingsBuilder = MongoClientSettings.builder()
                     .applyConnectionString(new ConnectionString(uri))
                     .retryWrites(true) // Enable retryable writes
-                    .readPreference(com.mongodb.ReadPreference.nearest()) // Read preference
-                    .writeConcern(com.mongodb.WriteConcern.W1); // Write concern
+                    .readPreference(ReadPreference.nearest()) // Read preference
+                    .writeConcern(WriteConcern.W1); // Write concern
 
             // Create a MongoClient with the given settings
             mongoClient = MongoClients.create(settingsBuilder.build());
