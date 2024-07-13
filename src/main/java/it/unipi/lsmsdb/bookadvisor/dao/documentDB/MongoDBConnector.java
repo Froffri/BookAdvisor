@@ -16,15 +16,15 @@ public class MongoDBConnector {
     private MongoDBConnector() {
         try {
             // Replica Set URI with all nodes and the replica set name
-            String uri = "mongodb://10.1.1.20:27020,10.1.1.21:27020,10.1.1.23:27020/?readPreference=secondary";
+            String uri = "mongodb://10.1.1.20:27020,10.1.1.21:27020,10.1.1.23:27020/";
             // String uri = "mongodb://localhost:27017";
 
             // Configure MongoClientSettings, if necessary
             MongoClientSettings.Builder settingsBuilder = MongoClientSettings.builder()
                     .applyConnectionString(new ConnectionString(uri))
                     .retryWrites(true) // Enable retryable writes
-                    .readPreference(com.mongodb.ReadPreference.primaryPreferred()) // Read preference
-                    .writeConcern(com.mongodb.WriteConcern.MAJORITY); // Write concern
+                    .readPreference(com.mongodb.ReadPreference.nearest()) // Read preference
+                    .writeConcern(com.mongodb.WriteConcern.W1); // Write concern
 
             // Create a MongoClient with the given settings
             mongoClient = MongoClients.create(settingsBuilder.build());
