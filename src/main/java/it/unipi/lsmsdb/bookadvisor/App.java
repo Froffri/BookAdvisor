@@ -509,7 +509,10 @@ public class App extends Application {
             if (userService.changedData(currentUser, newName, newBirthdate, newPassword)) {
                 currentUser.setName(newName);
                 currentUser.setBirthdate(newBirthdate);
-                currentUser.setPassword(newPassword);
+                
+                if(!newPassword.isEmpty())
+                    currentUser.setPassword(newPassword);
+
                 boolean success = userService.updateAccountInformation(currentUser.getId(), currentUser);
     
                 if (success) {
