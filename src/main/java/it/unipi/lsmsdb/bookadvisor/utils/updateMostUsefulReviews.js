@@ -27,29 +27,53 @@
 // 2. **Name your function** (e.g., `updateMostUsefulReviews`).
 // 3. **Add the following code** in the function editor to implement the logic for updating the most useful reviews:
 
-exports = async function() {
-  const db = context.services.get("mongodb-atlas").db("yourDatabase");
-  const booksCollection = db.collection("books");
-  const reviewsCollection = db.collection("reviews");
+// updateReviews.js
 
-  const booksCursor = booksCollection.find();
+const { MongoClient } = require('mongodb');
+
+// Replace the following with your MongoDB Atlas connection string
+const uri = "mongodb://10.1.1.20:27020,10.1.1.21:27020,10.1.1.23:27020/";
+
+async function updateMostUsefulReviews() {
+  const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true });
+
+  try {
+    await client.connect();
+    const db = client.db("BookAdvisor");
+    const booksCollection = db.collection("books");
+    const reviewsCollection = db.collection("reviews");
+
+    const booksCursor = booksCollection.find();
+
+    while (await booksCursor.hasNext()) {
+      const book = await booksCursor.next();
+
+      // Fetch reviews directly using review_ids from the book document
+      const reviewIds = book.review_ids.map(id => ObjectId(id)); // Convert review_ids to ObjectId
   
-  while (await booksCursor.hasNext()) {
-    const book = await booksCursor.next();
-    const mostUsefulReviews = await reviewsCollection.aggregate([
-      { "$match": { "book_id": book._id } },
-      { "$addFields": { "helpfulness": { "$subtract": ["$count_up_votes", "$count_down_votes"] } } },
-      { "$sort": { "helpfulness": -1 } },
-      { "$limit": 10 },
-      { "$project": { "helpfulness": 0 } }
-    ]).toArray();
+      const mostUsefulReviews = await reviewsCollection.aggregate([
+        { $match: { _id: { $in: reviewIds } } }, // Match reviews by their IDs
+        { $addFields: {
+            "helpfulness": { $subtract: ["$count_up_votes", "$count_down_votes"] }
+          }
+        },
+        { $sort: { "helpfulness": -1 } },
+        { $limit: 10 },
+        { $project: { "helpfulness": 0 } } // Exclude helpfulness field from final output
+      ]).toArray();
 
-    await booksCollection.updateOne(
-      { "_id": book._id },
-      { "$set": { "most_10_useful_reviews": mostUsefulReviews } }
-    );
+      // Update the book document with the most useful reviews
+      await booksCollection.updateOne(
+        { "_id": book._id },
+        { "$set": { "most_10_useful_reviews": mostUsefulReviews } }
+      );
+    }
+  } finally {
+    await client.close();
   }
-};
+}
+
+updateMostUsefulReviews().catch(console.error);
 
 // 4. **Save your function.**
 

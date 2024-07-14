@@ -509,7 +509,7 @@ public class App extends Application {
             if (userService.changedData(currentUser, newName, newBirthdate, newPassword)) {
                 currentUser.setName(newName);
                 currentUser.setBirthdate(newBirthdate);
-                
+
                 if(!newPassword.isEmpty())
                     currentUser.setPassword(newPassword);
 
@@ -816,13 +816,59 @@ public class App extends Application {
         booksBox.setPadding(new Insets(10));
     
         List<Book> authorBooks = bookService.getBooksByAuthor(currentUser.getId());
-        displayBooks(authorBooks, booksBox);
+        totalBooks = authorBooks.size();
+        displayBooksWithPagination(authorBooks, booksBox);
     
         ScrollPane scrollPane = new ScrollPane(booksBox);
         Scene scene = new Scene(scrollPane, 400, 600);
         booksStage.setScene(scene);
         booksStage.show();
     }
+    
+    private void displayBooksWithPagination(List<Book> books, VBox vbox) {
+        vbox.getChildren().clear();
+    
+        int start = currentPage * booksPerPage;
+        int end = Math.min(start + booksPerPage, totalBooks);
+        List<Book> booksToDisplay = books.subList(start, end);
+    
+        for (Book book : booksToDisplay) {
+            VBox bookBox = new VBox(5);
+            Label titleLabel = new Label("Title: " + book.getTitle());
+            ImageView imageView = new ImageView(new Image(book.getImageUrl()));
+            imageView.setFitHeight(100);
+            imageView.setFitWidth(80);
+            Label ratingLabel = new Label(String.format("Rating: %.2f", (double) book.getSumStars() / book.getNumRatings()));
+    
+            bookBox.getChildren().addAll(titleLabel, imageView, ratingLabel);
+            bookBox.setOnMouseClicked(e -> displayBookDetails(book, (Stage) vbox.getScene().getWindow()));
+    
+            vbox.getChildren().add(bookBox);
+        }
+    
+        // Add pagination controls
+        HBox paginationBox = new HBox(10);
+        Button previousPageButton = new Button("Previous");
+        previousPageButton.setDisable(currentPage == 0);
+        previousPageButton.setOnAction(e -> {
+            if (currentPage > 0) {
+                currentPage--;
+                displayBooksWithPagination(books, vbox);
+            }
+        });
+    
+        Button nextPageButton = new Button("Next");
+        nextPageButton.setDisable((currentPage + 1) * booksPerPage >= totalBooks);
+        nextPageButton.setOnAction(e -> {
+            if ((currentPage + 1) * booksPerPage < totalBooks) {
+                currentPage++;
+                displayBooksWithPagination(books, vbox);
+            }
+        });
+    
+        paginationBox.getChildren().addAll(previousPageButton, new Label("Page " + (currentPage + 1)), nextPageButton);
+        vbox.getChildren().add(paginationBox);
+    }    
 
     private void displayUsers(List<Reviewer> users, VBox vbox) {
         for (Reviewer reviewer : users) {
@@ -1297,14 +1343,7 @@ public class App extends Application {
     private void handleLogin(String username, String password, Node sourceNode) {
         // Use AuthenticationService to validate the user credentials
         Reviewer user = authenticationService.logIn(username, password);
-        if (user != null) {
-            // Removed System.out.println("Login successful for user: " + user.getNickname());
-            Alert successAlert = new Alert(Alert.AlertType.INFORMATION);
-            successAlert.setTitle("Login Successful");
-            successAlert.setHeaderText(null);
-            successAlert.setContentText("Login successful for user: " + user.getNickname());
-            successAlert.showAndWait();
-    
+        if (user != null) {    
             currentUser = user;
             // Enable and switch to home tab
             TabPane tabPane = (TabPane) sourceNode.getScene().getRoot();
