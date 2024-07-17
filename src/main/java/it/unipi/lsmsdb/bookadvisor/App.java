@@ -100,6 +100,7 @@ public class App extends Application {
 
     private Tab createLoginTab() {
         Tab tab = new Tab("Login");
+        tab.setClosable(false); 
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
 
@@ -120,6 +121,7 @@ public class App extends Application {
 
     private Tab createRegisterTab() {
         Tab tab = new Tab("Register");
+        tab.setClosable(false); 
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
     
@@ -190,6 +192,7 @@ public class App extends Application {
 
     private Tab createHomeTab() {
         Tab tab = new Tab("Home");
+        tab.setClosable(false); 
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
     
@@ -342,6 +345,7 @@ public class App extends Application {
 
     private Tab createFeedTab() {
         Tab tab = new Tab("Feed");
+        tab.setClosable(false); 
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
         vbox.setAlignment(Pos.CENTER);
@@ -481,6 +485,7 @@ public class App extends Application {
 
     private Tab createProfileTab() {
         Tab tab = new Tab("Profile");
+        tab.setClosable(false); 
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
     
@@ -1472,6 +1477,7 @@ public class App extends Application {
 
     private Tab createUploadTab() {
         Tab tab = new Tab("Upload");
+        tab.setClosable(false); 
         VBox vbox = new VBox(10);
         vbox.setPadding(new Insets(10));
     
