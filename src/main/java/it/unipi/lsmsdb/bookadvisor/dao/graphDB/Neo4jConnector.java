@@ -7,7 +7,6 @@ public class Neo4jConnector {
     // private static final String URI = "bolt://localhost:7687";
     private static final String USERNAME = "neo4j";
     private static final String PASSWORD = "studenti";
-    private static final String DATABASE_NAME = "bookadvisor";
 
     private Driver driver;
 

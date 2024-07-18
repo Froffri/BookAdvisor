@@ -190,22 +190,13 @@ public class BookDao {
     }
 
 
-    // Get books by author ID using the book ids contained in the author document
+    // Get books by author ID using the author id inside books
     public List<Book> getBooksByAuthor(ObjectId authorId) {
-        Document authorDoc = userDao.findAuthorById(authorId).toDocument();
-        if (authorDoc != null) {
-            List<ObjectId> bookIds = authorDoc.getList("bookIds", ObjectId.class);
-            List<Book> books = new ArrayList<>();
-            for (ObjectId bookId : bookIds) {
-                Document bookDoc = collection.find(Filters.eq("_id", bookId)).first();
-                if (bookDoc != null) {
-                    books.add(new Book(bookDoc));
-                }
-            }
-            return books;
-        } else {
-            return new ArrayList<>();
+        List<Book> books = new ArrayList<>();
+        for (Document doc : collection.find(Filters.eq("authors.id", authorId))) {
+            books.add(new Book(doc));
         }
+        return books;
     }
     
     // Get books by multiple genres with AND/OR logic

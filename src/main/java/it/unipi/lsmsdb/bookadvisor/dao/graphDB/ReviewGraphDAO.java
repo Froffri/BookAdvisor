@@ -47,7 +47,7 @@ public class ReviewGraphDAO {
     public boolean addReview(Review review) {
         try (Session session = connector.getSession()) {
             return session.run(
-                    "MERGE (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book})" +
+                    "MERGE (usr:User {id: $user})-[r:RATES]->(bk:Book {id: $book}) " +
                     "ON CREATE SET r.stars = $rating",
                     parameters("user", review.getUserId().toHexString(),
                             "book", review.getBookId().toHexString(),

@@ -64,7 +64,7 @@ public class UserService {
         if (requestingUser instanceof Admin || requestingUserId.equals(targetUserId)) {
 
             Reviewer targetUser = userDao.findUserById(targetUserId);
-            List<Review> reviews = userDao.getReviewsByUserId(targetUserId, reviewDao);
+            List<Review> reviews = reviewDao.findReviewsByUserId(targetUserId);
 
             if(reviewDao.deleteReviewsByUserId(targetUserId)){
                 if(userDao.deleteUser(targetUserId)){

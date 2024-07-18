@@ -20,7 +20,6 @@ public class Reviewer {
     private List<String> spokenLanguages;
     private List<ObjectId> upVotedReviews;
     private List<ObjectId> downVotedReviews;
-    private List<ObjectId> reviewIds; 
 
     // Default constructor
     public Reviewer() {
@@ -41,7 +40,6 @@ public class Reviewer {
         this.spokenLanguages = spokenLanguages;
         this.downVotedReviews = new ArrayList<>();
         this.upVotedReviews = new ArrayList<>();
-        this.reviewIds = new ArrayList<>();
     }
 
     public Reviewer(String name, String nickname, String password, LocalDate birthdate,
@@ -56,7 +54,6 @@ public class Reviewer {
         this.spokenLanguages = spokenLanguages;
         this.downVotedReviews = new ArrayList<>();
         this.upVotedReviews = new ArrayList<>();
-        this.reviewIds = new ArrayList<>(); 
     }
 
     // Constructor from MongoDB Document
@@ -74,7 +71,6 @@ public class Reviewer {
         this.spokenLanguages = doc.getList("spoken_languages", String.class);
         this.upVotedReviews = doc.getList("up_voted_reviews", ObjectId.class);
         this.downVotedReviews = doc.getList("down_voted_reviews", ObjectId.class);
-        this.reviewIds = doc.getList("reviews", ObjectId.class); 
     }    
     
     // Constructor from Neo4j Node
@@ -89,7 +85,6 @@ public class Reviewer {
         this.spokenLanguages = null;
         this.downVotedReviews = null;
         this.upVotedReviews = null;
-        this.reviewIds = null; 
     }
 
     // Getters and Setters
@@ -224,14 +219,6 @@ public class Reviewer {
         }
     }
 
-    public List<ObjectId> getReviewIds() {
-        return reviewIds;
-    }
-
-    public void setReviewIds(List<ObjectId> reviewIds) {
-        this.reviewIds = reviewIds;
-    }
-
     // toString method for debugging and logging
     @Override
     public String toString() {
@@ -247,7 +234,6 @@ public class Reviewer {
                 ", spokenLanguages=" + spokenLanguages +
                 ", upVotedReviews=" + upVotedReviews +
                 ", downVotedReviews=" + downVotedReviews +
-                ", reviewIds=" + reviewIds +
                 "} " + super.toString();
     }
 
@@ -262,39 +248,6 @@ public class Reviewer {
                 .append("favourite_genres", favouriteGenres)
                 .append("spoken_languages", spokenLanguages)
                 .append("up_voted_reviews", upVotedReviews)
-                .append("down_voted_reviews", downVotedReviews)
-                .append("reviews", reviewIds);
-    }
-
-    // CRUD operations for reviews
-
-    // Add a review ID to the reviewIds list
-    public void addReview(ObjectId reviewId) {
-        if (this.reviewIds == null) {
-            this.reviewIds = new ArrayList<>();
-        }
-        this.reviewIds.add(reviewId);
-    }
-
-    // Remove a review ID from the reviewIds list
-    public void removeReview(ObjectId reviewId) {
-        if (this.reviewIds != null) {
-            this.reviewIds.remove(reviewId);
-        }
-    }
-
-    // Update a review ID in the reviewIds list
-    public void updateReview(ObjectId oldReviewId, ObjectId newReviewId) {
-        if (this.reviewIds != null) {
-            int index = this.reviewIds.indexOf(oldReviewId);
-            if (index != -1) {
-                this.reviewIds.set(index, newReviewId);
-            }
-        }
-    }
-
-    // Get all review IDs
-    public List<ObjectId> getAllReviews() {
-        return this.reviewIds;
+                .append("down_voted_reviews", downVotedReviews);
     }
 }

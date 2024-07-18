@@ -662,8 +662,7 @@ public class App extends Application {
         VBox allReviewsBox = new VBox(10);
         allReviewsBox.setPadding(new Insets(10));
     
-        for (ObjectId reviewId : currentUser.getReviewIds()) {
-            Review review = reviewService.findReviewById(reviewId);
+        for (Review review : reviewService.findReviewsByUserId(currentUser.getId())) {
             if (review != null) {
                 VBox reviewBox = new VBox(5);
                 Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
@@ -672,7 +671,6 @@ public class App extends Application {
                 Button deleteReviewButton = new Button("Delete Review");
                 deleteReviewButton.setOnAction(e -> {
                     if (reviewService.deleteReview(review.getId(), currentUser, review.getBookId())) {
-                        currentUser.removeReview(review.getId());
                         userService.updateAccountInformation(currentUser.getId(), currentUser);
                         allReviewsBox.getChildren().remove(reviewBox);
                     }
@@ -901,7 +899,7 @@ public class App extends Application {
         Label spokenLanguagesLabel = new Label("Spoken Languages: " + String.join(", ", reviewer.getSpokenLanguages()));
     
         Button reviewsButton = new Button("Reviews");
-        reviewsButton.setOnAction(e -> displayUserReviews(reviewer.getReviewIds(), reviewer));
+        reviewsButton.setOnAction(e -> displayUserReviews(reviewService.findReviewsByUserId(reviewer.getId()), reviewer));
     
         userDetailsBox.getChildren().addAll(
                 nameLabel,
@@ -993,13 +991,12 @@ public class App extends Application {
         reviewsStage.show();
     }
 
-    private void displayUserReviews(List<ObjectId> reviewIds, Reviewer reviewer) {
+    private void displayUserReviews(List<Review> reviews, Reviewer reviewer) {
         Stage reviewStage = new Stage();
         VBox reviewsBox = new VBox(10);
         reviewsBox.setPadding(new Insets(10));
 
-        for (ObjectId reviewId : reviewIds) {
-            Review review = reviewService.findReviewById(reviewId);
+        for (Review review : reviews) {
             if (review != null) {
                 VBox reviewBox = new VBox(5);
                 Label reviewerLabel = new Label("Reviewer: " + review.getNickname());
@@ -1021,7 +1018,6 @@ public class App extends Application {
                     Button deleteReviewButton = new Button("Delete Review");
                     deleteReviewButton.setOnAction(e -> {
                         if (reviewService.deleteReview(review.getId(), reviewer, review.getBookId())) {
-                            reviewer.removeReview(review.getId());
                             userService.updateAccountInformation(reviewer.getId(), reviewer);
                             reviewsBox.getChildren().remove(reviewBox);
                         }

@@ -35,7 +35,6 @@ public class BookService {
         System.out.println("Adding book: " + book.toString());
         if (user instanceof Author) {
             if(bookDao.addBook(book)){
-                userDao.addBookToAuthor(((Author) user).getId(), book.getId());
                 // Successfully added the book in mongodb
                 if(bookGraphDAO.addBook(book)){
                     // Successfully added the book in neo4j
@@ -47,7 +46,6 @@ public class BookService {
                     for (Book.Author author : book.getAuthors()) {
                         authorIds.add(author.getId());
                     }
-                    userDao.removeBookFromAuthors(authorIds, book.getId());
                     bookDao.deleteBook(book.getId());
                     return false;
                 }
@@ -118,33 +116,20 @@ public class BookService {
     public boolean deleteBook(Book book, Reviewer user) {
         if (user instanceof Admin) {
 
-            List<ObjectId> authorIds = new ArrayList<>();
-            for (Book.Author author : book.getAuthors()) {
-                authorIds.add(author.getId());
-            }
-
-            if (userDao.removeBookFromAuthors(authorIds, book.getId())) {
-                if (bookDao.deleteBook(book.getId())) {
-                    // Successfully deleted the book in mongodb
-                    if (bookGraphDAO.deleteBook(book)) {
-                        // Successfully deleted the book in neo4j
-                        return true;
-                    } else {
-                        // Failed to delete the book in neo4j
-                        System.out.println("Failed to delete book in graph");
-                        userDao.addBookToAuthors(authorIds, book.getId());
-                        bookDao.addBook(book.getId(), book);
-                        return false;
-                    }
+            if (bookDao.deleteBook(book.getId())) {
+                // Successfully deleted the book in mongodb
+                if (bookGraphDAO.deleteBook(book)) {
+                    // Successfully deleted the book in neo4j
+                    return true;
                 } else {
-                    // Failed to delete the book in mongodb
-                    System.out.println("Failed to delete book in mongodb");
-                    userDao.addBookToAuthors(authorIds, book.getId());
+                    // Failed to delete the book in neo4j
+                    System.out.println("Failed to delete book in graph");
+                    bookDao.addBook(book.getId(), book);
                     return false;
                 }
             } else {
-                // Failed to remove the book from authors
-                System.out.println("Failed to remove book from authors");
+                // Failed to delete the book in mongodb
+                System.out.println("Failed to delete book in mongodb");
                 return false;
             }
         } else if (user instanceof Author) {
@@ -153,36 +138,23 @@ public class BookService {
                 .anyMatch(a -> a.getId().equals(author.getId()));
 
             if (authorExists) {
-                List<ObjectId> authorIds = new ArrayList<>();
-                for (Book.Author author1 : book.getAuthors()) {
-                    authorIds.add(author1.getId());
-                }
 
-                if (userDao.removeBookFromAuthors(authorIds, book.getId())) {
-                    if (bookDao.deleteBook(book.getId())) {
-                        // Successfully deleted the book in mongodb
-                        if (bookGraphDAO.deleteBook(book)) {
-                            // Successfully deleted the book in neo4j
-                            return true;
-                        } else {
-                            // Failed to delete the book in neo4j
-                            System.out.println("Failed to delete book in graph");
-                            userDao.addBookToAuthors(authorIds, book.getId());
-                            bookDao.addBook(book.getId(), book);
-                            return false;
-                        }
+                if (bookDao.deleteBook(book.getId())) {
+                    // Successfully deleted the book in mongodb
+                    if (bookGraphDAO.deleteBook(book)) {
+                        // Successfully deleted the book in neo4j
+                        return true;
                     } else {
-                        // Failed to delete the book in mongodb
-                        System.out.println("Failed to delete book in mongodb");
-                        userDao.addBookToAuthors(authorIds, book.getId());
+                        // Failed to delete the book in neo4j
+                        System.out.println("Failed to delete book in graph");
+                        bookDao.addBook(book.getId(), book);
                         return false;
                     }
                 } else {
-                    // Failed to remove the book from authors
-                    System.out.println("Failed to remove book from authors");
+                    // Failed to delete the book in mongodb
+                    System.out.println("Failed to delete book in mongodb");
                     return false;
                 }
-
             } else {
                 System.out.println("Gli autori possono cancellare solo libri di cui sono autori.");
                 return false;

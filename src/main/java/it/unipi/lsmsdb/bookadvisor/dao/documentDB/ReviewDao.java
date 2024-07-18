@@ -36,7 +36,6 @@ public class ReviewDao {
             ObjectId id = insertedId.asObjectId().getValue();
             bookDao.updateBookRating(review.getBookId(), review.getStars(), review.getCountry());
             bookDao.addReviewToBook(review.getBookId(), id);
-            userDao.addReview(review.getUserId(), id);
             // Add the review to the object
             review.setId(id);
         } catch (Exception e) {
@@ -96,26 +95,13 @@ public class ReviewDao {
             if (result.getDeletedCount() > 0) {
                 // Remove the review from the book
                 if(bookDao.removeReviewFromBook(review.getBookId(), id)){
-                    // Remove the review from the user
-                    if(userDao.removeReview(review.getUserId(), id)){
-                        // Successfully deleted the review from the database
-                        if(bookDao.updateBookRating(review.getBookId(), -review.getStars(), review.getCountry())){
-                            // Successfully updated the book rating
-                            return true;
-                        } else {
-                            // Failed to update the book rating
-                            System.out.println("Failed to update book rating");
-                            // Add the review back to the database
-                            collection.insertOne(review.toDocument().append("_id", id));
-                            // Add the review back to the book
-                            bookDao.addReviewToBook(review.getBookId(), id);
-                            // Add the review back to the user
-                            userDao.addReview(review.getUserId(), id);
-                            return false;
-                        }
+                    // Successfully deleted the review from the database
+                    if(bookDao.updateBookRating(review.getBookId(), -review.getStars(), review.getCountry())){
+                        // Successfully updated the book rating
+                        return true;
                     } else {
-                        // Failed to remove the review from the user
-                        System.out.println("Failed to remove review from user");
+                        // Failed to update the book rating
+                        System.out.println("Failed to update book rating");
                         // Add the review back to the database
                         collection.insertOne(review.toDocument().append("_id", id));
                         // Add the review back to the book
@@ -197,12 +183,12 @@ public class ReviewDao {
         return reviews;
     }
 
-    // Find reviews by user ID using document linking of the review ids contained in user
+    // Find reviews by user ID using the user id contained in the review
     public List<Review> findReviewsByUserId(ObjectId userId) {
         List<Review> reviews = new ArrayList<>();
         try {
-            for (ObjectId reviewId : userDao.findReviewerById(userId).getReviewIds()) {
-                reviews.add(findReviewById(reviewId));
+            for (Document doc : collection.find(Filters.eq("user_id", userId))) {
+                reviews.add(new Review(doc));
             }
         } catch (Exception e) {
             System.err.println("Errore durante la ricerca delle recensioni per ID utente: " + e.getMessage());

@@ -36,29 +36,20 @@ public class ReviewService {
 
         if(reviewDao.addReview(review.getId(), review)){
             if(bookDao.addReviewToBook(review.getBookId(), review.getId())){
-                if(userDao.addReview(review.getUserId(), review.getId())){
-                    if(bookDao.updateBookRating(review.getBookId(), review.getStars(), review.getCountry())){
-                        // Successfully added the review to mongodb
-                        if(reviewGraphDao.addReview(review)){
-                            // Successfully added the review to neo4j
-                            return true;
-                        } else {
-                            // Failed to add the review to neo4j
-                            System.out.println("Failed to add review to graph");
-                            reviewDao.deleteReview(review.getId());
-                            return false;
-                        }
+                if(bookDao.updateBookRating(review.getBookId(), review.getStars(), review.getCountry())){
+                    // Successfully added the review to mongodb
+                    if(reviewGraphDao.addReview(review)){
+                        // Successfully added the review to neo4j
+                        return true;
                     } else {
-                        // Failed to add the review to mongodb
-                        System.out.println("Failed to add review to book");
-                        reviewDao.deleteReviewById(review.getId());
-                        bookDao.removeReviewFromBook(review.getBookId(), review.getId());
-                        userDao.removeReview(review.getUserId(), review.getId());
+                        // Failed to add the review to neo4j
+                        System.out.println("Failed to add review to graph");
+                        reviewDao.deleteReview(review.getId());
                         return false;
                     }
                 } else {
                     // Failed to add the review to mongodb
-                    System.out.println("Failed to add review to user");
+                    System.out.println("Failed to add review to book");
                     reviewDao.deleteReviewById(review.getId());
                     bookDao.removeReviewFromBook(review.getBookId(), review.getId());
                     return false;
@@ -133,8 +124,6 @@ public class ReviewService {
 
                         // Rollback the deletion from mongodb
                         bookDao.updateBookRating(bookId, review.getStars(), review.getCountry());
-
-                        userDao.addReview(review.getUserId(), reviewId);
 
                         return false;
                     }

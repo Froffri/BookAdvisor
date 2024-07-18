@@ -100,58 +100,6 @@ public class UserDao {
         return users;
     }
 
-    public List<Review> getReviewsByUserId(ObjectId userId, ReviewDao reviewDao) {
-        List<Review> reviews = new ArrayList<>();
-        try {
-            Document doc = collection.find(Filters.eq("_id", userId)).first();
-            if (doc != null && doc.containsKey("reviewIds")) {
-                List<ObjectId> reviewIds = (List<ObjectId>) doc.get("reviewIds");
-                for (ObjectId reviewId : reviewIds) {
-                    Review review = reviewDao.findReviewById(reviewId);
-                    if (review != null) {
-                        reviews.add(review);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            System.err.println("Errore durante la ricerca delle recensioni per ID utente: " + e.getMessage());
-        }
-        return reviews;
-    }
-
-    public boolean addBookToAuthor(ObjectId authorId, ObjectId bookId) {
-        try {
-            UpdateResult result = collection.updateOne(Filters.eq("_id", authorId),
-                                                      new Document("$push", new Document("bookIds", bookId)));
-            return result.getModifiedCount() > 0;
-        } catch (Exception e) {
-            System.err.println("Errore durante l'aggiunta del libro all'autore: " + e.getMessage());
-            return false;
-        }
-    }
-
-    public boolean removeBookFromAuthors(List<ObjectId> authorIds, ObjectId bookId) {
-        try {
-            UpdateResult result = collection.updateMany(Filters.in("_id", authorIds),
-                                                      new Document("$pull", new Document("bookIds", bookId)));
-            return result.getModifiedCount() > 0;
-        } catch (Exception e) {
-            System.err.println("Errore durante la rimozione del libro dagli autori: " + e.getMessage());
-            return false;
-        }
-    }
-
-    public boolean addBookToAuthors(List<ObjectId> authorIds, ObjectId bookId) {
-        try {
-            UpdateResult result = collection.updateMany(Filters.in("_id", authorIds),
-                                                      new Document("$push", new Document("bookIds", bookId)));
-            return result.getModifiedCount() > 0;
-        } catch (Exception e) {
-            System.err.println("Errore durante l'aggiunta del libro agli autori: " + e.getMessage());
-            return false;
-        }
-    }
-
     // Find a user by their username
     public Reviewer findUserByUsername(String username) {
         try {
@@ -263,30 +211,6 @@ public class UserDao {
             System.err.println("Error while voting for a review: " + e.getMessage());
             return false;
         }
-    }
-
-
-    // Add a review to a user
-    public boolean addReview(ObjectId userId, ObjectId reviewId) {
-        Reviewer user = findReviewerById(userId);
-        if (user != null) {
-            if (user.getReviewIds() == null) {
-                user.setReviewIds(new ArrayList<>());
-            }
-            user.addReview(reviewId);
-            return updateUser(user);
-        }
-        return false;
-    }
-
-    // Remove a review from a user
-    public boolean removeReview(ObjectId userId, ObjectId reviewId) {
-        Reviewer user = findReviewerById(userId);
-        if (user != null) {
-            user.removeReview(reviewId);
-            return updateUser(user);
-        }
-        return false;
     }
 
     // Helper method to create a User object from a MongoDB document
